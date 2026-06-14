@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mini Code Judge</title>
+<style>
+  /* ── Design tokens ────────────────────────────────────────────── */
+  :root {
+    --bg:        #0d1117;
+    --surface:   #161b22;
+    --surface2:  #21262d;
+    --border:    #30363d;
+    --accent:    #58a6ff;
+    --accent2:   #3fb950;
+    --warn:      #f78166;
+    --yellow:    #e3b341;
+    --text:      #e6edf3;
+    --muted:     #8b949e;
+    --radius:    10px;
+    --mono:      'JetBrains Mono', 'Fira Code', monospace;
+    --sans:      'Inter', system-ui, sans-serif;
+  }
+
+  /* ── Reset ────────────────────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  /* ── Layout ───────────────────────────────────────────────────── */
+  .app { display: flex; height: 100vh; overflow: hidden; }
+
+  /* ── Sidebar ──────────────────────────────────────────────────── */
+  .sidebar {
+    width: 220px;
+    min-width: 220px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 20px 0;
+    gap: 4px;
+  }
+  .sidebar-logo {
+    padding: 0 20px 20px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 12px;
+  }
+  .sidebar-logo .logo-text {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.3px;
+  }
+  .sidebar-logo .logo-tag {
+    font-size: 10px;
+    color: var(--accent);
+    font-family: var(--mono);
+    background: rgba(88,166,255,0.1);
+    border: 1px solid rgba(88,166,255,0.25);
+    padding: 1px 6px;
+    border-radius: 4px;
+    display: inline-block;
+    margin-top: 4px;
+  }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 20px;
+    cursor: pointer;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 500;
+    border-left: 3px solid transparent;
+    transition: all 0.15s;
+    user-select: none;
+  }
+  .nav-item:hover { color: var(--text); background: rgba(255,255,255,0.04); }
+  .nav-item.active { color: var(--accent); border-left-color: var(--accent); background: rgba(88,166,255,0.07); }
+  .nav-item .icon { font-size: 15px; }
+  .nav-section-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    padding: 16px 20px 6px;
+    font-weight: 600;
+  }
+
+  /* ── Main panel ───────────────────────────────────────────────── */
+  .main {
+    flex: 1;
+    overflow-y: auto;
+    padding: 32px;
+    background: var(--bg);
+  }
+  .page { display: none; animation: fadein 0.2s ease; }
+  .page.active { display: block; }
+  @keyframes fadein { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+  /* ── Page header ─────────────────────────────────────────────── */
+  .page-header { margin-bottom: 28px; }
+  .page-header h1 { font-size: 22px; font-weight: 700; color: var(--text); }
+  .page-header p { color: var(--muted); font-size: 13px; margin-top: 4px; }
+
+  /* ── Cards ────────────────────────────────────────────────────── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    margin-bottom: 16px;
+  }
+  .card-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* ── Forms ────────────────────────────────────────────────────── */
+  .form-group { margin-bottom: 14px; }
+  label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+  input, select, textarea {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 13px;
+    padding: 9px 12px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(88,166,255,0.12); }
+  select option { background: var(--surface2); }
+  textarea { resize: vertical; font-family: var(--mono); font-size: 13px; min-height: 80px; }
+
+  /* ── Buttons ──────────────────────────────────────────────────── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 9px 18px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+    font-family: var(--sans);
+  }
+  .btn-primary { background: var(--accent); color: #0d1117; }
+  .btn-primary:hover { background: #79baff; }
+  .btn-success { background: var(--accent2); color: #0d1117; }
+  .btn-success:hover { background: #56d364; }
+  .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+  .btn-ghost:hover { color: var(--text); border-color: var(--accent); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-sm { padding: 5px 12px; font-size: 12px; }
+
+  /* ── Alert / Toast ────────────────────────────────────────────── */
+  .alert {
+    padding: 11px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    margin-bottom: 14px;
+    display: none;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .alert.show { display: flex; }
+  .alert-error { background: rgba(247,129,102,0.12); border: 1px solid rgba(247,129,102,0.3); color: #f78166; }
+  .alert-success { background: rgba(63,185,80,0.12); border: 1px solid rgba(63,185,80,0.3); color: #3fb950; }
+  .alert-info { background: rgba(88,166,255,0.1); border: 1px solid rgba(88,166,255,0.25); color: var(--accent); }
+
+  /* ── Badges / Pills ───────────────────────────────────────────── */
+  .badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-family: var(--mono);
+  }
+  .badge-accepted   { background: rgba(63,185,80,0.15);  color: #3fb950; border: 1px solid rgba(63,185,80,0.3); }
+  .badge-wrong      { background: rgba(247,129,102,0.15); color: #f78166; border: 1px solid rgba(247,129,102,0.3); }
+  .badge-pending    { background: rgba(227,179,65,0.15);  color: #e3b341; border: 1px solid rgba(227,179,65,0.3); }
+  .badge-running    { background: rgba(88,166,255,0.15);  color: var(--accent); border: 1px solid rgba(88,166,255,0.3); }
+  .badge-error      { background: rgba(247,129,102,0.15); color: #f78166; border: 1px solid rgba(247,129,102,0.3); }
+  .badge-easy   { background: rgba(63,185,80,0.15);  color: #3fb950; }
+  .badge-medium { background: rgba(227,179,65,0.15);  color: #e3b341; }
+  .badge-hard   { background: rgba(247,129,102,0.15); color: #f78166; }
+
+  /* ── Code editor ──────────────────────────────────────────────── */
+  .code-editor {
+    background: #010409;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .code-editor-toolbar {
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    padding: 8px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .code-editor-toolbar .dots { display: flex; gap: 6px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .dot-red { background: #ff5f57; }
+  .dot-yellow { background: #febc2e; }
+  .dot-green { background: #28c840; }
+  .code-editor textarea {
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.7;
+    padding: 16px;
+    min-height: 240px;
+    color: #c9d1d9;
+  }
+  .code-editor textarea:focus { box-shadow: none; border: none; }
+
+  /* ── Table ────────────────────────────────────────────────────── */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--muted);
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  tbody tr { border-bottom: 1px solid rgba(48,54,61,0.6); transition: background 0.1s; }
+  tbody tr:hover { background: rgba(255,255,255,0.03); }
+  tbody td { padding: 12px 14px; font-size: 13px; }
+  tbody tr:last-child { border-bottom: none; }
+
+  /* ── Stats row (dashboard) ────────────────────────────────────── */
+  .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 24px; }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+  }
+  .stat-card .stat-value { font-size: 28px; font-weight: 700; font-family: var(--mono); color: var(--text); }
+  .stat-card .stat-label { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .stat-card .stat-accent { color: var(--accent); }
+  .stat-card .stat-green  { color: var(--accent2); }
+  .stat-card .stat-yellow { color: var(--yellow); }
+
+  /* ── Auth header ──────────────────────────────────────────────── */
+  .auth-header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 32px;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 12px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .user-pill {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 4px 12px 4px 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .avatar {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), #bc8cff);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; color: #fff;
+  }
+
+  /* ── Verdict result box ───────────────────────────────────────── */
+  .verdict-box {
+    border-radius: 10px;
+    padding: 20px 24px;
+    display: none;
+    margin-top: 18px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+  }
+  .verdict-box.show { display: block; }
+  .verdict-title { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+  .verdict-accepted { color: var(--accent2); }
+  .verdict-wrong_answer { color: var(--warn); }
+  .verdict-time_limit_exceeded { color: var(--yellow); }
+  .verdict-compile_error { color: var(--warn); }
+  .verdict-runtime_error { color: var(--warn); }
+  .verdict-pending, .verdict-running { color: var(--accent); }
+  .verdict-meta { font-size: 12px; color: var(--muted); display: flex; gap: 18px; margin-top: 10px; }
+  .verdict-meta span { display: flex; align-items: center; gap: 5px; }
+  .error-pre {
+    background: #010409;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--warn);
+    margin-top: 12px;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+
+  /* ── Problem list item ────────────────────────────────────────── */
+  .problem-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 18px;
+    border-bottom: 1px solid rgba(48,54,61,0.5);
+    cursor: pointer;
+    transition: background 0.12s;
+  }
+  .problem-item:hover { background: rgba(255,255,255,0.03); }
+  .problem-item:last-child { border-bottom: none; }
+  .problem-num { font-family: var(--mono); font-size: 12px; color: var(--muted); width: 28px; }
+  .problem-title { flex: 1; font-size: 13px; font-weight: 500; }
+  .problem-title small { display: block; font-size: 11px; color: var(--muted); font-weight: 400; margin-top: 2px; }
+
+  /* ── Spinner ──────────────────────────────────────────────────── */
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner {
+    display: inline-block;
+    width: 14px; height: 14px;
+    border: 2px solid rgba(88,166,255,0.3);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+  }
+
+  /* ── Scrollbar ────────────────────────────────────────────────── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* ── Tabs ─────────────────────────────────────────────────────── */
+  .tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+  .tab {
+    padding: 9px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: all 0.15s;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* ── Modal ────────────────────────────────────────────────────── */
+  .modal-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    backdrop-filter: blur(2px);
+  }
+  .modal-backdrop.show { display: flex; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px;
+    width: 420px;
+    max-width: 95vw;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    animation: fadein 0.2s ease;
+  }
+  .modal h2 { font-size: 17px; font-weight: 700; margin-bottom: 20px; }
+
+  /* ── Responsive ───────────────────────────────────────────────── */
+  @media(max-width: 700px) {
+    .sidebar { display: none; }
+    .stats-row { grid-template-columns: 1fr 1fr; }
+    .main { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Auth Modal -->
+<div class="modal-backdrop" id="authModal">
+  <div class="modal">
+    <div class="tabs" id="authTabs">
+      <div class="tab active" onclick="switchAuthTab('login')">Login</div>
+      <div class="tab" onclick="switchAuthTab('register')">Register</div>
+    </div>
+
+    <!-- Login -->
+    <div id="loginForm">
+      <div class="alert alert-error" id="loginErr"></div>
+      <div class="form-group">
+        <label>Username</label>
+        <input type="text" id="loginUsername" placeholder="your username" />
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="loginPassword" placeholder="••••••••" />
+      </div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:4px" onclick="doLogin()">
+        Login
+      </button>
+    </div>
+
+    <!-- Register -->
+    <div id="registerForm" style="display:none">
+      <div class="alert alert-error" id="registerErr"></div>
+      <div class="form-group">
+        <label>Username</label>
+        <input type="text" id="regUsername" placeholder="akarsh" />
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="regEmail" placeholder="you@example.com" />
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="regPassword" placeholder="min 6 characters" />
+      </div>
+      <button class="btn btn-success" style="width:100%;justify-content:center;margin-top:4px" onclick="doRegister()">
+        Create account
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- App Shell -->
+<div class="app">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-text">⚡ Code Judge</div>
+      <span class="logo-tag">v1.0</span>
+    </div>
+
+    <div class="nav-section-label">Navigate</div>
+    <div class="nav-item active" onclick="goTo('dashboard')">
+      <span class="icon">◈</span> Dashboard
+    </div>
+    <div class="nav-item" onclick="goTo('problems')">
+      <span class="icon">≡</span> Problems
+    </div>
+    <div class="nav-item" onclick="goTo('submit')">
+      <span class="icon">▷</span> Submit Code
+    </div>
+    <div class="nav-item" onclick="goTo('history')">
+      <span class="icon">◷</span> My Submissions
+    </div>
+
+    <div class="nav-section-label" style="margin-top:auto">Settings</div>
+    <div class="nav-item" onclick="goTo('addproblem')">
+      <span class="icon">＋</span> Add Problem
+    </div>
+    <div class="nav-item" id="authNavBtn" onclick="handleAuthNav()">
+      <span class="icon">◉</span> <span id="authNavLabel">Login</span>
+    </div>
+  </aside>
+
+  <!-- Right panel -->
+  <div style="flex:1;display:flex;flex-direction:column;overflow:hidden">
+
+    <!-- Top bar -->
+    <div class="auth-header">
+      <span id="topBarText" style="color:var(--muted);font-size:12px">Not logged in</span>
+      <div id="userPillWrap" style="display:none" class="user-pill">
+        <div class="avatar" id="userAvatar">A</div>
+        <span id="userPillName">akarsh</span>
+      </div>
+      <button class="btn btn-ghost btn-sm" id="topAuthBtn" onclick="openAuthModal()">Login / Register</button>
+    </div>
+
+    <!-- Main content -->
+    <div class="main">
+
+      <!-- ── Dashboard ── -->
+      <div class="page active" id="page-dashboard">
+        <div class="page-header">
+          <h1>Dashboard</h1>
+          <p>Welcome to your coding arena. Pick a problem and start solving.</p>
+        </div>
+        <div class="stats-row">
+          <div class="stat-card">
+            <div class="stat-value stat-accent" id="statProblems">—</div>
+            <div class="stat-label">Problems available</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value stat-green" id="statAccepted">—</div>
+            <div class="stat-label">Accepted submissions</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value stat-yellow" id="statTotal">—</div>
+            <div class="stat-label">Total submissions</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">🚀 Recent submissions</div>
+          <div id="dashRecentList"><p style="color:var(--muted);font-size:13px">Login to see your recent submissions.</p></div>
+        </div>
+
+        <div class="card" style="margin-top:16px">
+          <div class="card-title">📋 How it works</div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:4px">
+            <div style="text-align:center;padding:14px 8px">
+              <div style="font-size:26px;margin-bottom:8px">①</div>
+              <div style="font-size:12px;font-weight:600;color:var(--text)">Pick a Problem</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:4px">Browse problems by difficulty</div>
+            </div>
+            <div style="text-align:center;padding:14px 8px">
+              <div style="font-size:26px;margin-bottom:8px">②</div>
+              <div style="font-size:12px;font-weight:600;color:var(--text)">Write C++ Code</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:4px">Use the built-in code editor</div>
+            </div>
+            <div style="text-align:center;padding:14px 8px">
+              <div style="font-size:26px;margin-bottom:8px">③</div>
+              <div style="font-size:12px;font-weight:600;color:var(--text)">Submit</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:4px">Compiled & judged automatically</div>
+            </div>
+            <div style="text-align:center;padding:14px 8px">
+              <div style="font-size:26px;margin-bottom:8px">④</div>
+              <div style="font-size:12px;font-weight:600;color:var(--text)">Get Verdict</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:4px">AC / WA / TLE / CE in seconds</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Problems ── -->
+      <div class="page" id="page-problems">
+        <div class="page-header">
+          <h1>Problems</h1>
+          <p>Choose a problem to solve. Click any row to open it.</p>
+        </div>
+        <div class="card" style="padding:0;overflow:hidden">
+          <div id="problemList" style="min-height:80px">
+            <div style="padding:24px;color:var(--muted)">Loading problems…</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Problem Detail + Submit ── -->
+      <div class="page" id="page-submit">
+        <div class="page-header">
+          <div style="display:flex;align-items:center;gap:12px">
+            <button class="btn btn-ghost btn-sm" onclick="goTo('problems')">← Back</button>
+            <h1 id="submitProblemTitle">Submit Code</h1>
+            <span id="submitDiffBadge" class="badge"></span>
+          </div>
+          <p id="submitProblemDesc" style="margin-top:10px;line-height:1.7;white-space:pre-wrap;color:var(--muted)"></p>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+          <div>
+            <div class="card" style="padding:0;overflow:hidden">
+              <div class="code-editor">
+                <div class="code-editor-toolbar">
+                  <div class="dots">
+                    <div class="dot dot-red"></div>
+                    <div class="dot dot-yellow"></div>
+                    <div class="dot dot-green"></div>
+                  </div>
+                  <select id="langSelect" style="width:auto;padding:3px 8px;font-size:12px">
+                    <option value="cpp">C++</option>
+                  </select>
+                </div>
+                <textarea id="codeInput" placeholder="// Write your C++ solution here
+#include&lt;bits/stdc++.h&gt;
+using namespace std;
+
+int main(){
+    // your code
+    return 0;
+}"></textarea>
+              </div>
+            </div>
+            <button class="btn btn-success" style="margin-top:12px;width:100%;justify-content:center;font-size:14px;padding:12px" onclick="submitCode()">
+              ▷ &nbsp;Run & Judge
+            </button>
+          </div>
+
+          <div>
+            <div class="verdict-box" id="verdictBox">
+              <div class="verdict-title" id="verdictTitle">—</div>
+              <div id="verdictSub" style="font-size:12px;color:var(--muted)"></div>
+              <div class="verdict-meta" id="verdictMeta"></div>
+              <pre class="error-pre" id="verdictError" style="display:none"></pre>
+            </div>
+            <div class="card" id="submitLog" style="display:none">
+              <div class="card-title">Judging log</div>
+              <div id="submitLogText" style="font-family:var(--mono);font-size:12px;color:var(--muted);line-height:1.8"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Submission History ── -->
+      <div class="page" id="page-history">
+        <div class="page-header">
+          <h1>My Submissions</h1>
+          <p>Your full judging history — newest first.</p>
+        </div>
+        <div class="card" style="padding:0;overflow:hidden">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Problem</th>
+                  <th>Language</th>
+                  <th>Verdict</th>
+                  <th>Runtime</th>
+                  <th>Submitted</th>
+                </tr>
+              </thead>
+              <tbody id="historyTable">
+                <tr><td colspan="6" style="color:var(--muted);padding:20px">Login to see your submissions.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Add Problem ── -->
+      <div class="page" id="page-addproblem">
+        <div class="page-header">
+          <h1>Add Problem</h1>
+          <p>Create a new problem with test cases for others to solve.</p>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+          <div class="card">
+            <div class="card-title">📝 Problem details</div>
+            <div class="alert alert-error" id="addProbErr"></div>
+            <div class="alert alert-success" id="addProbOk"></div>
+            <div class="form-group">
+              <label>Title</label>
+              <input type="text" id="probTitle" placeholder="e.g. Hello World" />
+            </div>
+            <div class="form-group">
+              <label>Description</label>
+              <textarea id="probDesc" style="min-height:120px" placeholder="Describe the problem. Include input format, output format, constraints."></textarea>
+            </div>
+            <div class="form-group">
+              <label>Difficulty</label>
+              <select id="probDiff">
+                <option value="easy">Easy</option>
+                <option value="medium">Medium</option>
+                <option value="hard">Hard</option>
+              </select>
+            </div>
+            <button class="btn btn-primary" onclick="addProblem()">Create Problem</button>
+          </div>
+
+          <div class="card">
+            <div class="card-title">🧪 Add test case</div>
+            <div class="alert alert-error" id="addTcErr"></div>
+            <div class="alert alert-success" id="addTcOk"></div>
+            <div class="form-group">
+              <label>Problem ID</label>
+              <input type="number" id="tcProbId" placeholder="e.g. 1" />
+            </div>
+            <div class="form-group">
+              <label>stdin (input)</label>
+              <textarea id="tcStdin" placeholder="Leave blank if no input needed"></textarea>
+            </div>
+            <div class="form-group">
+              <label>Expected stdout</label>
+              <textarea id="tcExpected" placeholder="Expected output exactly"></textarea>
+            </div>
+            <div class="form-group" style="display:flex;align-items:center;gap:8px">
+              <input type="checkbox" id="tcSample" style="width:auto" />
+              <label style="margin:0;text-transform:none;letter-spacing:0">Sample test case (shown to users)</label>
+            </div>
+            <button class="btn btn-ghost" onclick="addTestCase()">Add Test Case</button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /main -->
+  </div>
+</div>
+
+<script>
+// ── Config ─────────────────────────────────────────────────────────
+const API = 'http://localhost:8000';
+
+// ── State ──────────────────────────────────────────────────────────
+let token = localStorage.getItem('jwt') || null;
+let username = localStorage.getItem('username') || null;
+let currentProblem = null;
+let pollInterval = null;
+
+// ── Init ───────────────────────────────────────────────────────────
+window.onload = () => {
+  updateAuthUI();
+  loadProblems();
+  loadDashboard();
+};
+
+// ── Navigation ─────────────────────────────────────────────────────
+function goTo(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  const items = document.querySelectorAll('.nav-item');
+  const map = { dashboard: 0, problems: 1, submit: 2, history: 3, addproblem: 4 };
+  if (map[page] !== undefined) items[map[page]].classList.add('active');
+  if (page === 'history') loadHistory();
+  if (page === 'problems') loadProblems();
+  if (page === 'dashboard') loadDashboard();
+}
+
+// ── Auth ───────────────────────────────────────────────────────────
+function openAuthModal() { document.getElementById('authModal').classList.add('show'); }
+function closeAuthModal() { document.getElementById('authModal').classList.remove('show'); }
+
+function switchAuthTab(tab) {
+  document.getElementById('loginForm').style.display   = tab === 'login'    ? 'block' : 'none';
+  document.getElementById('registerForm').style.display = tab === 'register' ? 'block' : 'none';
+  document.querySelectorAll('#authTabs .tab').forEach((t, i) => {
+    t.classList.toggle('active', (i === 0 && tab === 'login') || (i === 1 && tab === 'register'));
+  });
+}
+
+function handleAuthNav() {
+  if (token) {
+    token = null; username = null;
+    localStorage.removeItem('jwt'); localStorage.removeItem('username');
+    updateAuthUI(); loadDashboard(); loadHistory();
+  } else {
+    openAuthModal();
+  }
+}
+
+function updateAuthUI() {
+  const loggedIn = !!token;
+  document.getElementById('authNavLabel').textContent = loggedIn ? 'Logout' : 'Login';
+  document.getElementById('topBarText').textContent = loggedIn ? `Logged in as ${username}` : 'Not logged in';
+  document.getElementById('userPillWrap').style.display = loggedIn ? 'flex' : 'none';
+  document.getElementById('topAuthBtn').style.display = loggedIn ? 'none' : 'inline-flex';
+  if (loggedIn) {
+    document.getElementById('userPillName').textContent = username;
+    document.getElementById('userAvatar').textContent = username[0].toUpperCase();
+  }
+}
+
+async function doLogin() {
+  const u = document.getElementById('loginUsername').value.trim();
+  const p = document.getElementById('loginPassword').value;
+  const err = document.getElementById('loginErr');
+  err.className = 'alert'; err.textContent = '';
+  try {
+    const fd = new FormData();
+    fd.append('username', u); fd.append('password', p);
+    const res = await fetch(`${API}/auth/login`, { method: 'POST', body: fd });
+    const data = await res.json();
+    if (!res.ok) { showAlert(err, data.detail || 'Login failed', 'error'); return; }
+    token = data.access_token; username = u;
+    localStorage.setItem('jwt', token); localStorage.setItem('username', u);
+    closeAuthModal(); updateAuthUI(); loadDashboard(); loadHistory();
+  } catch(e) { showAlert(err, 'Cannot reach API — is the server running?', 'error'); }
+}
+
+async function doRegister() {
+  const u = document.getElementById('regUsername').value.trim();
+  const e = document.getElementById('regEmail').value.trim();
+  const p = document.getElementById('regPassword').value;
+  const err = document.getElementById('registerErr');
+  err.className = 'alert'; err.textContent = '';
+  try {
+    const res = await fetch(`${API}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: u, email: e, password: p }),
+    });
+    const data = await res.json();
+    if (!res.ok) { showAlert(err, data.detail || 'Registration failed', 'error'); return; }
+    showAlert(err, '✓ Account created! Logging you in…', 'success');
+    setTimeout(() => {
+      document.getElementById('loginUsername').value = u;
+      document.getElementById('loginPassword').value = p;
+      switchAuthTab('login');
+      doLogin();
+    }, 800);
+  } catch(e) { showAlert(err, 'Cannot reach API — is the server running?', 'error'); }
+}
+
+// ── Problems ───────────────────────────────────────────────────────
+async function loadProblems() {
+  const el = document.getElementById('problemList');
+  try {
+    const res = await fetch(`${API}/problems`);
+    const problems = await res.json();
+    document.getElementById('statProblems').textContent = problems.length;
+    if (!problems.length) { el.innerHTML = '<div style="padding:24px;color:var(--muted)">No problems yet. Add one!</div>'; return; }
+    el.innerHTML = problems.map((p, i) => `
+      <div class="problem-item" onclick="openProblem(${JSON.stringify(p).replace(/"/g,'&quot;')})">
+        <span class="problem-num">${i + 1}</span>
+        <div class="problem-title">
+          ${p.title}
+          <small>${p.description.slice(0, 70)}${p.description.length > 70 ? '…' : ''}</small>
+        </div>
+        <span class="badge badge-${p.difficulty}">${p.difficulty}</span>
+        <span style="color:var(--muted);font-size:12px">→</span>
+      </div>`).join('');
+  } catch(e) { el.innerHTML = '<div style="padding:24px;color:var(--warn)">⚠ Cannot reach API. Is the server running?</div>'; }
+}
+
+function openProblem(p) {
+  currentProblem = p;
+  document.getElementById('submitProblemTitle').textContent = `#${p.id} — ${p.title}`;
+  document.getElementById('submitProblemDesc').textContent = p.description;
+  const diffBadge = document.getElementById('submitDiffBadge');
+  diffBadge.textContent = p.difficulty;
+  diffBadge.className = `badge badge-${p.difficulty}`;
+  document.getElementById('verdictBox').classList.remove('show');
+  document.getElementById('submitLog').style.display = 'none';
+  goTo('submit');
+}
+
+// ── Submit ─────────────────────────────────────────────────────────
+async function submitCode() {
+  if (!token) { openAuthModal(); return; }
+  if (!currentProblem) { alert('No problem selected'); return; }
+  const code = document.getElementById('codeInput').value;
+  const lang = document.getElementById('langSelect').value;
+
+  const vbox = document.getElementById('verdictBox');
+  const vtitle = document.getElementById('verdictTitle');
+  const vsub = document.getElementById('verdictSub');
+  const vmeta = document.getElementById('verdictMeta');
+  const verr = document.getElementById('verdictError');
+  const log = document.getElementById('submitLog');
+  const logText = document.getElementById('submitLogText');
+
+  vbox.classList.add('show');
+  vbox.style.borderColor = 'var(--border)';
+  vtitle.className = 'verdict-title verdict-pending';
+  vtitle.innerHTML = '<span class="spinner"></span> &nbsp;Submitting…';
+  vsub.textContent = ''; vmeta.textContent = ''; verr.style.display = 'none';
+  log.style.display = 'block';
+  logText.textContent = '→ Sending code to judge…\n';
+
+  try {
+    const res = await fetch(`${API}/submissions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ problem_id: currentProblem.id, language: lang, code }),
+    });
+    const sub = await res.json();
+    if (!res.ok) { vtitle.textContent = '✗ Error'; vsub.textContent = sub.detail; vtitle.className = 'verdict-title verdict-wrong_answer'; return; }
+
+    logText.textContent += `→ Submission #${sub.id} queued (status: pending)\n→ Waiting for worker to compile & run…\n`;
+    vtitle.innerHTML = '<span class="spinner"></span> &nbsp;Judging…';
+
+    if (pollInterval) clearInterval(pollInterval);
+    pollInterval = setInterval(() => pollVerdict(sub.id, logText, vtitle, vsub, vmeta, verr, vbox), 1500);
+  } catch(e) { vtitle.textContent = '⚠ Cannot reach API'; vtitle.className = 'verdict-title verdict-wrong_answer'; }
+}
+
+async function pollVerdict(id, logText, vtitle, vsub, vmeta, verr, vbox) {
+  try {
+    const res = await fetch(`${API}/submissions/${id}`, { headers: { 'Authorization': `Bearer ${token}` } });
+    const sub = await res.json();
+    if (sub.status === 'pending' || sub.status === 'running') {
+      logText.textContent += `  ↻ Status: ${sub.status}…\n`;
+      return;
+    }
+    clearInterval(pollInterval);
+    logText.textContent += `✓ Done. Verdict: ${sub.verdict || sub.status}\n`;
+
+    const icons = { accepted:'✓', wrong_answer:'✗', time_limit_exceeded:'⏱', compile_error:'⚙', runtime_error:'⚠', no_test_cases:'?' };
+    vtitle.className = `verdict-title verdict-${sub.verdict || sub.status}`;
+    vtitle.textContent = `${icons[sub.verdict] || '?'}  ${formatVerdict(sub.verdict || sub.status)}`;
+    vsub.textContent = sub.verdict === 'accepted' ? 'All test cases passed!' : 'Check your logic and try again.';
+    if (sub.runtime_ms) vmeta.innerHTML = `<span>⚡ ${sub.runtime_ms.toFixed(1)} ms</span><span>🧠 ${sub.memory_kb || '—'} KB</span>`;
+    if (sub.error_output) { verr.textContent = sub.error_output; verr.style.display = 'block'; }
+  } catch(e) { clearInterval(pollInterval); }
+}
+
+function formatVerdict(v) {
+  const map = { accepted:'Accepted', wrong_answer:'Wrong Answer', time_limit_exceeded:'Time Limit Exceeded', compile_error:'Compile Error', runtime_error:'Runtime Error', no_test_cases:'No Test Cases', queue_error:'Queue Error' };
+  return map[v] || v;
+}
+
+// ── History ────────────────────────────────────────────────────────
+async function loadHistory() {
+  const tbody = document.getElementById('historyTable');
+  if (!token) { tbody.innerHTML = '<tr><td colspan="6" style="color:var(--muted);padding:20px">Login to see your submissions.</td></tr>'; return; }
+  tbody.innerHTML = '<tr><td colspan="6" style="color:var(--muted);padding:16px">Loading…</td></tr>';
+  try {
+    const res = await fetch(`${API}/submissions`, { headers: { 'Authorization': `Bearer ${token}` } });
+    const subs = await res.json();
+    if (!subs.length) { tbody.innerHTML = '<tr><td colspan="6" style="color:var(--muted);padding:16px">No submissions yet.</td></tr>'; return; }
+    tbody.innerHTML = subs.map(s => `
+      <tr>
+        <td style="font-family:var(--mono);color:var(--muted)">#${s.id}</td>
+        <td>Problem #${s.problem_id}</td>
+        <td><span style="font-family:var(--mono);font-size:12px;color:var(--muted)">${s.language}</span></td>
+        <td><span class="badge ${verdictClass(s.verdict || s.status)}">${formatVerdict(s.verdict || s.status)}</span></td>
+        <td style="font-family:var(--mono);font-size:12px">${s.runtime_ms ? s.runtime_ms.toFixed(1)+' ms' : '—'}</td>
+        <td style="color:var(--muted);font-size:12px">${timeAgo(s.created_at)}</td>
+      </tr>`).join('');
+
+    // update dashboard stats
+    document.getElementById('statTotal').textContent = subs.length;
+    document.getElementById('statAccepted').textContent = subs.filter(s => s.verdict === 'accepted').length;
+  } catch(e) { tbody.innerHTML = '<tr><td colspan="6" style="color:var(--warn);padding:16px">⚠ Error loading submissions.</td></tr>'; }
+}
+
+function verdictClass(v) {
+  if (v === 'accepted') return 'badge-accepted';
+  if (v === 'wrong_answer') return 'badge-wrong';
+  if (v === 'pending' || v === 'running') return 'badge-running';
+  return 'badge-error';
+}
+
+// ── Add Problem ────────────────────────────────────────────────────
+async function addProblem() {
+  if (!token) { openAuthModal(); return; }
+  const title = document.getElementById('probTitle').value.trim();
+  const desc  = document.getElementById('probDesc').value.trim();
+  const diff  = document.getElementById('probDiff').value;
+  const err   = document.getElementById('addProbErr');
+  const ok    = document.getElementById('addProbOk');
+  [err, ok].forEach(e => { e.className = 'alert'; e.textContent = ''; });
+  if (!title || !desc) { showAlert(err, 'Title and description are required.', 'error'); return; }
+  try {
+    const res = await fetch(`${API}/problems`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ title, description: desc, difficulty: diff }),
+    });
+    const data = await res.json();
+    if (!res.ok) { showAlert(err, data.detail || 'Failed', 'error'); return; }
+    showAlert(ok, `✓ Problem #${data.id} "${data.title}" created!`, 'success');
+    document.getElementById('tcProbId').value = data.id;
+    loadProblems();
+  } catch(e) { showAlert(err, 'Cannot reach API.', 'error'); }
+}
+
+async function addTestCase() {
+  if (!token) { openAuthModal(); return; }
+  const pid  = document.getElementById('tcProbId').value;
+  const sin  = document.getElementById('tcStdin').value;
+  const exp  = document.getElementById('tcExpected').value.trim();
+  const samp = document.getElementById('tcSample').checked;
+  const err  = document.getElementById('addTcErr');
+  const ok   = document.getElementById('addTcOk');
+  [err, ok].forEach(e => { e.className = 'alert'; e.textContent = ''; });
+  if (!pid || !exp) { showAlert(err, 'Problem ID and expected output are required.', 'error'); return; }
+  try {
+    const res = await fetch(`${API}/problems/${pid}/test-cases`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ stdin: sin, expected: exp, is_sample: samp }),
+    });
+    const data = await res.json();
+    if (!res.ok) { showAlert(err, data.detail || 'Failed', 'error'); return; }
+    showAlert(ok, '✓ Test case added!', 'success');
+    document.getElementById('tcStdin').value = '';
+    document.getElementById('tcExpected').value = '';
+  } catch(e) { showAlert(err, 'Cannot reach API.', 'error'); }
+}
+
+// ── Dashboard ──────────────────────────────────────────────────────
+async function loadDashboard() {
+  loadProblems();
+  if (token) loadHistory();
+  const el = document.getElementById('dashRecentList');
+  if (!token) { el.innerHTML = '<p style="color:var(--muted);font-size:13px">Login to see your recent submissions.</p>'; return; }
+  try {
+    const res = await fetch(`${API}/submissions?limit=5`, { headers: { 'Authorization': `Bearer ${token}` } });
+    const subs = await res.json();
+    if (!subs.length) { el.innerHTML = '<p style="color:var(--muted);font-size:13px">No submissions yet. <a href="#" onclick="goTo(\'problems\')" style="color:var(--accent)">Try a problem →</a></p>'; return; }
+    el.innerHTML = subs.map(s => `
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(48,54,61,0.5)">
+        <span class="badge ${verdictClass(s.verdict || s.status)}">${formatVerdict(s.verdict || s.status)}</span>
+        <span style="font-size:13px">Problem #${s.problem_id}</span>
+        <span style="font-family:var(--mono);font-size:11px;color:var(--muted)">${s.language}</span>
+        <span style="font-size:12px;color:var(--muted);margin-left:auto">${timeAgo(s.created_at)}</span>
+      </div>`).join('');
+  } catch(e) {}
+}
+
+// ── Utils ──────────────────────────────────────────────────────────
+function showAlert(el, msg, type) {
+  el.className = `alert alert-${type} show`;
+  el.textContent = msg;
+}
+
+function timeAgo(iso) {
+  if (!iso) return '—';
+  const diff = Date.now() - new Date(iso).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return 'just now';
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  return `${Math.floor(h/24)}d ago`;
+}
+
+// Close modal on backdrop click
+document.getElementById('authModal').addEventListener('click', function(e) {
+  if (e.target === this) closeAuthModal();
+});
+</script>
+</body>
+</html>
