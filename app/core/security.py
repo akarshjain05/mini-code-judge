@@ -1,7 +1,6 @@
-from datetime import datetime, timedelta
-
+from datetime import datetime, timedelta, timezone
+import bcrypt
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
@@ -9,21 +8,26 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.core.database import get_db
 
-# bcrypt handles password hashing — never store plain passwords
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 # Tells FastAPI where clients send their token (POST /auth/login)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 
 def hash_password(plain: str) -> str:
-    """Hash a plain password with bcrypt."""
-    return pwd_context.hash(plain)
+    """Hash a plain password safely with bcrypt on Python 3.13+."""
+    password_bytes = plain.encode('utf-8')
+    salt = bcrypt.gensalt()
+    hashed_bytes = bcrypt.hashpw(password_bytes, salt)
+    return hashed_bytes.decode('utf-8')
 
 
 def verify_password(plain: str, hashed: str) -> bool:
-    """Check a plain password against a stored hash."""
-    return pwd_context.verify(plain, hashed)
+    """Check a plain password against a stored hash securely."""
+    try:
+        password_bytes = plain.encode('utf-8')
+        hashed_bytes = hashed.encode('utf-8')
+        return bcrypt.checkpw(password_bytes, hashed_bytes)
+    except Exception:
+        return False
 
 
 def create_access_token(data: dict) -> str:
@@ -32,7 +36,8 @@ def create_access_token(data: dict) -> str:
     data should contain {"sub": user_id_as_string}
     """
     payload = data.copy()
-    expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    # Using timezone-aware UTC format to keep Python 3.13 happy
+    expire = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     payload.update({"exp": expire})
     return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
