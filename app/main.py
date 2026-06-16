@@ -15,7 +15,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.database import Base, engine, get_db
 from app.routers import auth, submissions, problems
 
-# Create all DB tables on startup (in production, use Alembic migrations instead)
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
@@ -24,22 +23,17 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# CORS — allow any origin during development
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://mellow-gaufre-3dd99a.netlify.app", # Production frontend
-        "http://127.0.0.1:8000",                     # Local host IP
-        "http://localhost:8000",],
+    allow_origins=["https://mellow-gaufre-3dd99a.netlify.app"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Register routers
 app.include_router(auth.router)
 app.include_router(submissions.router)
 app.include_router(problems.router)
-
 
 @app.get("/", tags=["health"])
 def root():
