@@ -719,7 +719,10 @@ int main(){
 
 <script>
 // ── Config ─────────────────────────────────────────────────────────
-const API = 'https://mini-code-judge.onrender.com'
+const API = 'https://mini-code-judge.onrender.com';
+// IMPORTANT: this file should NOT be opened via file://... because browsers treat file: as origin="null"
+// and your API currently blocks origin="null" in CORS preflight.
+// Serve this file from http:// (e.g., VSCode Live Server) or deploy the frontend on the allowed origin.
 
 // ── State ──────────────────────────────────────────────────────────
 let token = localStorage.getItem('jwt') || null;
@@ -785,17 +788,40 @@ async function doLogin() {
   const u = document.getElementById('loginUsername').value.trim();
   const p = document.getElementById('loginPassword').value;
   const err = document.getElementById('loginErr');
-  err.className = 'alert'; err.textContent = '';
+  err.className = 'alert';
+  err.textContent = '';
+
   try {
-    const fd = new FormData();
-    fd.append('username', u); fd.append('password', p);
-    const res = await fetch(`${API}/auth/login`, { method: 'POST', body: fd });
-    const data = await res.json();
-    if (!res.ok) { showAlert(err, data.detail || 'Login failed', 'error'); return; }
-    token = data.access_token; username = u;
-    localStorage.setItem('jwt', token); localStorage.setItem('username', u);
-    closeAuthModal(); updateAuthUI(); loadDashboard(); loadHistory();
-  } catch(e) { showAlert(err, 'Cannot reach API — is the server running?', 'error'); }
+    // FastAPI's OAuth2PasswordRequestForm expects x-www-form-urlencoded
+    const body = new URLSearchParams();
+    body.append('username', u);
+    body.append('password', p);
+
+    const res = await fetch(`${API}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: body.toString(),
+    });
+
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      showAlert(err, data.detail || 'Login failed', 'error');
+      return;
+    }
+
+    token = data.access_token;
+    username = u;
+    localStorage.setItem('jwt', token);
+    localStorage.setItem('username', u);
+
+    closeAuthModal();
+    updateAuthUI();
+    loadDashboard();
+    loadHistory();
+  } catch (e) {
+    showAlert(err, 'Cannot reach API — is the server running? (or CORS blocked)', 'error');
+  }
 }
 
 async function doRegister() {
