@@ -1056,8 +1056,7 @@ async function runCode() {
   vtitle.innerHTML = '<span class="spinner"></span> &nbsp;Running sample tests…';
   vsub.textContent = ''; vmeta.textContent = ''; verr.style.display = 'none';
   log.style.display = 'block';
-  logText.textContent = '→ Running against sample test cases only…
-';
+  logText.textContent = '→ Running against sample test cases only…';
 
   try {
     const res = await fetch(`${API}/submissions`, {
