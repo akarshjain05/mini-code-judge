@@ -8,13 +8,15 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.database import Base, engine, get_db
 from app.routers import auth, submissions, problems, admin
+from app.routers.ai_review import router as ai_review_router
+from app.worker.poller import start_background_worker
 
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="Mini Code Judge",
-    description="Submit code, get verdicts.",
-    version="1.0.0",
+    description="Submit code, get verdicts + AI review.",
+    version="2.0.0",
 )
 
 app.add_middleware(
@@ -25,10 +27,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.on_event("startup")
+def on_startup():
+    start_background_worker()
+
 app.include_router(auth.router)
 app.include_router(submissions.router)
 app.include_router(problems.router)
 app.include_router(admin.router)
+app.include_router(ai_review_router)
 
 @app.get("/", tags=["health"])
 def root():
