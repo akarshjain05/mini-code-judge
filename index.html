@@ -486,6 +486,9 @@
     </div>
 
     <div class="nav-section-label" id="settingsSectionLabel" style="margin-top:auto;display:none">Settings</div>
+    <div class="nav-item" id="navAdmin" onclick="goTo('admin')" style="display:none">
+      <span>🛡</span> Admin Dashboard
+    </div>
     <div class="nav-item" id="navAddProblem" onclick="goTo('addproblem')" style="display:none">
       <span class="icon">＋</span> Add Problem
     </div>
@@ -790,7 +793,7 @@ function goTo(page) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-' + page).classList.add('active');
   const items = document.querySelectorAll('.nav-item');
-  const map = { dashboard: 0, problems: 1, submit: 2, history: 3, addproblem: 4, admin: 5 };
+  const map = { dashboard: 0, problems: 1, submit: 2, history: 3, addproblem: 4, admin: 4 };
   if (map[page] !== undefined) items[map[page]].classList.add('active');
   if (page === 'history') loadHistory();
   if (page === 'problems') loadProblems();
@@ -849,7 +852,8 @@ function updateAdminUI() {
   document.getElementById('settingsSectionLabel').style.display = isAdmin ? 'block' : 'none';
   document.getElementById('adminBadge').style.display = isAdmin ? 'inline-block' : 'none';
   // Admin dashboard only for akarsh
-  const isAkarsh = username === 'akarsh';
+  const storedUser = username || localStorage.getItem('username') || '';
+  const isAkarsh = storedUser === 'akarsh';
   const adminNav = document.getElementById('navAdmin');
   if (adminNav) adminNav.style.display = isAkarsh ? 'flex' : 'none';
 }
@@ -1052,7 +1056,8 @@ async function runCode() {
   vtitle.innerHTML = '<span class="spinner"></span> &nbsp;Running sample tests…';
   vsub.textContent = ''; vmeta.textContent = ''; verr.style.display = 'none';
   log.style.display = 'block';
-  logText.textContent = '→ Running against sample test cases only…';
+  logText.textContent = '→ Running against sample test cases only…
+';
 
   try {
     const res = await fetch(`${API}/submissions`, {
