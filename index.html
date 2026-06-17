@@ -598,8 +598,10 @@
                     <div class="dot dot-yellow"></div>
                     <div class="dot dot-green"></div>
                   </div>
-                  <select id="langSelect" style="width:auto;padding:3px 8px;font-size:12px">
+                  <select id="langSelect" style="width:auto;padding:3px 8px;font-size:12px" onchange="updateCodePlaceholder()">
                     <option value="cpp">C++</option>
+                    <option value="c">C</option>
+                    <option value="java">Java</option>
                     <option value="python">Python</option>
                   </select>
                 </div>
@@ -613,9 +615,18 @@ int main(){
 }"></textarea>
               </div>
             </div>
-            <button class="btn btn-success" style="margin-top:12px;width:100%;justify-content:center;font-size:14px;padding:12px" onclick="submitCode()">
-              ▷ &nbsp;Run & Judge
-            </button>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px">
+              <button class="btn btn-ghost" style="justify-content:center;font-size:14px;padding:12px;border:1px solid var(--accent);color:var(--accent)" onclick="runCode()">
+                ▷ &nbsp;Run (Sample Tests)
+              </button>
+              <button class="btn btn-success" style="justify-content:center;font-size:14px;padding:12px" onclick="submitCode()">
+                ✓ &nbsp;Submit (All Tests)
+              </button>
+            </div>
+            <div class="card" id="sampleTestsCard" style="margin-top:14px;display:none">
+              <div class="card-title">📋 Sample Test Cases</div>
+              <div id="sampleTestsList"></div>
+            </div>
           </div>
 
           <div>
@@ -715,6 +726,39 @@ int main(){
         </div>
       </div>
 
+      <!-- ── Admin Dashboard ── -->
+      <div class="page" id="page-admin">
+        <div class="page-header">
+          <h1>🛡 Admin Dashboard</h1>
+          <p>Only visible to you (akarsh). Full system overview.</p>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px">
+          <div class="card">
+            <div class="card-title">👥 Registered Users</div>
+            <div id="adminUsersList"><p style="color:var(--muted)">Loading…</p></div>
+          </div>
+          <div class="card">
+            <div class="card-title">📊 All Submissions</div>
+            <div id="adminStatsBox" style="font-size:13px;color:var(--muted)">Loading…</div>
+          </div>
+        </div>
+        <div class="card" style="padding:0;overflow:hidden">
+          <div style="padding:14px 16px;border-bottom:1px solid var(--border)">
+            <div class="card-title" style="margin:0">📋 All Submissions (All Users)</div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>#</th><th>User</th><th>Problem</th><th>Language</th><th>Verdict</th><th>Runtime</th><th>Submitted</th></tr>
+              </thead>
+              <tbody id="adminSubsTable">
+                <tr><td colspan="7" style="color:var(--muted);padding:20px">Loading…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
     </div><!-- /main -->
   </div>
 </div>
@@ -746,11 +790,12 @@ function goTo(page) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-' + page).classList.add('active');
   const items = document.querySelectorAll('.nav-item');
-  const map = { dashboard: 0, problems: 1, submit: 2, history: 3, addproblem: 4 };
+  const map = { dashboard: 0, problems: 1, submit: 2, history: 3, addproblem: 4, admin: 5 };
   if (map[page] !== undefined) items[map[page]].classList.add('active');
   if (page === 'history') loadHistory();
   if (page === 'problems') loadProblems();
   if (page === 'dashboard') loadDashboard();
+  if (page === 'admin') loadAdminDashboard();
 }
 
 // ── Auth ───────────────────────────────────────────────────────────
@@ -803,6 +848,10 @@ function updateAdminUI() {
   document.getElementById('navAddProblem').style.display = display;
   document.getElementById('settingsSectionLabel').style.display = isAdmin ? 'block' : 'none';
   document.getElementById('adminBadge').style.display = isAdmin ? 'inline-block' : 'none';
+  // Admin dashboard only for akarsh
+  const isAkarsh = username === 'akarsh';
+  const adminNav = document.getElementById('navAdmin');
+  if (adminNav) adminNav.style.display = isAkarsh ? 'flex' : 'none';
 }
 
 async function doLogin() {
@@ -827,7 +876,14 @@ async function doLogin() {
     const data = await res.json().catch(() => ({}));
 
     if (!res.ok) {
-      showAlert(err, data.detail || 'Login failed', 'error');
+      let msg = 'Login failed';
+      if (data.detail) {
+        if (typeof data.detail === 'string') msg = data.detail;
+        else if (Array.isArray(data.detail)) msg = data.detail.map(e => e.msg).join(', ');
+      }
+      if (res.status === 401) msg = '❌ Incorrect username or password';
+      if (res.status === 422) msg = '⚠ Please enter both username and password';
+      showAlert(err, msg, 'error');
       return;
     }
 
@@ -853,7 +909,25 @@ async function doRegister() {
       body: JSON.stringify({ username: u, email: e, password: p }),
     });
     const data = await res.json();
-    if (!res.ok) { showAlert(err, data.detail || 'Registration failed', 'error'); return; }
+    if (!res.ok) {
+      let msg = 'Registration failed';
+      if (data.detail) {
+        if (typeof data.detail === 'string') msg = data.detail;
+        else if (Array.isArray(data.detail)) {
+          const fieldMsgs = data.detail.map(e => {
+            const field = e.loc ? e.loc[e.loc.length-1] : '';
+            if (field === 'email') return '⚠ Please enter a valid email address';
+            if (field === 'password') return '⚠ Password is too short (min 6 characters)';
+            return e.msg;
+          });
+          msg = fieldMsgs.join(' | ');
+        }
+      }
+      if (msg.includes('Username already taken')) msg = '❌ Username already taken, choose another';
+      if (msg.includes('Email already registered')) msg = '❌ Email already registered, try logging in';
+      showAlert(err, msg, 'error');
+      return;
+    }
     showAlert(err, '✓ Account created! Logging you in…', 'success');
     setTimeout(() => {
       document.getElementById('loginUsername').value = u;
@@ -894,7 +968,107 @@ function openProblem(p) {
   diffBadge.className = `badge badge-${p.difficulty}`;
   document.getElementById('verdictBox').classList.remove('show');
   document.getElementById('submitLog').style.display = 'none';
+  loadSampleTestCases(p.id);
   goTo('submit');
+}
+
+async function loadSampleTestCases(problemId) {
+  const card = document.getElementById('sampleTestsCard');
+  const list = document.getElementById('sampleTestsList');
+  try {
+    const res = await fetch(`${API}/problems/${problemId}/sample-tests`);
+    if (!res.ok) { card.style.display = 'none'; return; }
+    const tests = await res.json();
+    if (!tests.length) { card.style.display = 'none'; return; }
+    card.style.display = 'block';
+    list.innerHTML = tests.map((t, i) => `
+      <div style="margin-bottom:12px;border:1px solid var(--border);border-radius:6px;overflow:hidden">
+        <div style="padding:6px 10px;background:var(--surface2);font-size:11px;color:var(--muted);font-weight:600">Sample ${i+1}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0">
+          <div style="padding:8px 10px;border-right:1px solid var(--border)">
+            <div style="font-size:10px;color:var(--muted);margin-bottom:4px">INPUT</div>
+            <pre style="font-size:12px;font-family:var(--mono);color:var(--text);margin:0;white-space:pre-wrap">${t.stdin || '(no input)'}</pre>
+          </div>
+          <div style="padding:8px 10px">
+            <div style="font-size:10px;color:var(--muted);margin-bottom:4px">EXPECTED OUTPUT</div>
+            <pre style="font-size:12px;font-family:var(--mono);color:var(--accent2);margin:0;white-space:pre-wrap">${t.expected}</pre>
+          </div>
+        </div>
+      </div>`).join('');
+  } catch(e) { card.style.display = 'none'; }
+}
+
+function updateCodePlaceholder() {
+  const lang = document.getElementById('langSelect').value;
+  const ta = document.getElementById('codeInput');
+  const placeholders = {
+    cpp: `// C++ solution
+#include<bits/stdc++.h>
+using namespace std;
+int main(){
+    // your code
+    return 0;
+}`,
+    c: `// C solution
+#include <stdio.h>
+int main(){
+    // your code
+    return 0;
+}`,
+    java: `// Java solution
+import java.util.*;
+public class Main {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        // your code
+    }
+}`,
+    python: `# Python solution
+import sys
+input = sys.stdin.readline
+
+# your code`
+  };
+  ta.placeholder = placeholders[lang] || '';
+}
+
+async function runCode() {
+  if (!token) { openAuthModal(); return; }
+  if (!currentProblem) { alert('No problem selected'); return; }
+  const code = document.getElementById('codeInput').value;
+  const lang = document.getElementById('langSelect').value;
+
+  const vbox = document.getElementById('verdictBox');
+  const vtitle = document.getElementById('verdictTitle');
+  const vsub = document.getElementById('verdictSub');
+  const vmeta = document.getElementById('verdictMeta');
+  const verr = document.getElementById('verdictError');
+  const log = document.getElementById('submitLog');
+  const logText = document.getElementById('submitLogText');
+
+  vbox.classList.add('show');
+  vbox.style.borderColor = 'var(--border)';
+  vtitle.className = 'verdict-title verdict-pending';
+  vtitle.innerHTML = '<span class="spinner"></span> &nbsp;Running sample tests…';
+  vsub.textContent = ''; vmeta.textContent = ''; verr.style.display = 'none';
+  log.style.display = 'block';
+  logText.textContent = '→ Running against sample test cases only…';
+
+  try {
+    const res = await fetch(`${API}/submissions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ problem_id: currentProblem.id, language: lang, code, sample_only: true }),
+    });
+    const sub = await res.json();
+    if (!res.ok) { vtitle.textContent = '✗ Error'; vsub.textContent = sub.detail; vtitle.className = 'verdict-title verdict-wrong_answer'; return; }
+    logText.textContent += `→ Submission #${sub.id} queued
+→ Waiting for result…
+`;
+    vtitle.innerHTML = '<span class="spinner"></span> &nbsp;Judging…';
+    if (pollInterval) clearInterval(pollInterval);
+    pollInterval = setInterval(() => pollVerdict(sub.id, logText, vtitle, vsub, vmeta, verr, vbox), 1500);
+  } catch(e) { vtitle.textContent = '⚠ Cannot reach API'; vtitle.className = 'verdict-title verdict-wrong_answer'; }
 }
 
 // ── Submit ─────────────────────────────────────────────────────────
@@ -992,6 +1166,53 @@ function verdictClass(v) {
   if (v === 'wrong_answer') return 'badge-wrong';
   if (v === 'pending' || v === 'running') return 'badge-running';
   return 'badge-error';
+}
+
+// ── Admin Dashboard ────────────────────────────────────────────────
+async function loadAdminDashboard() {
+  if (username !== 'akarsh') return;
+  try {
+    // Load all users
+    const usersRes = await fetch(`${API}/admin/users`, { headers: { 'Authorization': `Bearer ${token}` } });
+    if (usersRes.ok) {
+      const users = await usersRes.json();
+      document.getElementById('adminUsersList').innerHTML = users.length
+        ? `<table style="width:100%;font-size:13px"><thead><tr><th style="text-align:left;padding:4px 8px;color:var(--muted)">#</th><th style="text-align:left;padding:4px 8px;color:var(--muted)">Username</th><th style="text-align:left;padding:4px 8px;color:var(--muted)">Email</th><th style="text-align:left;padding:4px 8px;color:var(--muted)">Joined</th></tr></thead><tbody>` +
+          users.map(u => `<tr><td style="padding:4px 8px;color:var(--muted)">${u.id}</td><td style="padding:4px 8px;font-weight:600">${u.username}</td><td style="padding:4px 8px;color:var(--muted)">${u.email}</td><td style="padding:4px 8px;color:var(--muted);font-size:11px">${timeAgo(u.created_at)}</td></tr>`).join('') +
+          `</tbody></table>`
+        : '<p style="color:var(--muted)">No users yet.</p>';
+    }
+    // Load all submissions
+    const subsRes = await fetch(`${API}/admin/submissions`, { headers: { 'Authorization': `Bearer ${token}` } });
+    if (subsRes.ok) {
+      const subs = await subsRes.json();
+      const accepted = subs.filter(s => s.verdict === 'accepted').length;
+      document.getElementById('adminStatsBox').innerHTML = `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div style="background:var(--surface2);border-radius:8px;padding:12px;text-align:center">
+            <div style="font-size:24px;font-weight:700;color:var(--text)">${subs.length}</div>
+            <div style="font-size:11px;color:var(--muted)">Total Submissions</div>
+          </div>
+          <div style="background:var(--surface2);border-radius:8px;padding:12px;text-align:center">
+            <div style="font-size:24px;font-weight:700;color:var(--accent2)">${accepted}</div>
+            <div style="font-size:11px;color:var(--muted)">Accepted</div>
+          </div>
+        </div>`;
+      document.getElementById('adminSubsTable').innerHTML = subs.length
+        ? subs.map(s => `<tr>
+            <td style="font-family:var(--mono);color:var(--muted)">#${s.id}</td>
+            <td style="font-weight:600">${s.username || s.user_id}</td>
+            <td>Problem #${s.problem_id}</td>
+            <td><span style="font-family:var(--mono);font-size:12px;color:var(--muted)">${s.language}</span></td>
+            <td><span class="badge ${verdictClass(s.verdict || s.status)}">${formatVerdict(s.verdict || s.status)}</span></td>
+            <td style="font-family:var(--mono);font-size:12px">${s.runtime_ms ? s.runtime_ms.toFixed(1)+' ms' : '—'}</td>
+            <td style="color:var(--muted);font-size:12px">${timeAgo(s.created_at)}</td>
+          </tr>`).join('')
+        : '<tr><td colspan="7" style="color:var(--muted);padding:16px">No submissions yet.</td></tr>';
+    }
+  } catch(e) {
+    document.getElementById('adminUsersList').innerHTML = '<p style="color:var(--warn)">⚠ Error loading admin data.</p>';
+  }
 }
 
 // ── Add Problem ────────────────────────────────────────────────────
