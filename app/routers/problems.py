@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from typing import Optional
 
 from app.core.database import get_db
-from app.core.security import get_current_user
+from app.core.security import get_current_admin_user
 from app.models.problem import Problem, TestCase
 
 router = APIRouter(prefix="/problems", tags=["problems"])
@@ -30,6 +30,13 @@ class ProblemOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class TestCaseOut(BaseModel):
+    id: int
+    stdin: str
+    expected: str
+    model_config = {"from_attributes": True}
+
+
 @router.get("", response_model=list[ProblemOut])
 def list_problems(db: Session = Depends(get_db)):
     """List all problems — public, no login needed."""
@@ -44,13 +51,23 @@ def get_problem(problem_id: int, db: Session = Depends(get_db)):
     return p
 
 
+@router.get("/{problem_id}/test-cases", response_model=list[TestCaseOut])
+def get_sample_test_cases(problem_id: int, db: Session = Depends(get_db)):
+    """Get sample (public) test cases for a problem — no login needed."""
+    return (
+        db.query(TestCase)
+        .filter(TestCase.problem_id == problem_id, TestCase.is_sample == 1)
+        .all()
+    )
+
+
 @router.post("", response_model=ProblemOut, status_code=201)
 def create_problem(
     payload: ProblemCreate,
     db: Session = Depends(get_db),
-    current_user=Depends(get_current_user),  # Must be logged in to add problems
+    current_user=Depends(get_current_admin_user),
 ):
-    """Add a new problem. In production you'd restrict this to admins."""
+    """Add a new problem. Admins only."""
     p = Problem(**payload.model_dump())
     db.add(p)
     db.commit()
@@ -63,9 +80,9 @@ def add_test_case(
     problem_id: int,
     payload: TestCaseCreate,
     db: Session = Depends(get_db),
-    current_user=Depends(get_current_user),
+    current_user=Depends(get_current_admin_user),
 ):
-    """Add a test case to a problem."""
+    """Add a test case to a problem. Admins only."""
     if not db.query(Problem).filter(Problem.id == problem_id).first():
         raise HTTPException(status_code=404, detail="Problem not found")
 

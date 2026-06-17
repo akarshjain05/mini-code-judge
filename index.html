@@ -485,8 +485,8 @@
       <span class="icon">◷</span> My Submissions
     </div>
 
-    <div class="nav-section-label" style="margin-top:auto">Settings</div>
-    <div class="nav-item" onclick="goTo('addproblem')">
+    <div class="nav-section-label" id="settingsSectionLabel" style="margin-top:auto;display:none">Settings</div>
+    <div class="nav-item" id="navAddProblem" onclick="goTo('addproblem')" style="display:none">
       <span class="icon">＋</span> Add Problem
     </div>
     <div class="nav-item" id="authNavBtn" onclick="handleAuthNav()">
@@ -503,6 +503,7 @@
       <div id="userPillWrap" style="display:none" class="user-pill">
         <div class="avatar" id="userAvatar">A</div>
         <span id="userPillName">akarsh</span>
+        <span id="adminBadge" style="display:none;font-size:10px;background:rgba(227,179,65,0.15);color:var(--yellow);border:1px solid rgba(227,179,65,0.3);padding:1px 6px;border-radius:10px;margin-left:4px">ADMIN</span>
       </div>
       <button class="btn btn-ghost btn-sm" id="topAuthBtn" onclick="openAuthModal()">Login / Register</button>
     </div>
@@ -599,6 +600,7 @@
                   </div>
                   <select id="langSelect" style="width:auto;padding:3px 8px;font-size:12px">
                     <option value="cpp">C++</option>
+                    <option value="python">Python</option>
                   </select>
                 </div>
                 <textarea id="codeInput" placeholder="// Write your C++ solution here
@@ -727,12 +729,13 @@ const API = 'https://mini-code-judge.onrender.com';
 // ── State ──────────────────────────────────────────────────────────
 let token = localStorage.getItem('jwt') || null;
 let username = localStorage.getItem('username') || null;
+let isAdmin = false;
 let currentProblem = null;
 let pollInterval = null;
-
 // ── Init ───────────────────────────────────────────────────────────
 window.onload = () => {
   updateAuthUI();
+  fetchCurrentUser();
   loadProblems();
   loadDashboard();
 };
@@ -764,9 +767,9 @@ function switchAuthTab(tab) {
 
 function handleAuthNav() {
   if (token) {
-    token = null; username = null;
+    token = null; username = null; isAdmin = false;
     localStorage.removeItem('jwt'); localStorage.removeItem('username');
-    updateAuthUI(); loadDashboard(); loadHistory();
+    updateAuthUI(); updateAdminUI(); loadDashboard(); loadHistory();
   } else {
     openAuthModal();
   }
@@ -782,6 +785,24 @@ function updateAuthUI() {
     document.getElementById('userPillName').textContent = username;
     document.getElementById('userAvatar').textContent = username[0].toUpperCase();
   }
+}
+
+async function fetchCurrentUser() {
+  if (!token) { isAdmin = false; updateAdminUI(); return; }
+  try {
+    const res = await fetch(`${API}/auth/me`, { headers: { 'Authorization': `Bearer ${token}` } });
+    if (!res.ok) { isAdmin = false; updateAdminUI(); return; }
+    const data = await res.json();
+    isAdmin = !!data.is_admin;
+  } catch(e) { isAdmin = false; }
+  updateAdminUI();
+}
+
+function updateAdminUI() {
+  const display = isAdmin ? 'flex' : 'none';
+  document.getElementById('navAddProblem').style.display = display;
+  document.getElementById('settingsSectionLabel').style.display = isAdmin ? 'block' : 'none';
+  document.getElementById('adminBadge').style.display = isAdmin ? 'inline-block' : 'none';
 }
 
 async function doLogin() {
@@ -810,15 +831,10 @@ async function doLogin() {
       return;
     }
 
-    token = data.access_token;
-    username = u;
-    localStorage.setItem('jwt', token);
-    localStorage.setItem('username', u);
+    token = data.access_token; username = u;
+    localStorage.setItem('jwt', token); localStorage.setItem('username', u);
+    closeAuthModal(); updateAuthUI(); fetchCurrentUser(); loadDashboard(); loadHistory();
 
-    closeAuthModal();
-    updateAuthUI();
-    loadDashboard();
-    loadHistory();
   } catch (e) {
     showAlert(err, 'Cannot reach API — is the server running? (or CORS blocked)', 'error');
   }

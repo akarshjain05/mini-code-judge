@@ -1,6 +1,7 @@
-from datetime import datetime, timedelta, timezone
-import bcrypt
+from datetime import datetime, timedelta
+
 from jose import JWTError, jwt
+from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
@@ -8,36 +9,21 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.core.database import get_db
 
-# Tells FastAPI where clients send their token (POST /auth/login)
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 
 def hash_password(plain: str) -> str:
-    """Hash a plain password safely with bcrypt on Python 3.13+."""
-    password_bytes = plain.encode('utf-8')
-    salt = bcrypt.gensalt()
-    hashed_bytes = bcrypt.hashpw(password_bytes, salt)
-    return hashed_bytes.decode('utf-8')
+    return pwd_context.hash(plain)
 
 
 def verify_password(plain: str, hashed: str) -> bool:
-    """Check a plain password against a stored hash securely."""
-    try:
-        password_bytes = plain.encode('utf-8')
-        hashed_bytes = hashed.encode('utf-8')
-        return bcrypt.checkpw(password_bytes, hashed_bytes)
-    except Exception:
-        return False
+    return pwd_context.verify(plain, hashed)
 
 
 def create_access_token(data: dict) -> str:
-    """
-    Create a signed JWT token.
-    data should contain {"sub": user_id_as_string}
-    """
     payload = data.copy()
-    # Using timezone-aware UTC format to keep Python 3.13 happy
-    expire = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     payload.update({"exp": expire})
     return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
@@ -46,15 +32,6 @@ def get_current_user(
     token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db),
 ):
-    """
-    FastAPI dependency — decodes the JWT and returns the logged-in user.
-    Raises 401 if the token is missing, expired, or invalid.
-
-    Usage in a route:
-        def my_route(current_user = Depends(get_current_user)):
-            ...
-    """
-    # Import here to avoid circular imports (models → database → security → models)
     from app.models.user import User
 
     credentials_error = HTTPException(
@@ -76,3 +53,13 @@ def get_current_user(
         raise credentials_error
 
     return user
+
+
+def get_current_admin_user(current_user = Depends(get_current_user)):
+    """Like get_current_user, but also requires is_admin=True."""
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required",
+        )
+    return current_user

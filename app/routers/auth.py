@@ -3,7 +3,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.security import hash_password, verify_password, create_access_token
+from app.core.security import hash_password, verify_password, create_access_token, get_current_user
 from app.models.user import User
 from app.schemas.user import UserRegister, UserOut, Token
 
@@ -12,11 +12,6 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/register", response_model=UserOut, status_code=201)
 def register(payload: UserRegister, db: Session = Depends(get_db)):
-    """
-    Register a new user.
-    Checks for duplicate username/email before saving.
-    Password is hashed with bcrypt — never stored plain.
-    """
     if db.query(User).filter(User.username == payload.username).first():
         raise HTTPException(status_code=400, detail="Username already taken")
 
@@ -36,13 +31,9 @@ def register(payload: UserRegister, db: Session = Depends(get_db)):
 
 @router.post("/login", response_model=Token)
 def login(
-    form: OAuth2PasswordRequestForm = Depends(),  # Reads username + password from form body
+    form: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db),
 ):
-    """
-    Login and get a JWT token.
-    Uses OAuth2PasswordRequestForm so it's compatible with FastAPI's built-in /docs login.
-    """
     user = db.query(User).filter(User.username == form.username).first()
 
     if not user or not verify_password(form.password, user.password):
@@ -53,3 +44,9 @@ def login(
 
     token = create_access_token(data={"sub": str(user.id)})
     return {"access_token": token, "token_type": "bearer"}
+
+
+@router.get("/me", response_model=UserOut)
+def get_me(current_user: User = Depends(get_current_user)):
+    """Return the currently logged-in user's info, including admin status."""
+    return current_user
