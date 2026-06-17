@@ -9,6 +9,7 @@ Run with:
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import text
+from app.worker.poller import start_background_worker
 # ... your other existing imports ...
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -22,6 +23,9 @@ app = FastAPI(
     description="Submit code, get verdicts. Built with FastAPI + PostgreSQL + Redis + Docker.",
     version="1.0.0",
 )
+@app.on_event("startup")
+def on_startup():
+    start_background_worker()
 
 app.add_middleware(
     CORSMiddleware,
