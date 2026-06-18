@@ -1547,18 +1547,20 @@ async function runCode() {
       vtitle.textContent = labels[data.verdict] || '✗ ' + data.verdict;
       vsub.textContent = `Failed on Sample Test Case #${data.failed_case} · not submitted`;
       if (data.input !== undefined) {
-        verr.textContent = 'Input:
-' + data.input + '
+    verr.textContent = `Input:
+${data.input}
 
 Expected Output:
-' + data.expected + '
+${data.expected}
 
 Your Output:
-' + (data.actual || '(no output)');
-        verr.style.display = 'block';
-      } else if (data.error) {
-        verr.textContent = data.error;
-        verr.style.display = 'block';
+${data.actual || '(no output)'}`;
+    verr.style.display = 'block';
+}
+else if (data.error) {
+    verr.textContent = data.error;
+    verr.style.display = 'block';
+
       }
       vmeta.innerHTML = data.runtime_ms ? `<span>⚡ ${data.runtime_ms.toFixed(1)} ms</span>` : '';
     }
