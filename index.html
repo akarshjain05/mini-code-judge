@@ -1110,8 +1110,8 @@ async function submitCode() {
   vtitle.className = 'verdict-title verdict-pending';
   vtitle.innerHTML = '<span class="spinner"></span> &nbsp;Submitting…';
   vsub.textContent = ''; vmeta.textContent = ''; verr.style.display = 'none';
-  log.style.display = 'block';
-  logText.textContent = '→ Sending code to judge…\n';
+  log.style.display = 'none';
+  logText.textContent = '';
 
   try {
     const res = await fetch(`${API}/submissions`, {
