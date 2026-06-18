@@ -1,6 +1,4 @@
-"""
-Entry point for the FastAPI application.
-"""
+"""Entry point for the FastAPI application."""
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import text
@@ -10,16 +8,12 @@ from app.core.database import Base, engine, get_db
 from app.routers import auth, submissions, problems, admin
 from app.routers.ai_review import router as ai_review_router
 from app.routers.contest import router as contest_router
-from app.routers.contest import Contest, ContestProblem, ContestParticipant
+from app.routers.run import router as run_router
 from app.worker.poller import start_background_worker
 
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI(
-    title="Mini Code Judge",
-    description="Submit code, get verdicts + AI review + Contests.",
-    version="3.0.0",
-)
+app = FastAPI(title="Mini Code Judge", version="3.0.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -39,6 +33,7 @@ app.include_router(problems.router)
 app.include_router(admin.router)
 app.include_router(ai_review_router)
 app.include_router(contest_router)
+app.include_router(run_router)
 
 @app.get("/", tags=["health"])
 def root():
@@ -50,4 +45,4 @@ def check_health(db: Session = Depends(get_db)):
         db.execute(text("SELECT 1"))
         return {"status": "healthy", "database": "connected"}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))

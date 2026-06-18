@@ -4,7 +4,6 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Mini Code Judge</title>
-<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
   /* ── Design tokens ────────────────────────────────────────────── */
   :root {
@@ -424,55 +423,16 @@
       <div class="tab" onclick="switchAuthTab('register')">Register</div>
     </div>
 
-    <!-- Google Sign-In -->
-    <div id="googleButtonWrap" style="display:flex;justify-content:center;margin:16px 0 4px">
-      <div id="googleSignInDiv"></div>
-    </div>
-    <div id="googleDivider" style="display:flex;align-items:center;gap:10px;margin:14px 0">
-      <div style="flex:1;height:1px;background:var(--border)"></div>
-      <span style="font-size:11px;color:var(--muted)">OR</span>
-      <div style="flex:1;height:1px;background:var(--border)"></div>
-    </div>
-
-    <!-- Google first-time setup: choose username + password -->
-    <div id="googleSetupForm" style="display:none">
-      <div class="alert alert-info" style="display:block;margin-bottom:14px">
-        You're signing up with Google for the first time. Choose a username and password — afterward you can log in with either the Google button or this username/password.
-      </div>
-      <div class="alert alert-error" id="googleSetupErr"></div>
-      <div class="form-group">
-        <label>Username</label>
-        <input type="text" id="googleSetupUsername" placeholder="choose a username" />
-      </div>
-      <div class="form-group">
-        <label>Password</label>
-        <div style="position:relative">
-          <input type="password" id="googleSetupPassword" placeholder="min 6 characters" style="padding-right:42px" />
-          <button type="button" onclick="togglePasswordVisibility('googleSetupPassword', this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);padding:4px;display:flex" aria-label="Show password">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-          </button>
-        </div>
-      </div>
-      <button class="btn btn-success" style="width:100%;justify-content:center;margin-top:4px" onclick="completeGoogleSignup()">
-        Finish Sign Up
-      </button>
-    </div>
-
     <!-- Login -->
     <div id="loginForm">
       <div class="alert alert-error" id="loginErr"></div>
       <div class="form-group">
-        <label>Username or Email</label>
-        <input type="text" id="loginUsername" placeholder="your username or email" />
+        <label>Username</label>
+        <input type="text" id="loginUsername" placeholder="your username" />
       </div>
       <div class="form-group">
         <label>Password</label>
-        <div style="position:relative">
-          <input type="password" id="loginPassword" placeholder="••••••••" style="padding-right:42px" />
-          <button type="button" onclick="togglePasswordVisibility('loginPassword', this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);padding:4px;display:flex" aria-label="Show password">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-          </button>
-        </div>
+        <input type="password" id="loginPassword" placeholder="••••••••" />
       </div>
       <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:4px" onclick="doLogin()">
         Login
@@ -492,12 +452,7 @@
       </div>
       <div class="form-group">
         <label>Password</label>
-        <div style="position:relative">
-          <input type="password" id="regPassword" placeholder="min 6 characters" style="padding-right:42px" />
-          <button type="button" onclick="togglePasswordVisibility('regPassword', this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);padding:4px;display:flex" aria-label="Show password">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-          </button>
-        </div>
+        <input type="password" id="regPassword" placeholder="min 6 characters" />
       </div>
       <button class="btn btn-success" style="width:100%;justify-content:center;margin-top:4px" onclick="doRegister()">
         Create account
@@ -575,11 +530,11 @@
             <div class="stat-label">Problems available</div>
           </div>
           <div class="stat-card">
-            <div class="stat-value stat-green" id="dashStatAccepted">—</div>
+            <div class="stat-value stat-green" id="statAccepted">—</div>
             <div class="stat-label">Accepted submissions</div>
           </div>
           <div class="stat-card">
-            <div class="stat-value stat-yellow" id="dashStatTotal">—</div>
+            <div class="stat-value stat-yellow" id="statTotal">—</div>
             <div class="stat-label">Total submissions</div>
           </div>
         </div>
@@ -700,9 +655,8 @@ int main(){
                 </div>
               </div>
             </div>
-            <div class="card" id="submitLog" style="display:none">
-              <div class="card-title">Judging log</div>
-              <div id="submitLogText" style="font-family:var(--mono);font-size:12px;color:var(--muted);line-height:1.8"></div>
+            <div id="submitLog" style="display:none">
+              <div id="submitLogText"></div>
             </div>
           </div>
         </div>
@@ -941,7 +895,6 @@ int main(){
 <script>
 // ── Config ─────────────────────────────────────────────────────────
 const API = 'https://mini-code-judge.onrender.com';
-const GOOGLE_CLIENT_ID = '195071714890-cqr22mhg2cvfc1ttad54j8qgdqc3ee24.apps.googleusercontent.com';
 // IMPORTANT: this file should NOT be opened via file://... because browsers treat file: as origin="null"
 // and your API currently blocks origin="null" in CORS preflight.
 // Serve this file from http:// (e.g., VSCode Live Server) or deploy the frontend on the allowed origin.
@@ -952,121 +905,13 @@ let username = localStorage.getItem('username') || null;
 let isAdmin = false;
 let currentProblem = null;
 let pollInterval = null;
-let pendingGoogleSetupToken = null;
 // ── Init ───────────────────────────────────────────────────────────
 window.onload = () => {
   updateAuthUI();
   fetchCurrentUser();
   loadProblems();
   loadDashboard();
-  initGoogleSignIn();
 };
-
-function initGoogleSignIn() {
-  if (!window.google || !google.accounts || !google.accounts.id) return;
-  google.accounts.id.initialize({
-    client_id: GOOGLE_CLIENT_ID,
-    callback: handleGoogleCredentialResponse,
-  });
-  const target = document.getElementById('googleSignInDiv');
-  if (target) {
-    google.accounts.id.renderButton(target, { theme: 'outline', size: 'large', width: 300, text: 'continue_with' });
-  }
-}
-
-async function handleGoogleCredentialResponse(response) {
-  const err = document.getElementById('loginErr');
-  err.className = 'alert'; err.textContent = '';
-  try {
-    const res = await fetch(`${API}/auth/google`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ credential: response.credential }),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      showAlert(err, data.detail || 'Google sign-in failed', 'error');
-      return;
-    }
-
-    if (data.needs_setup) {
-      pendingGoogleSetupToken = data.setup_token;
-      document.getElementById('googleSetupUsername').value = data.suggested_username || '';
-      document.getElementById('googleSetupPassword').value = '';
-      const setupErr = document.getElementById('googleSetupErr');
-      setupErr.className = 'alert'; setupErr.textContent = '';
-      showGoogleSetupForm();
-      return;
-    }
-
-    await finishLogin(data.access_token);
-  } catch (e) {
-    showAlert(err, 'Cannot reach API — is the server running? (or CORS blocked)', 'error');
-  }
-}
-
-async function finishLogin(accessToken) {
-  token = accessToken;
-  const meRes = await fetch(`${API}/auth/me`, { headers: { 'Authorization': `Bearer ${token}` } });
-  const me = await meRes.json();
-  username = me.username;
-  localStorage.setItem('jwt', token);
-  localStorage.setItem('username', username);
-  closeAuthModal(); updateAuthUI(); fetchCurrentUser(); loadDashboard(); loadHistory();
-}
-
-function showGoogleSetupForm() {
-  document.getElementById('authTabs').style.display = 'none';
-  document.getElementById('googleButtonWrap').style.display = 'none';
-  document.getElementById('googleDivider').style.display = 'none';
-  document.getElementById('loginForm').style.display = 'none';
-  document.getElementById('registerForm').style.display = 'none';
-  document.getElementById('googleSetupForm').style.display = 'block';
-}
-
-function hideGoogleSetupForm() {
-  document.getElementById('authTabs').style.display = 'flex';
-  document.getElementById('googleButtonWrap').style.display = 'flex';
-  document.getElementById('googleDivider').style.display = 'flex';
-  document.getElementById('googleSetupForm').style.display = 'none';
-  switchAuthTab('login');
-}
-
-async function completeGoogleSignup() {
-  const u = document.getElementById('googleSetupUsername').value.trim();
-  const p = document.getElementById('googleSetupPassword').value;
-  const err = document.getElementById('googleSetupErr');
-  err.className = 'alert'; err.textContent = '';
-
-  if (!pendingGoogleSetupToken) {
-    showAlert(err, 'Setup session expired. Please click "Sign in with Google" again.', 'error');
-    return;
-  }
-  if (!u || !p) {
-    showAlert(err, 'Please choose a username and password.', 'error');
-    return;
-  }
-
-  try {
-    const res = await fetch(`${API}/auth/complete-google-signup`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ setup_token: pendingGoogleSetupToken, username: u, password: p }),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      let msg = 'Could not complete sign up';
-      if (typeof data.detail === 'string') msg = data.detail;
-      else if (Array.isArray(data.detail) && data.detail.length) msg = data.detail[0].msg;
-      showAlert(err, msg, 'error');
-      return;
-    }
-    pendingGoogleSetupToken = null;
-    await finishLogin(data.access_token);
-  } catch (e) {
-    showAlert(err, 'Cannot reach API — is the server running?', 'error');
-  }
-}
 
 // ── Navigation ─────────────────────────────────────────────────────
 function goTo(page) {
@@ -1086,11 +931,7 @@ function goTo(page) {
 
 // ── Auth ───────────────────────────────────────────────────────────
 function openAuthModal() { document.getElementById('authModal').classList.add('show'); }
-function closeAuthModal() {
-  document.getElementById('authModal').classList.remove('show');
-  hideGoogleSetupForm();
-  pendingGoogleSetupToken = null;
-}
+function closeAuthModal() { document.getElementById('authModal').classList.remove('show'); }
 
 function switchAuthTab(tab) {
   document.getElementById('loginForm').style.display   = tab === 'login'    ? 'block' : 'none';
@@ -1098,17 +939,6 @@ function switchAuthTab(tab) {
   document.querySelectorAll('#authTabs .tab').forEach((t, i) => {
     t.classList.toggle('active', (i === 0 && tab === 'login') || (i === 1 && tab === 'register'));
   });
-}
-
-const EYE_OPEN_SVG = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
-const EYE_OFF_SVG = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
-
-function togglePasswordVisibility(inputId, btn) {
-  const input = document.getElementById(inputId);
-  const showing = input.type === 'text';
-  input.type = showing ? 'password' : 'text';
-  btn.innerHTML = showing ? EYE_OPEN_SVG : EYE_OFF_SVG;
-  btn.setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
 }
 
 function handleAuthNav() {
@@ -1355,8 +1185,8 @@ async function loadHistory() {
       </tr>`).join('');
 
     // update dashboard stats
-    document.getElementById('dashStatTotal').textContent = subs.length;
-    document.getElementById('dashStatAccepted').textContent = subs.filter(s => s.verdict === 'accepted').length;
+    document.getElementById('statTotal').textContent = subs.length;
+    document.getElementById('statAccepted').textContent = subs.filter(s => s.verdict === 'accepted').length;
   } catch(e) { tbody.innerHTML = '<tr><td colspan="6" style="color:var(--warn);padding:16px">⚠ Error loading submissions.</td></tr>'; }
 }
 
@@ -1498,39 +1328,66 @@ async function loadSampleTestCases(problemId) {
 async function runCode() {
   if (!token) { openAuthModal(); return; }
   if (!currentProblem) { alert('Select a problem first'); return; }
-  const code = document.getElementById('codeInput').value;
+  const code = document.getElementById('codeInput').value.trim();
   const lang = document.getElementById('langSelect').value;
-  if (!code.trim()) { alert('Please write some code first'); return; }
+  if (!code) { alert('Please write some code first'); return; }
 
   const vbox = document.getElementById('verdictBox');
   const vtitle = document.getElementById('verdictTitle');
   const vsub = document.getElementById('verdictSub');
   const vmeta = document.getElementById('verdictMeta');
   const verr = document.getElementById('verdictError');
-  const log = document.getElementById('submitLog');
-  const logText = document.getElementById('submitLogText');
 
   vbox.classList.add('show');
   vtitle.className = 'verdict-title verdict-pending';
-  vtitle.innerHTML = '<span class="spinner"></span> Running sample tests…';
-  vsub.textContent = ''; vmeta.textContent = ''; verr.style.display = 'none';
-  log.style.display = 'block';
-  logText.textContent = '→ Running against sample test cases only…\n';
+  vtitle.innerHTML = '<span class="spinner"></span> Testing sample cases…';
+  vsub.textContent = '(not counted as a submission)';
+  vmeta.textContent = ''; verr.style.display = 'none';
+  document.getElementById('aiReviewBtn').style.display = 'none';
+  document.getElementById('aiReviewPanel').style.display = 'none';
 
   try {
-    const res = await fetch(`${API}/submissions`, {
+    const res = await fetch(`${API}/run`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify({ problem_id: currentProblem.id, language: lang, code, sample_only: true }),
+      body: JSON.stringify({ problem_id: currentProblem.id, language: lang, code }),
     });
-    const sub = await res.json();
-    if (!res.ok) { vtitle.textContent = '✗ Error'; vsub.textContent = sub.detail; vtitle.className = 'verdict-title verdict-wrong_answer'; return; }
-    logText.textContent += `→ Queued as #${sub.id}\n`;
-    vtitle.innerHTML = '<span class="spinner"></span> Judging…';
-    if (pollInterval) clearInterval(pollInterval);
-    pollInterval = setInterval(() => pollVerdict(sub.id, logText, vtitle, vsub, vmeta, verr, vbox), 1500);
-  } catch(e) { vtitle.textContent = '⚠ Cannot reach API'; vtitle.className = 'verdict-title verdict-wrong_answer'; }
+    const data = await res.json();
+    if (!res.ok) {
+      vtitle.className = 'verdict-title verdict-wrong_answer';
+      vtitle.textContent = 'Error';
+      vsub.textContent = data.detail || 'Run failed';
+      return;
+    }
+    if (data.verdict === 'accepted') {
+      vtitle.className = 'verdict-title verdict-accepted';
+      vtitle.textContent = '✓ All sample tests passed!';
+      vsub.textContent = `Passed ${data.passed}/${data.total} sample test cases · not submitted`;
+      vmeta.textContent = data.runtime_ms ? `⚡ ${data.runtime_ms.toFixed(1)} ms` : '';
+    } else if (data.verdict === 'compile_error') {
+      vtitle.className = 'verdict-title verdict-compile_error';
+      vtitle.textContent = '✗ Compile Error';
+      vsub.textContent = '';
+      verr.textContent = data.error || '';
+      verr.style.display = 'block';
+    } else {
+      vtitle.className = 'verdict-title verdict-wrong_answer';
+      const labels = { wrong_answer: '✗ Wrong Answer', time_limit_exceeded: '⏱ Time Limit Exceeded', runtime_error: '✗ Runtime Error' };
+      vtitle.textContent = labels[data.verdict] || '✗ ' + data.verdict;
+      vsub.textContent = `Failed on Sample Test Case #${data.failed_case}`;
+      if (data.input !== undefined) {
+        verr.textContent = 'Input:\n' + data.input + '\n\nExpected Output:\n' + data.expected + '\n\nYour Output:\n' + (data.actual || '(no output)');
+        verr.style.display = 'block';
+      }
+      if (data.error) { verr.textContent = data.error; verr.style.display = 'block'; }
+      vmeta.textContent = data.runtime_ms ? `⚡ ${data.runtime_ms.toFixed(1)} ms` : '';
+    }
+  } catch(e) {
+    vtitle.className = 'verdict-title verdict-wrong_answer';
+    vtitle.textContent = '⚠ Cannot reach API';
+  }
 }
+
 
 async function loadAdminDashboard() {
   if ((username || localStorage.getItem('username')) !== 'akarsh') return;
@@ -1676,7 +1533,6 @@ async function loadAnalytics() {
     const subs = await res.json();
     renderAnalytics(subs);
   } catch(e) {
-    console.error('Analytics error:', e);
     document.getElementById('analyticsStatsRow').innerHTML = '<p style="color:var(--warn)">⚠ Error loading analytics.</p>';
   }
 }
@@ -1692,7 +1548,7 @@ function renderAnalytics(subs) {
   const accuracy = total ? Math.round((accepted / total) * 100) : 0;
 
   // Streak calculation
-  const days = new Set(subs.filter(s => s.verdict === 'accepted' && s.created_at && !isNaN(new Date(s.created_at).getTime())).map(s => {
+  const days = new Set(subs.filter(s => s.verdict === 'accepted').map(s => {
     const d = new Date(s.created_at);
     return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
   }));
@@ -1762,7 +1618,6 @@ function renderAnalytics(subs) {
   const activityMap = {};
   subs.forEach(s => {
     const d = new Date(s.created_at);
-    if (!s.created_at || isNaN(d.getTime())) return; // skip malformed timestamps instead of crashing
     const key = d.toISOString().split('T')[0];
     activityMap[key] = (activityMap[key] || 0) + 1;
   });
@@ -1807,9 +1662,8 @@ function renderAnalytics(subs) {
   // Time of day heatmap
   const hourCounts = Array(24).fill(0);
   subs.forEach(s => {
-    const d = new Date(s.created_at);
-    if (!s.created_at || isNaN(d.getTime())) return; // skip malformed timestamps instead of corrupting counts
-    hourCounts[d.getHours()]++;
+    const h = new Date(s.created_at).getHours();
+    hourCounts[h]++;
   });
   const maxHour = Math.max(...hourCounts, 1);
   const timeHTML = `
