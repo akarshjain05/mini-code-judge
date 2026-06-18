@@ -1275,9 +1275,11 @@ async function submitCode() {
   vbox.classList.add('show');
   vbox.style.borderColor = 'var(--border)';
   vtitle.className = 'verdict-title verdict-pending';
-  vtitle.innerHTML = '<span class="spinner"></span> &nbsp;Submitting…';
+  log.style.display = 'none';
+  logText.textContent = '';
+  vtitle.innerHTML = '<span class="spinner"></span> &nbsp;Judging…';
   vsub.textContent = ''; vmeta.textContent = ''; verr.style.display = 'none';
-  log.style.display = 'block';
+  log.style.display = 'none';
   logText.textContent = '→ Sending code to judge…\n';
 
   try {
@@ -1289,7 +1291,6 @@ async function submitCode() {
     const sub = await res.json();
     if (!res.ok) { vtitle.textContent = '✗ Error'; vsub.textContent = sub.detail; vtitle.className = 'verdict-title verdict-wrong_answer'; return; }
 
-    logText.textContent += `→ Submission #${sub.id} queued (status: pending)\n→ Waiting for worker to compile & run…\n`;
     vtitle.innerHTML = '<span class="spinner"></span> &nbsp;Judging…';
 
     if (pollInterval) clearInterval(pollInterval);
@@ -1302,11 +1303,9 @@ async function pollVerdict(id, logText, vtitle, vsub, vmeta, verr, vbox) {
     const res = await fetch(`${API}/submissions/${id}`, { headers: { 'Authorization': `Bearer ${token}` } });
     const sub = await res.json();
     if (sub.status === 'pending' || sub.status === 'running') {
-      logText.textContent += `  ↻ Status: ${sub.status}…\n`;
       return;
     }
     clearInterval(pollInterval);
-    logText.textContent += `✓ Done. Verdict: ${sub.verdict || sub.status}\n`;
 
     const icons = { accepted:'✓', wrong_answer:'✗', time_limit_exceeded:'⏱', compile_error:'⚙', runtime_error:'⚠', no_test_cases:'?' };
     vtitle.className = `verdict-title verdict-${sub.verdict || sub.status}`;
@@ -1505,10 +1504,13 @@ async function runCode() {
   const vmeta = document.getElementById('verdictMeta');
   const verr = document.getElementById('verdictError');
 
+  // Clear any previous judging log
+  document.getElementById('submitLog').style.display = 'none';
+  document.getElementById('submitLogText').textContent = '';
   vbox.classList.add('show');
   vtitle.className = 'verdict-title verdict-pending';
   vtitle.innerHTML = '<span class="spinner"></span> Testing sample cases…';
-  vsub.textContent = '(not counted as a submission)';
+  vsub.textContent = '';
   vmeta.textContent = ''; verr.style.display = 'none';
   const aiBtn = document.getElementById('aiReviewBtn');
   if (aiBtn) aiBtn.style.display = 'none';
@@ -1545,7 +1547,14 @@ async function runCode() {
       vtitle.textContent = labels[data.verdict] || '✗ ' + data.verdict;
       vsub.textContent = `Failed on Sample Test Case #${data.failed_case} · not submitted`;
       if (data.input !== undefined) {
-        verr.textContent = 'Input:\n' + data.input + '\n\nExpected Output:\n' + data.expected + '\n\nYour Output:\n' + (data.actual || '(no output)');
+        verr.textContent = 'Input:
+' + data.input + '
+
+Expected Output:
+' + data.expected + '
+
+Your Output:
+' + (data.actual || '(no output)');
         verr.style.display = 'block';
       } else if (data.error) {
         verr.textContent = data.error;
