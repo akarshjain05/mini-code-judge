@@ -26,6 +26,10 @@ class UserRegister(BaseModel):
         return v
 
 
+class GoogleLoginRequest(BaseModel):
+    credential: str   # the ID token returned by Google's Sign-In button
+
+
 class UserOut(BaseModel):
     id: int
     username: str

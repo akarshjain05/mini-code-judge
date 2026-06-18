@@ -12,6 +12,7 @@ class User(Base):
     id         = Column(Integer, primary_key=True, index=True)
     username   = Column(String(50), unique=True, nullable=False, index=True)
     email      = Column(String(255), unique=True, nullable=False)
-    password   = Column(String(255), nullable=False)
+    password   = Column(String(255), nullable=True)   # nullable: Google-only accounts have no password
+    google_id  = Column(String(255), unique=True, nullable=True, index=True)
     is_admin   = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

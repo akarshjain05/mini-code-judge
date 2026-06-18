@@ -4,6 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Mini Code Judge</title>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
   /* ── Design tokens ────────────────────────────────────────────── */
   :root {
@@ -421,6 +422,16 @@
     <div class="tabs" id="authTabs">
       <div class="tab active" onclick="switchAuthTab('login')">Login</div>
       <div class="tab" onclick="switchAuthTab('register')">Register</div>
+    </div>
+
+    <!-- Google Sign-In -->
+    <div style="display:flex;justify-content:center;margin:16px 0 4px">
+      <div id="googleSignInDiv"></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;margin:14px 0">
+      <div style="flex:1;height:1px;background:var(--border)"></div>
+      <span style="font-size:11px;color:var(--muted)">OR</span>
+      <div style="flex:1;height:1px;background:var(--border)"></div>
     </div>
 
     <!-- Login -->
@@ -896,6 +907,7 @@ int main(){
 <script>
 // ── Config ─────────────────────────────────────────────────────────
 const API = 'https://mini-code-judge.onrender.com';
+const GOOGLE_CLIENT_ID = '195071714890-cqr22mhg2cvfc1ttad54j8qgdqc3ee24.apps.googleusercontent.com';
 // IMPORTANT: this file should NOT be opened via file://... because browsers treat file: as origin="null"
 // and your API currently blocks origin="null" in CORS preflight.
 // Serve this file from http:// (e.g., VSCode Live Server) or deploy the frontend on the allowed origin.
@@ -912,7 +924,46 @@ window.onload = () => {
   fetchCurrentUser();
   loadProblems();
   loadDashboard();
+  initGoogleSignIn();
 };
+
+function initGoogleSignIn() {
+  if (!window.google || !google.accounts || !google.accounts.id) return;
+  google.accounts.id.initialize({
+    client_id: GOOGLE_CLIENT_ID,
+    callback: handleGoogleCredentialResponse,
+  });
+  const target = document.getElementById('googleSignInDiv');
+  if (target) {
+    google.accounts.id.renderButton(target, { theme: 'outline', size: 'large', width: 300 });
+  }
+}
+
+async function handleGoogleCredentialResponse(response) {
+  const err = document.getElementById('loginErr');
+  err.className = 'alert'; err.textContent = '';
+  try {
+    const res = await fetch(`${API}/auth/google`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ credential: response.credential }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      showAlert(err, data.detail || 'Google sign-in failed', 'error');
+      return;
+    }
+    token = data.access_token;
+    const meRes = await fetch(`${API}/auth/me`, { headers: { 'Authorization': `Bearer ${token}` } });
+    const me = await meRes.json();
+    username = me.username;
+    localStorage.setItem('jwt', token);
+    localStorage.setItem('username', username);
+    closeAuthModal(); updateAuthUI(); fetchCurrentUser(); loadDashboard(); loadHistory();
+  } catch (e) {
+    showAlert(err, 'Cannot reach API — is the server running? (or CORS blocked)', 'error');
+  }
+}
 
 // ── Navigation ─────────────────────────────────────────────────────
 function goTo(page) {

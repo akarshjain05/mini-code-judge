@@ -16,6 +16,9 @@ class Settings(BaseSettings):
     TIME_LIMIT_SECONDS: int = 2
     MEMORY_LIMIT_MB: int = 256
 
+    # Google Sign-In
+    GOOGLE_CLIENT_ID: str = ""
+
     # Modern Pydantic V2 Config
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
