@@ -63,3 +63,25 @@ def get_current_admin_user(current_user = Depends(get_current_user)):
             detail="Admin access required",
         )
     return current_user
+
+
+def create_setup_token(email: str, google_id: str) -> str:
+    """Short-lived signed token proving a Google identity was verified,
+    used only to let a brand-new user choose a username + password."""
+    payload = {
+        "email": email,
+        "google_id": google_id,
+        "purpose": "google_setup",
+        "exp": datetime.utcnow() + timedelta(minutes=15),
+    }
+    return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+
+
+def decode_setup_token(token: str) -> dict:
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Setup link expired or invalid. Please sign in with Google again.")
+    if payload.get("purpose") != "google_setup":
+        raise HTTPException(status_code=401, detail="Invalid setup token")
+    return payload
