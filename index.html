@@ -416,6 +416,26 @@
 </head>
 <body>
 
+<!-- Submission Code Viewer Modal -->
+<div class="modal-backdrop" id="codeViewerModal" onclick="if(event.target===this)closeCodeViewer()" style="display:none;align-items:center;justify-content:center">
+  <div class="modal" style="max-width:800px;width:95vw;max-height:85vh;display:flex;flex-direction:column">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-shrink:0">
+      <div>
+        <div style="font-size:16px;font-weight:700;color:var(--text)" id="cvTitle">Submission #—</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px" id="cvMeta">—</div>
+      </div>
+      <button onclick="closeCodeViewer()" style="margin-left:auto;background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;padding:4px;line-height:1">✕</button>
+    </div>
+    <div style="display:flex;gap:10px;margin-bottom:12px;flex-shrink:0;flex-wrap:wrap">
+      <span id="cvVerdict" class="badge">—</span>
+      <span id="cvLang" style="font-family:var(--mono);font-size:11px;color:var(--muted);background:var(--surface2);padding:3px 10px;border-radius:10px">—</span>
+      <span id="cvRuntime" style="font-size:12px;color:var(--muted);padding:3px 10px;background:var(--surface2);border-radius:10px">—</span>
+      <button onclick="copySubmissionCode()" style="margin-left:auto;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:11px;padding:4px 12px;border-radius:6px;cursor:pointer" id="cvCopyBtn">Copy Code</button>
+    </div>
+    <pre id="cvCode" style="flex:1;overflow:auto;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px;font-family:var(--mono);font-size:13px;line-height:1.6;color:var(--text);white-space:pre;margin:0;min-height:200px"></pre>
+  </div>
+</div>
+
 <!-- Auth Modal -->
 <div class="modal-backdrop" id="authModal">
   <div class="modal">
@@ -554,7 +574,7 @@
     <div class="nav-item" onclick="goTo('problems')">
       <span class="icon">≡</span> Problems
     </div>
-    <div class="nav-item" onclick="goTo('submit')">
+    <div class="nav-item" id="navSubmitCode" onclick="goTo('problems')" style="display:none">
       <span class="icon">▷</span> Submit Code
     </div>
     <div class="nav-item" onclick="goTo('history')">
@@ -759,10 +779,11 @@ int main(){
                   <th>Verdict</th>
                   <th>Runtime</th>
                   <th>Submitted</th>
+                  <th style="text-align:center">Code</th>
                 </tr>
               </thead>
               <tbody id="historyTable">
-                <tr><td colspan="6" style="color:var(--muted);padding:20px">Login to see your submissions.</td></tr>
+                <tr><td colspan="7" style="color:var(--muted);padding:20px">Login to see your submissions.</td></tr>
               </tbody>
             </table>
           </div>
@@ -1298,13 +1319,22 @@ function handleHashNav() {
   if (hash.startsWith('problem/')) {
     const id = parseInt(hash.split('/')[1]);
     if (id) {
-      // Try to open from cached problems list
       goTo('problems', false);
       fetch(`${API}/problems`).then(r => r.json()).then(problems => {
         const p = problems.find(p => p.id === id);
         if (p) { openProblem(p); history.replaceState({ page: 'submit', problem_id: id }, '', '#problem/' + id); }
       }).catch(() => {});
     }
+    return;
+  }
+  if (hash.startsWith('submission/')) {
+    const id = parseInt(hash.split('/')[1]);
+    if (id && token) {
+      goTo('history', false);
+      loadHistory().then(() => {
+        if (window._submissionsCache && window._submissionsCache[id]) openSubmissionViewer(id);
+      });
+    } else if (id) { openAuthModal(); }
     return;
   }
   const validPages = ['dashboard','problems','submit','history','analytics','account','leaderboard','contests','admin','addproblem'];
@@ -1566,26 +1596,70 @@ function formatVerdict(v) {
 // ── History ────────────────────────────────────────────────────────
 async function loadHistory() {
   const tbody = document.getElementById('historyTable');
-  if (!token) { tbody.innerHTML = '<tr><td colspan="6" style="color:var(--muted);padding:20px">Login to see your submissions.</td></tr>'; return; }
-  tbody.innerHTML = '<tr><td colspan="6" style="color:var(--muted);padding:16px">Loading…</td></tr>';
+  if (!token) { tbody.innerHTML = '<tr><td colspan="7" style="color:var(--muted);padding:20px">Login to see your submissions.</td></tr>'; return; }
+  tbody.innerHTML = '<tr><td colspan="7" style="color:var(--muted);padding:16px">Loading…</td></tr>';
   try {
     const res = await fetch(`${API}/submissions`, { headers: { 'Authorization': `Bearer ${token}` } });
     const subs = await res.json();
-    if (!subs.length) { tbody.innerHTML = '<tr><td colspan="6" style="color:var(--muted);padding:16px">No submissions yet.</td></tr>'; return; }
-    tbody.innerHTML = subs.map(s => `
-      <tr>
+    if (!subs.length) { tbody.innerHTML = '<tr><td colspan="7" style="color:var(--muted);padding:16px">No submissions yet.</td></tr>'; return; }
+    tbody.innerHTML = subs.map(s => {
+      const submittedAt = s.created_at ? timeAgo(s.created_at) : '—';
+      const hasCode = !!s.code;
+      return `
+      <tr onclick="openSubmissionViewer(${s.id})" style="cursor:pointer" title="Click to view submitted code" onmouseenter="this.style.background='rgba(88,166,255,0.05)'" onmouseleave="this.style.background=''">
         <td style="font-family:var(--mono);color:var(--muted)">#${s.id}</td>
-        <td>Problem #${s.problem_id}</td>
+        <td style="font-weight:500">Problem #${s.problem_id}</td>
         <td><span style="font-family:var(--mono);font-size:12px;color:var(--muted)">${s.language}</span></td>
         <td><span class="badge ${verdictClass(s.verdict || s.status)}">${formatVerdict(s.verdict || s.status)}</span></td>
         <td style="font-family:var(--mono);font-size:12px">${s.runtime_ms ? s.runtime_ms.toFixed(1)+' ms' : '—'}</td>
-        <td style="color:var(--muted);font-size:12px">${timeAgo(s.created_at)}</td>
-      </tr>`).join('');
+        <td style="color:var(--muted);font-size:12px">${submittedAt}</td>
+        <td style="text-align:center">
+          ${hasCode
+            ? `<button onclick="event.stopPropagation();openSubmissionViewer(${s.id})" style="background:var(--surface2);border:1px solid var(--border);color:var(--accent);font-size:10px;padding:3px 10px;border-radius:6px;cursor:pointer">View</button>`
+            : `<span style="color:var(--muted);font-size:11px">—</span>`}
+        </td>
+      </tr>`;
+    }).join('');
 
-    // update dashboard stats
+    // Cache submissions for viewer
+    window._submissionsCache = {};
+    subs.forEach(s => { window._submissionsCache[s.id] = s; });
+
+    // Update dashboard stats
     document.getElementById('dashStatTotal').textContent = subs.length;
     document.getElementById('dashStatAccepted').textContent = subs.filter(s => s.verdict === 'accepted').length;
-  } catch(e) { tbody.innerHTML = '<tr><td colspan="6" style="color:var(--warn);padding:16px">⚠ Error loading submissions.</td></tr>'; }
+  } catch(e) { tbody.innerHTML = '<tr><td colspan="7" style="color:var(--warn);padding:16px">⚠ Error loading submissions.</td></tr>'; }
+}
+
+function openSubmissionViewer(id) {
+  const s = window._submissionsCache && window._submissionsCache[id];
+  if (!s) return;
+  document.getElementById('cvTitle').textContent = `Submission #${s.id} — Problem #${s.problem_id}`;
+  const submittedAt = s.created_at ? new Date(s.created_at).toLocaleString('en-IN', {timeZone:'Asia/Kolkata'}) : 'Unknown time';
+  document.getElementById('cvMeta').textContent = submittedAt + ' IST';
+  const vEl = document.getElementById('cvVerdict');
+  vEl.textContent = formatVerdict(s.verdict || s.status);
+  vEl.className = 'badge ' + verdictClass(s.verdict || s.status);
+  document.getElementById('cvLang').textContent = s.language ? s.language.toUpperCase() : '—';
+  document.getElementById('cvRuntime').textContent = s.runtime_ms ? s.runtime_ms.toFixed(1) + ' ms' : 'N/A';
+  document.getElementById('cvCode').textContent = s.code || '// Code not available\n// (older submissions may not have code stored)';
+  const modal = document.getElementById('codeViewerModal');
+  modal.style.display = 'flex';
+  history.pushState({ page: 'submission', id }, '', '#submission/' + id);
+}
+
+function closeCodeViewer() {
+  document.getElementById('codeViewerModal').style.display = 'none';
+  history.back();
+}
+
+function copySubmissionCode() {
+  const code = document.getElementById('cvCode').textContent;
+  navigator.clipboard.writeText(code).then(() => {
+    const btn = document.getElementById('cvCopyBtn');
+    btn.textContent = 'Copied!';
+    setTimeout(() => { btn.textContent = 'Copy Code'; }, 1800);
+  });
 }
 
 function verdictClass(v) {
