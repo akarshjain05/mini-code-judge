@@ -477,6 +477,37 @@
       <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:4px" onclick="doLogin()">
         Login
       </button>
+      <div style="text-align:center;margin-top:12px">
+        <a href="#" onclick="showForgotPassword()" style="font-size:12px;color:var(--accent);text-decoration:none">Forgot password?</a>
+      </div>
+    </div>
+
+    <!-- Forgot Password form -->
+    <div id="forgotPasswordForm" style="display:none">
+      <div class="alert" id="forgotErr"></div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Enter your email. If it matches an account, you'll get a reset token to use below.</p>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="forgotEmail" placeholder="you@example.com" />
+      </div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="doForgotPassword()">Get Reset Token</button>
+      <div id="forgotTokenBox" style="display:none;margin-top:14px">
+        <p style="font-size:12px;color:var(--muted);margin-bottom:8px">Copy this token — it expires in 15 minutes:</p>
+        <div id="forgotTokenDisplay" style="font-family:var(--mono);font-size:11px;background:var(--surface2);padding:10px;border-radius:6px;word-break:break-all;color:var(--accent)"></div>
+        <div class="form-group" style="margin-top:14px">
+          <label>New Password</label>
+          <div style="position:relative">
+            <input type="password" id="forgotNewPassword" placeholder="min 6 characters" style="padding-right:42px" />
+            <button type="button" onclick="togglePasswordVisibility('forgotNewPassword',this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);padding:4px;display:flex">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+        </div>
+        <button class="btn btn-success" style="width:100%;justify-content:center" onclick="doResetPassword()">Reset Password</button>
+      </div>
+      <div style="text-align:center;margin-top:10px">
+        <a href="#" onclick="showForgotPassword(false)" style="font-size:12px;color:var(--muted);text-decoration:none">← Back to login</a>
+      </div>
     </div>
 
     <!-- Register -->
@@ -532,6 +563,9 @@
 
     <div class="nav-item" onclick="goTo('analytics')">
       <span>📊</span> My Analytics
+    </div>
+    <div class="nav-item" onclick="goTo('account')">
+      <span>👤</span> My Account
     </div>
     <div class="nav-item" onclick="goTo('contests')">
       <span>🏆</span> Contests
@@ -861,7 +895,7 @@ int main(){
         </div>
 
         <!-- Stats Row -->
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px" id="analyticsStatsRow">
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:14px" id="analyticsStatsRow">
           <div class="card" style="text-align:center;padding:20px">
             <div style="font-size:28px;font-weight:800;color:var(--accent)" id="statTotal">—</div>
             <div style="font-size:11px;color:var(--muted);margin-top:4px">Total Submissions</div>
@@ -878,6 +912,29 @@ int main(){
             <div style="font-size:28px;font-weight:800;color:#8b5cf6" id="statStreak">—</div>
             <div style="font-size:11px;color:var(--muted);margin-top:4px">🔥 Day Streak</div>
           </div>
+        </div>
+
+        <!-- Problems Solved by Difficulty -->
+        <div class="card" style="margin-bottom:18px;padding:18px">
+          <div class="card-title" style="margin-bottom:14px">🎯 Problems Solved</div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px" id="difficultyBreakdown">
+            <div style="text-align:center;padding:14px;background:var(--surface2);border-radius:10px">
+              <div style="font-size:22px;font-weight:800;color:#4ade80" id="diffEasySolved">—</div>
+              <div style="font-size:11px;color:#4ade80;margin-top:2px">Easy</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:4px" id="diffEasyTotal">of — problems</div>
+            </div>
+            <div style="text-align:center;padding:14px;background:var(--surface2);border-radius:10px">
+              <div style="font-size:22px;font-weight:800;color:#f59e0b" id="diffMediumSolved">—</div>
+              <div style="font-size:11px;color:#f59e0b;margin-top:2px">Medium</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:4px" id="diffMediumTotal">of — problems</div>
+            </div>
+            <div style="text-align:center;padding:14px;background:var(--surface2);border-radius:10px">
+              <div style="font-size:22px;font-weight:800;color:#ef4444" id="diffHardSolved">—</div>
+              <div style="font-size:11px;color:#ef4444;margin-top:2px">Hard</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:4px" id="diffHardTotal">of — problems</div>
+            </div>
+          </div>
+          <div style="margin-top:14px;font-size:12px;color:var(--muted);text-align:center" id="totalSolvedLine">—</div>
         </div>
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px">
@@ -912,6 +969,82 @@ int main(){
         <div class="card">
           <div class="card-title">⏰ Best Time to Code</div>
           <div id="timeHeatmap" style="margin-top:14px"></div>
+        </div>
+      </div>
+
+      <!-- My Account -->
+      <div class="page" id="page-account">
+        <div class="page-header">
+          <h1>👤 My Account</h1>
+          <p>Manage your profile, profile picture, and password.</p>
+        </div>
+
+        <!-- Profile Card -->
+        <div class="card" style="margin-bottom:18px;padding:24px">
+          <div class="card-title" style="margin-bottom:18px">Profile</div>
+          <div style="display:flex;align-items:center;gap:24px;margin-bottom:24px">
+            <!-- Avatar -->
+            <div style="position:relative;flex-shrink:0">
+              <div id="accountAvatarWrapper" style="width:80px;height:80px;border-radius:50%;overflow:hidden;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:700;color:#fff;cursor:pointer;border:3px solid var(--border)" onclick="document.getElementById('avatarFileInput').click()" title="Click to change photo">
+                <span id="accountAvatarText"></span>
+                <img id="accountAvatarImg" src="" alt="" style="display:none;width:100%;height:100%;object-fit:cover" />
+              </div>
+              <div style="position:absolute;bottom:0;right:0;background:var(--accent);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:2px solid var(--bg)" onclick="document.getElementById('avatarFileInput').click()">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+              </div>
+              <input type="file" id="avatarFileInput" accept="image/*" style="display:none" onchange="previewAvatar(this)" />
+            </div>
+            <div>
+              <div style="font-size:20px;font-weight:700;color:var(--text)" id="accountUsername">—</div>
+              <div style="font-size:13px;color:var(--muted);margin-top:3px" id="accountEmail">—</div>
+              <div style="font-size:12px;color:var(--muted);margin-top:6px">Click the avatar to change your photo (max 200 KB)</div>
+            </div>
+          </div>
+
+          <div class="alert" id="profileAlert"></div>
+
+          <!-- Date of Birth -->
+          <div class="form-group" style="max-width:280px">
+            <label>Date of Birth</label>
+            <input type="date" id="accountDob" style="color:var(--text);background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;width:100%;" />
+          </div>
+
+          <button class="btn btn-primary" style="padding:10px 28px" onclick="saveProfile()">Save Profile</button>
+        </div>
+
+        <!-- Change Password Card -->
+        <div class="card" style="padding:24px">
+          <div class="card-title" style="margin-bottom:18px">Change Password</div>
+          <div class="alert" id="pwAlert"></div>
+          <div class="form-group" style="max-width:340px">
+            <label>Current Password</label>
+            <div style="position:relative">
+              <input type="password" id="pwCurrent" placeholder="••••••••" style="padding-right:42px" />
+              <button type="button" onclick="togglePasswordVisibility('pwCurrent',this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);padding:4px;display:flex">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="form-group" style="max-width:340px">
+            <label>New Password</label>
+            <div style="position:relative">
+              <input type="password" id="pwNew" placeholder="min 6 characters" style="padding-right:42px" />
+              <button type="button" onclick="togglePasswordVisibility('pwNew',this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);padding:4px;display:flex">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="form-group" style="max-width:340px">
+            <label>Confirm New Password</label>
+            <div style="position:relative">
+              <input type="password" id="pwConfirm" placeholder="repeat new password" style="padding-right:42px" />
+              <button type="button" onclick="togglePasswordVisibility('pwConfirm',this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);padding:4px;display:flex">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+          </div>
+          <p style="font-size:12px;color:var(--muted);margin-bottom:14px">Google sign-in users: leave Current Password blank if you've never set one.</p>
+          <button class="btn btn-primary" style="padding:10px 28px" onclick="changePassword()">Update Password</button>
         </div>
       </div>
 
@@ -1067,6 +1200,7 @@ async function completeGoogleSignup() {
 
 // ── Navigation ─────────────────────────────────────────────────────
 function goTo(page) {
+  if (!token && ['history','analytics','contests','account'].includes(page)) { openAuthModal(); return; }
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-' + page).classList.add('active');
@@ -1079,6 +1213,7 @@ function goTo(page) {
   if (page === 'admin') loadAdminDashboard();
   if (page === 'analytics') loadAnalytics();
   if (page === 'contests') loadContests();
+  if (page === 'account') loadAccount();
 }
 
 // ── Auth ───────────────────────────────────────────────────────────
@@ -1708,19 +1843,50 @@ function renderAIReview(reviewText, container) {
 async function loadAnalytics() {
   if (!token) { openAuthModal(); return; }
   try {
-    const res = await fetch(`${API}/submissions?limit=200`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    if (!res.ok) throw new Error('Failed to load');
-    const subs = await res.json();
-    renderAnalytics(subs);
+    const [subsRes, probsRes] = await Promise.all([
+      fetch(`${API}/submissions?limit=200`, { headers: { 'Authorization': `Bearer ${token}` } }),
+      fetch(`${API}/problems`)
+    ]);
+    if (!subsRes.ok) throw new Error('Failed to load submissions');
+    const subs = await subsRes.json();
+    const problems = probsRes.ok ? await probsRes.json() : [];
+    renderAnalytics(subs, problems);
   } catch(e) {
     console.error('Analytics error:', e);
     document.getElementById('analyticsStatsRow').innerHTML = '<p style="color:var(--warn)">⚠ Error loading analytics.</p>';
   }
 }
 
-function renderAnalytics(subs) {
+// ── IST timezone helper (UTC+5:30) ─────────────────────────────────
+const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+
+function toIST(dateStr) {
+  if (!dateStr) return null;
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return null;
+  return new Date(d.getTime() + IST_OFFSET_MS);
+}
+
+function toISTDateKey(dateStr) {
+  const d = toIST(dateStr);
+  if (!d) return null;
+  // use UTC getters on the shifted date to get IST calendar date
+  return `${d.getUTCFullYear()}-${d.getUTCMonth()}-${d.getUTCDate()}`;
+}
+
+function toISTHour(dateStr) {
+  const d = toIST(dateStr);
+  if (!d) return null;
+  return d.getUTCHours();
+}
+
+function formatHour(h) {
+  if (h === 0) return '12am';
+  if (h === 12) return '12pm';
+  return h < 12 ? h + 'am' : (h - 12) + 'pm';
+}
+
+function renderAnalytics(subs, problems = []) {
   if (!subs.length) {
     document.getElementById('analyticsStatsRow').innerHTML = '<p style="color:var(--muted)">No submissions yet. Solve some problems first!</p>';
     return;
@@ -1730,28 +1896,53 @@ function renderAnalytics(subs) {
   const accepted = subs.filter(s => s.verdict === 'accepted').length;
   const accuracy = total ? Math.round((accepted / total) * 100) : 0;
 
-  // Streak calculation
-  const days = new Set(subs.filter(s => s.verdict === 'accepted' && s.created_at && !isNaN(new Date(s.created_at).getTime())).map(s => {
-    const d = new Date(s.created_at);
-    return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-  }));
+  // ── Streak (in IST) ────────────────────────────────────────────────
+  const acceptedDays = new Set(
+    subs.filter(s => s.verdict === 'accepted').map(s => toISTDateKey(s.created_at)).filter(Boolean)
+  );
   let streak = 0;
-  const today = new Date();
+  const nowIST = toIST(new Date().toISOString());
   for (let i = 0; i < 365; i++) {
-    const d = new Date(today);
-    d.setDate(d.getDate() - i);
-    const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-    if (days.has(key)) streak++;
+    const d = new Date(nowIST.getTime() - i * 86400000);
+    const key = `${d.getUTCFullYear()}-${d.getUTCMonth()}-${d.getUTCDate()}`;
+    if (acceptedDays.has(key)) streak++;
     else if (i > 0) break;
   }
 
-  // Stats
   document.getElementById('statTotal').textContent = total;
   document.getElementById('statAccepted').textContent = accepted;
   document.getElementById('statAccuracy').textContent = accuracy + '%';
-  document.getElementById('statStreak').textContent = streak + ' days';
+  document.getElementById('statStreak').textContent = streak + (streak === 1 ? ' day' : ' days');
 
-  // Language accuracy chart
+  // ── Difficulty breakdown ───────────────────────────────────────────
+  if (problems.length) {
+    // Map problem id -> difficulty
+    const probMap = {};
+    const diffTotals = { easy: 0, medium: 0, hard: 0 };
+    problems.forEach(p => {
+      probMap[p.id] = (p.difficulty || '').toLowerCase();
+      const d = (p.difficulty || '').toLowerCase();
+      if (diffTotals[d] !== undefined) diffTotals[d]++;
+    });
+    // Unique problems solved per difficulty (only accepted, unique problem_ids)
+    const solvedByDiff = { easy: new Set(), medium: new Set(), hard: new Set() };
+    subs.filter(s => s.verdict === 'accepted').forEach(s => {
+      const diff = probMap[s.problem_id];
+      if (diff && solvedByDiff[diff]) solvedByDiff[diff].add(s.problem_id);
+    });
+    const totalSolved = solvedByDiff.easy.size + solvedByDiff.medium.size + solvedByDiff.hard.size;
+    const totalProbs  = problems.length;
+    document.getElementById('diffEasySolved').textContent   = solvedByDiff.easy.size;
+    document.getElementById('diffMediumSolved').textContent = solvedByDiff.medium.size;
+    document.getElementById('diffHardSolved').textContent   = solvedByDiff.hard.size;
+    document.getElementById('diffEasyTotal').textContent    = `of ${diffTotals.easy} problem${diffTotals.easy !== 1 ? 's' : ''}`;
+    document.getElementById('diffMediumTotal').textContent  = `of ${diffTotals.medium} problem${diffTotals.medium !== 1 ? 's' : ''}`;
+    document.getElementById('diffHardTotal').textContent    = `of ${diffTotals.hard} problem${diffTotals.hard !== 1 ? 's' : ''}`;
+    document.getElementById('totalSolvedLine').innerHTML    =
+      `<strong style="color:var(--text)">${totalSolved}</strong> unique problem${totalSolved !== 1 ? 's' : ''} solved out of <strong style="color:var(--text)">${totalProbs}</strong> available`;
+  }
+
+  // ── Language accuracy ──────────────────────────────────────────────
   const langs = {};
   subs.forEach(s => {
     if (!langs[s.language]) langs[s.language] = { total: 0, accepted: 0 };
@@ -1774,7 +1965,7 @@ function renderAnalytics(subs) {
       </div>`;
   }).join('') || '<p style="color:var(--muted);font-size:13px">No data yet</p>';
 
-  // Verdict breakdown
+  // ── Verdict breakdown ──────────────────────────────────────────────
   const verdicts = {};
   subs.forEach(s => {
     const v = s.verdict || s.status || 'unknown';
@@ -1797,45 +1988,39 @@ function renderAnalytics(subs) {
       </div>`;
   }).join('');
 
-  // Activity Heatmap (last 12 weeks)
+  // ── Activity Heatmap (last 12 weeks, IST dates) ────────────────────
   const activityMap = {};
   subs.forEach(s => {
-    const d = new Date(s.created_at);
-    if (!s.created_at || isNaN(d.getTime())) return; // skip malformed timestamps instead of crashing
-    const key = d.toISOString().split('T')[0];
+    const key = toISTDateKey(s.created_at);
+    if (!key) return;
     activityMap[key] = (activityMap[key] || 0) + 1;
   });
 
   const weeks = 12;
-  const days2 = weeks * 7;
-  const startDate = new Date();
-  startDate.setDate(startDate.getDate() - days2 + 1);
+  const nowISTMidnight = new Date(nowIST);
+  nowISTMidnight.setUTCHours(0,0,0,0);
+  const startDate = new Date(nowISTMidnight.getTime() - (weeks * 7 - 1) * 86400000);
 
-  // Build grid
   const dayLabels = ['Sun','','Tue','','Thu','','Sat'];
   let heatmapHTML = '<div style="display:flex;gap:4px">';
-  // Day labels column
   heatmapHTML += '<div style="display:flex;flex-direction:column;gap:2px;padding-top:18px">';
-  dayLabels.forEach(d => {
-    heatmapHTML += `<div style="height:12px;font-size:9px;color:var(--muted);line-height:12px">${d}</div>`;
+  dayLabels.forEach(lbl => {
+    heatmapHTML += `<div style="height:12px;font-size:9px;color:var(--muted);line-height:12px">${lbl}</div>`;
   });
   heatmapHTML += '</div>';
 
   for (let w = 0; w < weeks; w++) {
     heatmapHTML += '<div style="display:flex;flex-direction:column;gap:2px">';
-    // Week label
-    const weekStart = new Date(startDate);
-    weekStart.setDate(weekStart.getDate() + w * 7);
+    const weekStart = new Date(startDate.getTime() + w * 7 * 86400000);
     const monthLabel = w % 4 === 0 ? weekStart.toLocaleDateString('en', {month:'short'}) : '';
     heatmapHTML += `<div style="height:14px;font-size:9px;color:var(--muted)">${monthLabel}</div>`;
-
-    for (let d = 0; d < 7; d++) {
-      const date = new Date(startDate);
-      date.setDate(date.getDate() + w * 7 + d);
-      const key = date.toISOString().split('T')[0];
+    for (let dd = 0; dd < 7; dd++) {
+      const date = new Date(startDate.getTime() + (w * 7 + dd) * 86400000);
+      const key = `${date.getUTCFullYear()}-${date.getUTCMonth()}-${date.getUTCDate()}`;
       const count = activityMap[key] || 0;
       const color = count === 0 ? 'var(--surface2)' : count === 1 ? '#1e4023' : count <= 3 ? '#2d6a31' : count <= 5 ? '#3d8b42' : '#4ade80';
-      const title = count ? `${count} submission${count>1?'s':''} on ${key}` : key;
+      const dateStr = date.toLocaleDateString('en-IN', {day:'numeric',month:'short',timeZone:'UTC'});
+      const title = count ? `${count} submission${count>1?'s':''} on ${dateStr}` : dateStr;
       heatmapHTML += `<div title="${title}" style="width:12px;height:12px;border-radius:2px;background:${color};cursor:default"></div>`;
     }
     heatmapHTML += '</div>';
@@ -1843,32 +2028,223 @@ function renderAnalytics(subs) {
   heatmapHTML += '</div>';
   document.getElementById('activityHeatmap').innerHTML = heatmapHTML;
 
-  // Time of day heatmap
+  // ── Best Time to Code (IST hours) ─────────────────────────────────
   const hourCounts = Array(24).fill(0);
   subs.forEach(s => {
-    const d = new Date(s.created_at);
-    if (!s.created_at || isNaN(d.getTime())) return; // skip malformed timestamps instead of corrupting counts
-    hourCounts[d.getHours()]++;
+    const h = toISTHour(s.created_at);
+    if (h === null) return;
+    hourCounts[h]++;
   });
-  const maxHour = Math.max(...hourCounts, 1);
+  const maxCount = Math.max(...hourCounts);
+  const peakHour = maxCount > 0 ? hourCounts.indexOf(maxCount) : null;
   const timeHTML = `
     <div style="display:flex;gap:3px;align-items:flex-end;height:60px">
       ${hourCounts.map((c, h) => {
-        const pct = Math.round((c / maxHour) * 100);
+        const pct = maxCount > 0 ? Math.round((c / maxCount) * 100) : 0;
         const color = pct > 70 ? '#4ade80' : pct > 40 ? '#3d8b42' : pct > 10 ? '#2d6a31' : 'var(--surface2)';
-        const label = h % 6 === 0 ? (h === 0 ? '12am' : h === 12 ? '12pm' : h < 12 ? h+'am' : (h-12)+'pm') : '';
+        const label = h % 6 === 0 ? formatHour(h) : '';
         return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">
-          <div title="${c} submissions at ${h}:00" style="width:100%;height:${Math.max(pct*0.5, 2)}px;background:${color};border-radius:2px 2px 0 0;min-height:2px"></div>
+          <div title="${c} submission${c!==1?'s':''} at ${formatHour(h)} IST" style="width:100%;height:${Math.max(pct*0.5,2)}px;background:${color};border-radius:2px 2px 0 0"></div>
           <div style="font-size:9px;color:var(--muted);white-space:nowrap">${label}</div>
         </div>`;
       }).join('')}
     </div>
     <div style="margin-top:8px;font-size:12px;color:var(--muted)">
-      Peak time: <strong style="color:var(--text)">${hourCounts.indexOf(maxHour)}:00 – ${hourCounts.indexOf(maxHour)+1}:00</strong>
+      ${peakHour !== null
+        ? `Peak time (IST): <strong style="color:var(--text)">${formatHour(peakHour)} – ${formatHour((peakHour+1)%24)}</strong>`
+        : `<span>No submissions yet to show peak time</span>`}
     </div>`;
   document.getElementById('timeHeatmap').innerHTML = timeHTML;
 }
 
+
+// ── My Account ─────────────────────────────────────────────────────
+let _accountData = null;
+
+async function loadAccount() {
+  if (!token) { openAuthModal(); return; }
+  try {
+    const res = await fetch(`${API}/auth/me`, { headers: { 'Authorization': `Bearer ${token}` } });
+    const data = await res.json();
+    _accountData = data;
+    document.getElementById('accountUsername').textContent = data.username;
+    document.getElementById('accountEmail').textContent = data.email;
+    if (data.date_of_birth) document.getElementById('accountDob').value = data.date_of_birth;
+    _renderAccountAvatar(data.profile_picture, data.username);
+    document.getElementById('profileAlert').className = 'alert';
+    document.getElementById('profileAlert').textContent = '';
+    document.getElementById('pwAlert').className = 'alert';
+    document.getElementById('pwAlert').textContent = '';
+    document.getElementById('pwCurrent').value = '';
+    document.getElementById('pwNew').value = '';
+    document.getElementById('pwConfirm').value = '';
+  } catch(e) {
+    console.error('loadAccount error', e);
+  }
+}
+
+function _renderAccountAvatar(profilePicture, uname) {
+  const img = document.getElementById('accountAvatarImg');
+  const txt = document.getElementById('accountAvatarText');
+  const wrap = document.getElementById('accountAvatarWrapper');
+  if (profilePicture) {
+    img.src = profilePicture;
+    img.style.display = 'block';
+    txt.style.display = 'none';
+    wrap.style.background = 'transparent';
+  } else {
+    img.style.display = 'none';
+    txt.style.display = '';
+    txt.textContent = (uname || '?')[0].toUpperCase();
+    wrap.style.background = 'var(--accent)';
+  }
+}
+
+function previewAvatar(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 200 * 1024) {
+    showAlert(document.getElementById('profileAlert'), 'Image must be under 200 KB. Try a smaller photo.', 'error');
+    input.value = '';
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = e => {
+    _renderAccountAvatar(e.target.result, _accountData?.username);
+  };
+  reader.readAsDataURL(file);
+}
+
+async function saveProfile() {
+  if (!token) return;
+  const btn = event.target;
+  const alertEl = document.getElementById('profileAlert');
+  alertEl.className = 'alert'; alertEl.textContent = '';
+  btn.disabled = true; btn.textContent = 'Saving…';
+
+  const dob = document.getElementById('accountDob').value || null;
+  const img = document.getElementById('accountAvatarImg');
+  const profile_picture = img.style.display !== 'none' && img.src && !img.src.endsWith('/') ? img.src : null;
+
+  try {
+    const res = await fetch(`${API}/auth/me`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ date_of_birth: dob, profile_picture }),
+    });
+    const data = await res.json();
+    if (!res.ok) { showAlert(alertEl, data.detail || 'Save failed', 'error'); return; }
+    _accountData = data;
+    // Update top-bar avatar if profile pic changed
+    _syncTopBarAvatar(data.profile_picture, data.username);
+    showAlert(alertEl, '✓ Profile saved!', 'success');
+  } catch(e) {
+    showAlert(alertEl, 'Cannot reach API', 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Save Profile';
+  }
+}
+
+function _syncTopBarAvatar(profilePicture, uname) {
+  const av = document.getElementById('userAvatar');
+  if (!av) return;
+  if (profilePicture) {
+    av.innerHTML = `<img src="${profilePicture}" style="width:100%;height:100%;border-radius:50%;object-fit:cover" />`;
+  } else {
+    av.textContent = (uname || '?')[0].toUpperCase();
+  }
+}
+
+async function changePassword() {
+  if (!token) return;
+  const btn = event.target;
+  const alertEl = document.getElementById('pwAlert');
+  alertEl.className = 'alert'; alertEl.textContent = '';
+  const current = document.getElementById('pwCurrent').value;
+  const newPw   = document.getElementById('pwNew').value;
+  const confirm = document.getElementById('pwConfirm').value;
+
+  if (newPw.length < 6) { showAlert(alertEl, 'New password must be at least 6 characters', 'error'); return; }
+  if (newPw !== confirm) { showAlert(alertEl, 'Passwords do not match', 'error'); return; }
+
+  btn.disabled = true; btn.textContent = 'Updating…';
+  try {
+    const res = await fetch(`${API}/auth/change-password`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ current_password: current || null, new_password: newPw }),
+    });
+    const data = await res.json();
+    if (!res.ok) { showAlert(alertEl, data.detail || 'Update failed', 'error'); return; }
+    document.getElementById('pwCurrent').value = '';
+    document.getElementById('pwNew').value = '';
+    document.getElementById('pwConfirm').value = '';
+    showAlert(alertEl, '✓ Password updated successfully!', 'success');
+  } catch(e) {
+    showAlert(alertEl, 'Cannot reach API', 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Update Password';
+  }
+}
+
+// ── Forgot Password ─────────────────────────────────────────────────
+let _forgotResetToken = null;
+
+function showForgotPassword(show = true) {
+  document.getElementById('loginForm').style.display = show ? 'none' : 'block';
+  document.getElementById('forgotPasswordForm').style.display = show ? 'block' : 'none';
+  if (show) {
+    document.getElementById('forgotEmail').value = '';
+    document.getElementById('forgotErr').className = 'alert';
+    document.getElementById('forgotErr').textContent = '';
+    document.getElementById('forgotTokenBox').style.display = 'none';
+    _forgotResetToken = null;
+  }
+}
+
+async function doForgotPassword() {
+  const email = document.getElementById('forgotEmail').value.trim();
+  const alertEl = document.getElementById('forgotErr');
+  alertEl.className = 'alert'; alertEl.textContent = '';
+  if (!email) { showAlert(alertEl, 'Please enter your email', 'error'); return; }
+  try {
+    const res = await fetch(`${API}/auth/forgot-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+    const data = await res.json();
+    if (!res.ok) { showAlert(alertEl, data.detail || 'Not found', 'error'); return; }
+    _forgotResetToken = data.reset_token;
+    document.getElementById('forgotTokenDisplay').textContent = data.reset_token;
+    document.getElementById('forgotTokenBox').style.display = 'block';
+    showAlert(alertEl, 'Token generated — copy it and set your new password below.', 'success');
+  } catch(e) {
+    showAlert(alertEl, 'Cannot reach API', 'error');
+  }
+}
+
+async function doResetPassword() {
+  const alertEl = document.getElementById('forgotErr');
+  const newPw = document.getElementById('forgotNewPassword').value;
+  if (!newPw || newPw.length < 6) { showAlert(alertEl, 'Password must be at least 6 characters', 'error'); return; }
+  if (!_forgotResetToken) { showAlert(alertEl, 'Get a reset token first', 'error'); return; }
+  try {
+    const res = await fetch(`${API}/auth/reset-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reset_token: _forgotResetToken, new_password: newPw }),
+    });
+    const data = await res.json();
+    if (!res.ok) { showAlert(alertEl, data.detail || 'Reset failed', 'error'); return; }
+    showAlert(alertEl, '✓ Password reset! You can now log in.', 'success');
+    document.getElementById('forgotTokenBox').style.display = 'none';
+    _forgotResetToken = null;
+    setTimeout(() => showForgotPassword(false), 1800);
+  } catch(e) {
+    showAlert(alertEl, 'Cannot reach API', 'error');
+  }
+}
 
 // ── Contest Mode ─────────────────────────────────────────────────────
 let contestRefreshInterval = null;
