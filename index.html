@@ -682,10 +682,37 @@
           <h1>Problems</h1>
           <p>Choose a problem to solve. Click any row to open it.</p>
         </div>
+        <!-- Filter bar -->
+        <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
+          <input type="text" id="probSearch" placeholder="🔍 Search problems…" oninput="filterProblems()"
+            style="flex:1;min-width:180px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px" />
+          <select id="probFilterDiff" onchange="filterProblems()"
+            style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px">
+            <option value="">All Difficulties</option>
+            <option value="easy">Easy</option>
+            <option value="medium">Medium</option>
+            <option value="hard">Hard</option>
+          </select>
+          <select id="probFilterCat" onchange="filterProblems()"
+            style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px">
+            <option value="">All Categories</option>
+          </select>
+        </div>
         <div class="card" style="padding:0;overflow:hidden">
-          <div id="problemList" style="min-height:80px">
-            <div style="padding:24px;color:var(--muted)">Loading problems…</div>
-          </div>
+          <table style="width:100%;border-collapse:collapse">
+            <thead>
+              <tr style="border-bottom:1px solid var(--border)">
+                <th style="padding:10px 16px;text-align:left;color:var(--muted);font-size:11px;font-weight:600;width:48px">#</th>
+                <th style="padding:10px 16px;text-align:left;color:var(--muted);font-size:11px;font-weight:600">Title</th>
+                <th style="padding:10px 16px;text-align:center;color:var(--muted);font-size:11px;font-weight:600">Category</th>
+                <th style="padding:10px 16px;text-align:center;color:var(--muted);font-size:11px;font-weight:600">Difficulty</th>
+                <th style="padding:10px 16px;text-align:center;color:var(--muted);font-size:11px;font-weight:600">Acceptance</th>
+              </tr>
+            </thead>
+            <tbody id="problemList">
+              <tr><td colspan="5" style="padding:24px;color:var(--muted)">Loading problems…</td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
@@ -804,6 +831,7 @@ int main(){
             <div class="card-title">📝 Problem details</div>
             <div class="alert alert-error" id="addProbErr"></div>
             <div class="alert alert-success" id="addProbOk"></div>
+            <input type="hidden" id="editProbId" value="" />
             <div class="form-group">
               <label>Title</label>
               <input type="text" id="probTitle" placeholder="e.g. Hello World" />
@@ -812,15 +840,24 @@ int main(){
               <label>Description</label>
               <textarea id="probDesc" style="min-height:120px" placeholder="Describe the problem. Include input format, output format, constraints."></textarea>
             </div>
-            <div class="form-group">
-              <label>Difficulty</label>
-              <select id="probDiff">
-                <option value="easy">Easy</option>
-                <option value="medium">Medium</option>
-                <option value="hard">Hard</option>
-              </select>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div class="form-group">
+                <label>Difficulty</label>
+                <select id="probDiff">
+                  <option value="easy">Easy</option>
+                  <option value="medium">Medium</option>
+                  <option value="hard">Hard</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Category</label>
+                <input type="text" id="probCategory" placeholder="e.g. Arrays, DP, Graphs" />
+              </div>
             </div>
-            <button class="btn btn-primary" onclick="addProblem()">Create Problem</button>
+            <div style="display:flex;gap:10px">
+              <button class="btn btn-primary" id="saveProbBtn" onclick="saveProblem()">Create Problem</button>
+              <button class="btn btn-ghost" id="cancelEditBtn" style="display:none" onclick="cancelProblemEdit()">Cancel Edit</button>
+            </div>
           </div>
 
           <div class="card">
@@ -1360,8 +1397,9 @@ function closeAuthModal() {
 }
 
 function switchAuthTab(tab) {
-  document.getElementById('loginForm').style.display   = tab === 'login'    ? 'block' : 'none';
-  document.getElementById('registerForm').style.display = tab === 'register' ? 'block' : 'none';
+  document.getElementById('loginForm').style.display        = tab === 'login'    ? 'block' : 'none';
+  document.getElementById('registerForm').style.display     = tab === 'register' ? 'block' : 'none';
+  document.getElementById('forgotPasswordForm').style.display = 'none'; // always hide on tab switch
   document.querySelectorAll('#authTabs .tab').forEach((t, i) => {
     t.classList.toggle('active', (i === 0 && tab === 'login') || (i === 1 && tab === 'register'));
   });
@@ -1494,24 +1532,146 @@ async function doRegister() {
 }
 
 // ── Problems ───────────────────────────────────────────────────────
+let _allProblems = [];
+let _problemAcceptance = {}; // problem_id -> { total, accepted }
+
 async function loadProblems() {
-  const el = document.getElementById('problemList');
+  const tbody = document.getElementById('problemList');
   try {
-    const res = await fetch(`${API}/problems`);
-    const problems = await res.json();
+    const [probRes, subRes] = await Promise.all([
+      fetch(`${API}/problems`),
+      token ? fetch(`${API}/leaderboard/submissions`) : Promise.resolve(null),
+    ]);
+    const problems = await probRes.json();
+    _allProblems = problems;
     document.getElementById('statProblems').textContent = problems.length;
-    if (!problems.length) { el.innerHTML = '<div style="padding:24px;color:var(--muted)">No problems yet. Add one!</div>'; return; }
-    el.innerHTML = problems.map((p, i) => `
-      <div class="problem-item" onclick="openProblem(${JSON.stringify(p).replace(/"/g,'&quot;')})">
-        <span class="problem-num">${i + 1}</span>
-        <div class="problem-title">
-          ${p.title}
-          <small>${p.description.slice(0, 70)}${p.description.length > 70 ? '…' : ''}</small>
-        </div>
-        <span class="badge badge-${p.difficulty}">${p.difficulty}</span>
-        <span style="color:var(--muted);font-size:12px">→</span>
-      </div>`).join('');
-  } catch(e) { el.innerHTML = '<div style="padding:24px;color:var(--warn)">⚠ Cannot reach API. Is the server running?</div>'; }
+
+    // Build acceptance rates from all submissions
+    _problemAcceptance = {};
+    if (subRes && subRes.ok) {
+      const subs = await subRes.json();
+      subs.forEach(s => {
+        if (!_problemAcceptance[s.problem_id]) _problemAcceptance[s.problem_id] = { total: 0, accepted: 0 };
+        _problemAcceptance[s.problem_id].total++;
+        if (s.verdict === 'accepted') _problemAcceptance[s.problem_id].accepted++;
+      });
+    }
+
+    // Populate category filter
+    const cats = [...new Set(problems.map(p => p.category).filter(Boolean))].sort();
+    const catSel = document.getElementById('probFilterCat');
+    catSel.innerHTML = '<option value="">All Categories</option>' +
+      cats.map(c => `<option value="${c}">${c}</option>`).join('');
+
+    filterProblems();
+  } catch(e) {
+    tbody.innerHTML = '<tr><td colspan="5" style="padding:24px;color:var(--warn)">⚠ Cannot reach API.</td></tr>';
+  }
+}
+
+function filterProblems() {
+  const tbody = document.getElementById('problemList');
+  const search = (document.getElementById('probSearch')?.value || '').toLowerCase();
+  const diff   = document.getElementById('probFilterDiff')?.value || '';
+  const cat    = document.getElementById('probFilterCat')?.value || '';
+
+  const filtered = _allProblems.filter(p => {
+    if (diff && p.difficulty !== diff) return false;
+    if (cat  && p.category   !== cat)  return false;
+    if (search && !p.title.toLowerCase().includes(search) && !(p.category||'').toLowerCase().includes(search)) return false;
+    return true;
+  });
+
+  if (!filtered.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="padding:24px;color:var(--muted)">No problems match your filters.</td></tr>';
+    return;
+  }
+
+  const isAdmin = document.getElementById('adminBadge')?.style.display !== 'none';
+  tbody.innerHTML = filtered.map((p, i) => {
+    const acc = _problemAcceptance[p.id];
+    const rate = acc && acc.total > 0 ? Math.round((acc.accepted/acc.total)*100) : null;
+    const rateColor = rate === null ? 'var(--muted)' : rate >= 70 ? '#4ade80' : rate >= 40 ? '#f59e0b' : '#ef4444';
+    const catBadge = p.category
+      ? `<span style="font-size:10px;background:rgba(88,166,255,0.12);color:var(--accent);padding:2px 8px;border-radius:8px;border:1px solid rgba(88,166,255,0.2)">${p.category}</span>`
+      : '<span style="color:var(--muted);font-size:11px">—</span>';
+    return `<tr onclick="openProblem(${JSON.stringify(p).replace(/"/g,'&quot;')})"
+      style="cursor:pointer;border-bottom:1px solid var(--border);transition:background 0.1s"
+      onmouseover="this.style.background='rgba(88,166,255,0.04)'" onmouseout="this.style.background=''">
+      <td style="padding:12px 16px;font-family:var(--mono);color:var(--muted);font-size:12px">${p.id}</td>
+      <td style="padding:12px 16px">
+        <div style="font-weight:600;font-size:13px;color:var(--text)">${p.title}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">${(p.description||'').slice(0,60)}${(p.description||'').length>60?'…':''}</div>
+      </td>
+      <td style="padding:12px 16px;text-align:center">${catBadge}</td>
+      <td style="padding:12px 16px;text-align:center"><span class="badge badge-${p.difficulty}">${p.difficulty}</span></td>
+      <td style="padding:12px 16px;text-align:center;font-weight:600;color:${rateColor};font-size:13px">
+        ${rate !== null ? rate+'%' : '<span style="color:var(--muted)">—</span>'}
+        ${acc ? `<div style="font-size:10px;color:var(--muted);font-weight:400">${acc.accepted}/${acc.total}</div>` : ''}
+      </td>
+    </tr>
+    ${isAdmin ? `<tr style="border-bottom:1px solid var(--border);background:rgba(0,0,0,0.15)">
+      <td colspan="5" style="padding:4px 16px;text-align:right">
+        <button onclick="event.stopPropagation();editProblem(${JSON.stringify(p).replace(/"/g,'&quot;')})" style="background:none;border:none;color:var(--accent);font-size:11px;cursor:pointer;padding:2px 8px">✏ Edit</button>
+      </td>
+    </tr>` : ''}`;
+  }).join('');
+}
+
+function editProblem(p) {
+  goTo('admin');
+  document.getElementById('editProbId').value = p.id;
+  document.getElementById('probTitle').value = p.title;
+  document.getElementById('probDesc').value = p.description;
+  document.getElementById('probDiff').value = p.difficulty;
+  document.getElementById('probCategory').value = p.category || '';
+  document.getElementById('saveProbBtn').textContent = `Update Problem #${p.id}`;
+  document.getElementById('cancelEditBtn').style.display = '';
+  document.querySelector('.card-title').textContent = `✏ Edit Problem #${p.id}`;
+  document.getElementById('addProbOk').className = 'alert';
+  document.getElementById('addProbErr').className = 'alert';
+}
+
+function cancelProblemEdit() {
+  document.getElementById('editProbId').value = '';
+  document.getElementById('probTitle').value = '';
+  document.getElementById('probDesc').value = '';
+  document.getElementById('probDiff').value = 'easy';
+  document.getElementById('probCategory').value = '';
+  document.getElementById('saveProbBtn').textContent = 'Create Problem';
+  document.getElementById('cancelEditBtn').style.display = 'none';
+  document.querySelector('.card-title').textContent = '➕ Add Problem';
+}
+
+async function saveProblem() {
+  if (!token) { openAuthModal(); return; }
+  const editId  = document.getElementById('editProbId').value;
+  const title   = document.getElementById('probTitle').value.trim();
+  const desc    = document.getElementById('probDesc').value.trim();
+  const diff    = document.getElementById('probDiff').value;
+  const category = document.getElementById('probCategory').value.trim() || null;
+  const err = document.getElementById('addProbErr');
+  const ok  = document.getElementById('addProbOk');
+  [err, ok].forEach(e => { e.className = 'alert'; e.textContent = ''; });
+  if (!title || !desc) { showAlert(err, 'Title and description are required.', 'error'); return; }
+
+  const isEdit = !!editId;
+  const url    = isEdit ? `${API}/problems/${editId}` : `${API}/problems`;
+  const method = isEdit ? 'PUT' : 'POST';
+
+  try {
+    const res = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ title, description: desc, difficulty: diff, category }),
+    });
+    const data = await res.json();
+    if (!res.ok) { showAlert(err, data.detail || 'Failed', 'error'); return; }
+    showAlert(ok, isEdit ? `✓ Problem #${data.id} updated!` : `✓ Problem #${data.id} "${data.title}" created!`, 'success');
+    if (!isEdit) document.getElementById('tcProbId').value = data.id;
+    cancelProblemEdit();
+    loadProblems();
+  } catch(e) { showAlert(err, 'Cannot reach API.', 'error'); }
 }
 
 function openProblem(p) {
@@ -1679,29 +1839,6 @@ function verdictClass(v) {
 }
 
 // ── Add Problem ────────────────────────────────────────────────────
-async function addProblem() {
-  if (!token) { openAuthModal(); return; }
-  const title = document.getElementById('probTitle').value.trim();
-  const desc  = document.getElementById('probDesc').value.trim();
-  const diff  = document.getElementById('probDiff').value;
-  const err   = document.getElementById('addProbErr');
-  const ok    = document.getElementById('addProbOk');
-  [err, ok].forEach(e => { e.className = 'alert'; e.textContent = ''; });
-  if (!title || !desc) { showAlert(err, 'Title and description are required.', 'error'); return; }
-  try {
-    const res = await fetch(`${API}/problems`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify({ title, description: desc, difficulty: diff }),
-    });
-    const data = await res.json();
-    if (!res.ok) { showAlert(err, data.detail || 'Failed', 'error'); return; }
-    showAlert(ok, `✓ Problem #${data.id} "${data.title}" created!`, 'success');
-    document.getElementById('tcProbId').value = data.id;
-    loadProblems();
-  } catch(e) { showAlert(err, 'Cannot reach API.', 'error'); }
-}
-
 async function addTestCase() {
   if (!token) { openAuthModal(); return; }
   const pid  = document.getElementById('tcProbId').value;
