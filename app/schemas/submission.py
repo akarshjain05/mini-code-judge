@@ -1,8 +1,8 @@
 from typing import Literal, Optional
+from datetime import datetime
 from pydantic import BaseModel, field_validator
 
 SupportedLanguage = Literal["cpp", "python"]
-
 
 class SubmissionCreate(BaseModel):
     problem_id: int
@@ -25,7 +25,6 @@ class SubmissionCreate(BaseModel):
             raise ValueError("problem_id must be a positive integer")
         return v
 
-
 class SubmissionOut(BaseModel):
     id: int
     problem_id: int
@@ -36,4 +35,6 @@ class SubmissionOut(BaseModel):
     runtime_ms: Optional[float] = None
     memory_kb: Optional[int] = None
     error_output: Optional[str] = None
+    ai_review: Optional[str] = None
+    created_at: Optional[datetime] = None
     model_config = {"from_attributes": True}

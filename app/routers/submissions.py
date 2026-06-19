@@ -74,7 +74,7 @@ def get_submission(
 def list_my_submissions(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
-    limit: int = 20,
+    limit: int = 200,
     offset: int = 0,
 ):
     return (
