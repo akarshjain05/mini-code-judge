@@ -828,7 +828,7 @@ int main(){
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
           <div class="card">
-            <div class="card-title">📝 Problem details</div>
+            <div class="card-title" id="addProbCardTitle">📝 Problem details</div>
             <div class="alert alert-error" id="addProbErr"></div>
             <div class="alert alert-success" id="addProbOk"></div>
             <input type="hidden" id="editProbId" value="" />
@@ -850,8 +850,59 @@ int main(){
                 </select>
               </div>
               <div class="form-group">
-                <label>Category</label>
-                <input type="text" id="probCategory" placeholder="e.g. Arrays, DP, Graphs" />
+                <label>Category <span style="color:var(--muted);font-weight:400">(ctrl/cmd-click for multiple)</span></label>
+                <select id="probCategorySelect" multiple size="6" style="height:140px">
+                  <option value="Arrays">Arrays</option>
+                  <option value="Strings">Strings</option>
+                  <option value="Linked List">Linked List</option>
+                  <option value="Stack">Stack</option>
+                  <option value="Queue">Queue</option>
+                  <option value="Hashing">Hashing</option>
+                  <option value="Two Pointers">Two Pointers</option>
+                  <option value="Sliding Window">Sliding Window</option>
+                  <option value="Binary Search">Binary Search</option>
+                  <option value="Sorting">Sorting</option>
+                  <option value="Recursion">Recursion</option>
+                  <option value="Backtracking">Backtracking</option>
+                  <option value="Dynamic Programming">Dynamic Programming</option>
+                  <option value="Greedy">Greedy</option>
+                  <option value="Trees">Trees</option>
+                  <option value="Binary Tree">Binary Tree</option>
+                  <option value="Binary Search Tree">Binary Search Tree</option>
+                  <option value="Heap / Priority Queue">Heap / Priority Queue</option>
+                  <option value="Trie">Trie</option>
+                  <option value="Graphs">Graphs</option>
+                  <option value="BFS">BFS</option>
+                  <option value="DFS">DFS</option>
+                  <option value="Topological Sort">Topological Sort</option>
+                  <option value="Union Find / DSU">Union Find / DSU</option>
+                  <option value="Shortest Path">Shortest Path</option>
+                  <option value="Minimum Spanning Tree">Minimum Spanning Tree</option>
+                  <option value="Bit Manipulation">Bit Manipulation</option>
+                  <option value="Math">Math</option>
+                  <option value="Number Theory">Number Theory</option>
+                  <option value="Combinatorics">Combinatorics</option>
+                  <option value="Geometry">Geometry</option>
+                  <option value="Matrix">Matrix</option>
+                  <option value="Simulation">Simulation</option>
+                  <option value="Divide and Conquer">Divide and Conquer</option>
+                  <option value="Segment Tree">Segment Tree</option>
+                  <option value="Fenwick Tree / BIT">Fenwick Tree / BIT</option>
+                  <option value="String Matching">String Matching</option>
+                  <option value="Dynamic Programming on Trees">Dynamic Programming on Trees</option>
+                  <option value="Game Theory">Game Theory</option>
+                  <option value="Bitmask DP">Bitmask DP</option>
+                  <option value="Prefix Sum">Prefix Sum</option>
+                  <option value="Monotonic Stack">Monotonic Stack</option>
+                  <option value="Monotonic Queue">Monotonic Queue</option>
+                  <option value="Design">Design</option>
+                  <option value="Interactive">Interactive</option>
+                  <option value="Randomized">Randomized</option>
+                  <option value="Implementation">Implementation</option>
+                  <option value="Brute Force">Brute Force</option>
+                  <option value="Constructive Algorithms">Constructive Algorithms</option>
+                  <option value="Probability">Probability</option>
+                </select>
               </div>
             </div>
             <div style="display:flex;gap:10px">
@@ -1557,8 +1608,10 @@ async function loadProblems() {
       });
     }
 
-    // Populate category filter
-    const cats = [...new Set(problems.map(p => p.category).filter(Boolean))].sort();
+    // Populate category filter (problems can have multiple comma-separated categories)
+    const catSet = new Set();
+    problems.forEach(p => (p.category || '').split(',').map(c => c.trim()).filter(Boolean).forEach(c => catSet.add(c)));
+    const cats = [...catSet].sort();
     const catSel = document.getElementById('probFilterCat');
     catSel.innerHTML = '<option value="">All Categories</option>' +
       cats.map(c => `<option value="${c}">${c}</option>`).join('');
@@ -1577,7 +1630,10 @@ function filterProblems() {
 
   const filtered = _allProblems.filter(p => {
     if (diff && p.difficulty !== diff) return false;
-    if (cat  && p.category   !== cat)  return false;
+    if (cat) {
+      const probCats = (p.category || '').split(',').map(c => c.trim());
+      if (!probCats.includes(cat)) return false;
+    }
     if (search && !p.title.toLowerCase().includes(search) && !(p.category||'').toLowerCase().includes(search)) return false;
     return true;
   });
@@ -1592,8 +1648,9 @@ function filterProblems() {
     const acc = _problemAcceptance[p.id];
     const rate = acc && acc.total > 0 ? Math.round((acc.accepted/acc.total)*100) : null;
     const rateColor = rate === null ? 'var(--muted)' : rate >= 70 ? '#4ade80' : rate >= 40 ? '#f59e0b' : '#ef4444';
-    const catBadge = p.category
-      ? `<span style="font-size:10px;background:rgba(88,166,255,0.12);color:var(--accent);padding:2px 8px;border-radius:8px;border:1px solid rgba(88,166,255,0.2)">${p.category}</span>`
+    const catList = (p.category || '').split(',').map(c => c.trim()).filter(Boolean);
+    const catBadge = catList.length
+      ? `<div style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center">${catList.map(c => `<span style="font-size:10px;background:rgba(88,166,255,0.12);color:var(--accent);padding:2px 8px;border-radius:8px;border:1px solid rgba(88,166,255,0.2);white-space:nowrap">${c}</span>`).join('')}</div>`
       : '<span style="color:var(--muted);font-size:11px">—</span>';
     return `<tr onclick="openProblem(${JSON.stringify(p).replace(/"/g,'&quot;')})"
       style="cursor:pointer;border-bottom:1px solid var(--border);transition:background 0.1s"
@@ -1619,15 +1676,19 @@ function filterProblems() {
 }
 
 function editProblem(p) {
-  goTo('admin');
+  goTo('addproblem');
   document.getElementById('editProbId').value = p.id;
   document.getElementById('probTitle').value = p.title;
   document.getElementById('probDesc').value = p.description;
   document.getElementById('probDiff').value = p.difficulty;
-  document.getElementById('probCategory').value = p.category || '';
+  // Set selected categories
+  const cats = (p.category || '').split(',').map(c => c.trim()).filter(Boolean);
+  document.querySelectorAll('#probCategorySelect option').forEach(opt => {
+    opt.selected = cats.includes(opt.value);
+  });
   document.getElementById('saveProbBtn').textContent = `Update Problem #${p.id}`;
   document.getElementById('cancelEditBtn').style.display = '';
-  document.querySelector('.card-title').textContent = `✏ Edit Problem #${p.id}`;
+  document.getElementById('addProbCardTitle').textContent = `✏ Edit Problem #${p.id}`;
   document.getElementById('addProbOk').className = 'alert';
   document.getElementById('addProbErr').className = 'alert';
 }
@@ -1637,10 +1698,10 @@ function cancelProblemEdit() {
   document.getElementById('probTitle').value = '';
   document.getElementById('probDesc').value = '';
   document.getElementById('probDiff').value = 'easy';
-  document.getElementById('probCategory').value = '';
+  document.querySelectorAll('#probCategorySelect option').forEach(opt => { opt.selected = false; });
   document.getElementById('saveProbBtn').textContent = 'Create Problem';
   document.getElementById('cancelEditBtn').style.display = 'none';
-  document.querySelector('.card-title').textContent = '➕ Add Problem';
+  document.getElementById('addProbCardTitle').textContent = '📝 Problem details';
 }
 
 async function saveProblem() {
@@ -1649,7 +1710,8 @@ async function saveProblem() {
   const title   = document.getElementById('probTitle').value.trim();
   const desc    = document.getElementById('probDesc').value.trim();
   const diff    = document.getElementById('probDiff').value;
-  const category = document.getElementById('probCategory').value.trim() || null;
+  const selectedCats = Array.from(document.getElementById('probCategorySelect').selectedOptions).map(o => o.value);
+  const category = selectedCats.length ? selectedCats.join(', ') : null;
   const err = document.getElementById('addProbErr');
   const ok  = document.getElementById('addProbOk');
   [err, ok].forEach(e => { e.className = 'alert'; e.textContent = ''; });

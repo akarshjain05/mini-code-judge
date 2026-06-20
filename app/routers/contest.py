@@ -1,7 +1,7 @@
 """
 Contest Mode endpoints.
 POST /contests              → create a contest (admin only)
-GET  /contests              → list all active contests
+GET  /contests              → list all contests
 GET  /contests/{id}         → get contest details + leaderboard
 POST /contests/{id}/join    → join a contest
 POST /contests/{id}/submit  → submit code for a contest problem
@@ -102,7 +102,6 @@ def create_contest(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
-    # Validate problems exist
     for pid in payload.problem_ids:
         if not db.query(Problem).filter(Problem.id == pid).first():
             raise HTTPException(status_code=404, detail=f"Problem {pid} not found")
@@ -127,7 +126,6 @@ def create_contest(
         points = payload.points_per_problem[i] if payload.points_per_problem and i < len(payload.points_per_problem) else 100
         db.add(ContestProblem(contest_id=contest.id, problem_id=pid, points=points))
 
-    # Auto-join creator
     db.add(ContestParticipant(contest_id=contest.id, user_id=current_user.id))
     db.commit()
     db.refresh(contest)
@@ -148,16 +146,13 @@ def list_contests(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
-    # Contests user created or joined
-    joined_ids = [p.contest_id for p in db.query(ContestParticipant).filter(
-        ContestParticipant.user_id == current_user.id).all()]
-    created = db.query(Contest).filter(Contest.created_by == current_user.id).all()
-    joined = db.query(Contest).filter(Contest.id.in_(joined_ids)).all()
-    public = db.query(Contest).filter(Contest.is_public == True).all()
+    # Show every contest to every logged-in user so they can discover and join it
+    joined_ids = {p.contest_id for p in db.query(ContestParticipant).filter(
+        ContestParticipant.user_id == current_user.id).all()}
 
-    all_contests = {c.id: c for c in created + joined + public}
+    all_contests = db.query(Contest).all()
     result = []
-    for c in all_contests.values():
+    for c in all_contests:
         result.append({
             "id": c.id,
             "title": c.title,
@@ -167,6 +162,7 @@ def list_contests(
             "ends_at": c.ends_at,
             "status": _contest_status(c),
             "is_mine": c.created_by == current_user.id,
+            "is_joined": c.id in joined_ids,
         })
     result.sort(key=lambda x: x["starts_at"], reverse=True)
     return result
