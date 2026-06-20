@@ -4,6 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Mini Code Judge</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj4KPGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnIiB4MT0iMCIgeTE9IjAiIHgyPSIxMDAiIHkyPSIxMDAiPgo8c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiM1OGE2ZmYiLz4KPHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjM2ZiOTUwIi8+CjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPgo8cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjI0IiBmaWxsPSJ1cmwoI2cpIi8+Cjx0ZXh0IHg9IjUwIiB5PSI2OCIgZm9udC1mYW1pbHk9Ik1lbmxvLENvbnNvbGFzLG1vbm9zcGFjZSIgZm9udC1zaXplPSI0NiIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPiZsdDsvJmd0OzwvdGV4dD4KPC9zdmc+Cg==" />
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
   /* ── Design tokens ────────────────────────────────────────────── */
@@ -568,9 +569,10 @@
 
   <!-- Sidebar -->
   <aside class="sidebar">
-    <div class="sidebar-logo">
-      <div class="logo-text">⚡ Code Judge</div>
-      <span class="logo-tag">v1.0</span>
+    <div class="sidebar-logo" style="display:flex;align-items:center;gap:9px">
+      <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj4KPGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnIiB4MT0iMCIgeTE9IjAiIHgyPSIxMDAiIHkyPSIxMDAiPgo8c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiM1OGE2ZmYiLz4KPHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjM2ZiOTUwIi8+CjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPgo8cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjI0IiBmaWxsPSJ1cmwoI2cpIi8+Cjx0ZXh0IHg9IjUwIiB5PSI2OCIgZm9udC1mYW1pbHk9Ik1lbmxvLENvbnNvbGFzLG1vbm9zcGFjZSIgZm9udC1zaXplPSI0NiIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPiZsdDsvJmd0OzwvdGV4dD4KPC9zdmc+Cg=="
+        alt="Code Judge" style="width:28px;height:28px;border-radius:7px;flex-shrink:0" />
+      <div class="logo-text">Code Judge</div>
     </div>
 
     <div class="nav-section-label">Navigate</div>
@@ -611,8 +613,7 @@
 
     <!-- Top bar -->
     <div class="auth-header">
-      <span id="topBarText" style="color:var(--muted);font-size:12px">Not logged in</span>
-      <div id="userPillWrap" style="display:none" class="user-pill" onclick="goTo('account')" title="My Account" style="cursor:pointer">
+      <div id="userPillWrap" style="display:none" class="user-pill" onclick="goTo('account')" title="My Account">
         <div class="avatar" id="userAvatar">A</div>
         <span id="userPillName">akarsh</span>
         <span id="adminBadge" style="display:none;font-size:10px;background:rgba(227,179,65,0.15);color:var(--yellow);border:1px solid rgba(227,179,65,0.3);padding:1px 6px;border-radius:10px;margin-left:4px">ADMIN</span>
@@ -1189,8 +1190,8 @@ int main(){
         <div class="card" style="padding:0;overflow:hidden">
           <div style="padding:14px 16px;border-bottom:1px solid var(--border)"><div class="card-title" style="margin:0">📋 All Submissions</div></div>
           <div class="table-wrap"><table>
-            <thead><tr><th>#</th><th>User</th><th>Problem</th><th>Language</th><th>Verdict</th><th>Runtime</th><th>When</th></tr></thead>
-            <tbody id="adminSubsTable"><tr><td colspan="7" style="color:var(--muted);padding:20px">Loading…</td></tr></tbody>
+            <thead><tr><th>#</th><th>User</th><th>Problem</th><th>Language</th><th>Verdict</th><th>Runtime</th><th>When</th><th style="text-align:center">Code</th></tr></thead>
+            <tbody id="adminSubsTable"><tr><td colspan="8" style="color:var(--muted);padding:20px">Loading…</td></tr></tbody>
           </table></div>
         </div>
       </div>
@@ -1436,7 +1437,6 @@ function handleAuthNav() {
 function updateAuthUI() {
   const loggedIn = !!token;
   document.getElementById('authNavLabel').textContent = loggedIn ? 'Logout' : 'Login';
-  document.getElementById('topBarText').textContent = loggedIn ? `Logged in as ${username}` : 'Not logged in';
   document.getElementById('userPillWrap').style.display = loggedIn ? 'flex' : 'none';
   document.getElementById('topAuthBtn').style.display = loggedIn ? 'none' : 'inline-flex';
   if (loggedIn) {
