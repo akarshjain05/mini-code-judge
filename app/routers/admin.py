@@ -6,7 +6,6 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
-
 from app.core.database import get_db
 from app.core.security import get_current_user
 from app.models.user import User
@@ -53,6 +52,7 @@ def list_all_submissions(
             "username": user.username if user else f"user_{s.user_id}",
             "problem_id": s.problem_id,
             "language": s.language,
+            "code": s.code,
             "verdict": s.verdict or s.status,
             "status": s.status,
             "runtime_ms": s.runtime_ms,

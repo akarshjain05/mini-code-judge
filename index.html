@@ -1894,6 +1894,23 @@ function openSubmissionViewer(id) {
   history.pushState({ page: 'submission', id }, '', '#submission/' + id);
 }
 
+function openAdminSubmissionViewer(id) {
+  const s = window._adminSubsCache && window._adminSubsCache[id];
+  if (!s) return;
+  document.getElementById('cvTitle').textContent = `Submission #${s.id} — ${s.username} — Problem #${s.problem_id}`;
+  const submittedAt = s.created_at ? new Date(s.created_at).toLocaleString('en-IN', {timeZone:'Asia/Kolkata'}) : 'Unknown time';
+  document.getElementById('cvMeta').textContent = submittedAt + ' IST';
+  const vEl = document.getElementById('cvVerdict');
+  vEl.textContent = formatVerdict(s.verdict || s.status);
+  vEl.className = 'badge ' + verdictClass(s.verdict || s.status);
+  document.getElementById('cvLang').textContent = s.language ? s.language.toUpperCase() : '—';
+  document.getElementById('cvRuntime').textContent = s.runtime_ms ? s.runtime_ms.toFixed(1) + ' ms' : 'N/A';
+  document.getElementById('cvCode').textContent = s.code || '// Code not available';
+  const modal = document.getElementById('codeViewerModal');
+  modal.style.display = 'flex';
+  history.pushState({ page: 'admin-submission', id }, '', '#admin');
+}
+
 function closeCodeViewer() {
   document.getElementById('codeViewerModal').style.display = 'none';
   history.back();
@@ -2125,7 +2142,7 @@ async function loadAdminDashboard() {
           </div>
         </div>`;
       document.getElementById('adminSubsTable').innerHTML = subs.length
-        ? subs.map(s => `<tr>
+        ? subs.map(s => `<tr onclick="openAdminSubmissionViewer(${s.id})" style="cursor:pointer" onmouseenter="this.style.background='rgba(88,166,255,0.05)'" onmouseleave="this.style.background=''">
             <td style="font-family:var(--mono);color:var(--muted)">#${s.id}</td>
             <td style="font-weight:600">${s.username || s.user_id}</td>
             <td>Problem #${s.problem_id}</td>
@@ -2133,8 +2150,13 @@ async function loadAdminDashboard() {
             <td><span class="badge ${verdictClass(s.verdict || s.status)}">${formatVerdict(s.verdict || s.status)}</span></td>
             <td style="font-family:var(--mono);font-size:12px">${s.runtime_ms ? s.runtime_ms.toFixed(1)+' ms' : '—'}</td>
             <td style="color:var(--muted);font-size:11px">${timeAgo(s.created_at)}</td>
+            <td style="text-align:center">${s.code ? `<button onclick="event.stopPropagation();openAdminSubmissionViewer(${s.id})" style="background:var(--surface2);border:1px solid var(--border);color:var(--accent);font-size:10px;padding:3px 10px;border-radius:6px;cursor:pointer">View</button>` : '<span style="color:var(--muted);font-size:11px">—</span>'}</td>
           </tr>`).join('')
-        : '<tr><td colspan="7" style="color:var(--muted);padding:16px">No submissions yet.</td></tr>';
+        : '<tr><td colspan="8" style="color:var(--muted);padding:16px">No submissions yet.</td></tr>';
+
+      // Cache for the code viewer modal
+      window._adminSubsCache = {};
+      subs.forEach(s => { window._adminSubsCache[s.id] = s; });
     }
   } catch(e) {
     document.getElementById('adminUsersList').innerHTML = '<p style="color:var(--warn)">⚠ Error loading data. Check if admin endpoints are deployed.</p>';
