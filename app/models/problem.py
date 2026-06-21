@@ -7,11 +7,11 @@ class Problem(Base):
     A coding problem with a title, description, and test cases stored separately.
     """
     __tablename__ = "problems"
-
     id          = Column(Integer, primary_key=True, index=True)
     title       = Column(String(200), nullable=False)
     description = Column(Text, nullable=False)        # Full problem statement
     difficulty  = Column(String(10), default="easy")  # easy / medium / hard
+    category    = Column(String(100), nullable=True)  # comma-separated categories
     created_at  = Column(DateTime(timezone=True), server_default=func.now())
 
 
@@ -22,7 +22,6 @@ class TestCase(Base):
     If any fails → Wrong Answer.
     """
     __tablename__ = "test_cases"
-
     id         = Column(Integer, primary_key=True, index=True)
     problem_id = Column(Integer, nullable=False, index=True)  # FK to problems.id
     stdin      = Column(Text, nullable=False)   # Input fed to the program
