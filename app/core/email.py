@@ -1,22 +1,23 @@
 """
-SMTP email sending for password reset links.
+Email sending via Brevo's HTTP API.
+Render's free tier blocks outbound traffic on raw SMTP ports (25, 465, 587),
+so we send over HTTPS via Brevo's REST API instead of an SMTP socket.
 """
 import os
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+import httpx
 
-SMTP_HOST = os.environ.get("SMTP_HOST", "smtp.gmail.com")
-SMTP_PORT = int(os.environ.get("SMTP_PORT", "587"))
-SMTP_USER = os.environ.get("SMTP_USER", "")
-SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD", "")
-FROM_EMAIL = os.environ.get("FROM_EMAIL", SMTP_USER)
+BREVO_API_KEY = os.environ.get("BREVO_API_KEY", "")
+FROM_EMAIL = os.environ.get("FROM_EMAIL", "")
+FROM_NAME = os.environ.get("FROM_NAME", "Code Judge")
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "https://mini-code-judge-frontend.onrender.com")
+
+BREVO_URL = "https://api.brevo.com/v3/smtp/email"
 
 
 def send_password_reset_email(to_email: str, username: str, reset_token: str) -> bool:
-    if not SMTP_USER or not SMTP_PASSWORD:
-        print("SMTP not configured — SMTP_USER/SMTP_PASSWORD missing")
+    """Send a password reset link via Brevo. Returns True on success."""
+    if not BREVO_API_KEY or not FROM_EMAIL:
+        print("Email not configured — BREVO_API_KEY/FROM_EMAIL missing")
         return False
 
     reset_link = f"{FRONTEND_URL}/#reset-password/{reset_token}"
@@ -34,17 +35,27 @@ def send_password_reset_email(to_email: str, username: str, reset_token: str) ->
     </div>
     """
 
-    msg = MIMEMultipart("alternative")
-    msg["Subject"] = "Reset your Code Judge password"
-    msg["From"] = FROM_EMAIL
-    msg["To"] = to_email
-    msg.attach(MIMEText(html, "html"))
+    payload = {
+        "sender": {"name": FROM_NAME, "email": FROM_EMAIL},
+        "to": [{"email": to_email, "name": username}],
+        "subject": "Reset your Code Judge password",
+        "htmlContent": html,
+    }
 
     try:
-        with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=15) as server:
-            server.starttls()
-            server.login(SMTP_USER, SMTP_PASSWORD)
-            server.sendmail(FROM_EMAIL, [to_email], msg.as_string())
+        resp = httpx.post(
+            BREVO_URL,
+            headers={
+                "accept": "application/json",
+                "api-key": BREVO_API_KEY,
+                "content-type": "application/json",
+            },
+            json=payload,
+            timeout=15.0,
+        )
+        if resp.status_code not in (200, 201):
+            print(f"Brevo send failed: {resp.status_code} {resp.text}")
+            return False
         return True
     except Exception as e:
         print(f"Failed to send reset email: {e}")
