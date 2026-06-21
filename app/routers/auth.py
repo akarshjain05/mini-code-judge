@@ -11,6 +11,7 @@ from app.core.security import (
     hash_password, verify_password, create_access_token, get_current_user,
     create_setup_token, decode_setup_token,
 )
+from app.core.email import send_password_reset_email
 from app.models.user import User
 from app.schemas.user import (
     UserRegister, UserOut, Token, GoogleLoginRequest, GoogleCompleteSignup,
@@ -89,14 +90,22 @@ def forgot_password(payload: ForgotPasswordRequest, db: Session = Depends(get_db
     user = db.query(User).filter(User.email == payload.email).first()
     if not user:
         raise HTTPException(status_code=404, detail="No account found with that email")
-    # Use setup-token mechanism with purpose=password_reset (15 min expiry)
+
     from datetime import datetime, timedelta
     from jose import jwt
     reset_token = jwt.encode(
         {"sub": str(user.id), "purpose": "password_reset", "exp": datetime.utcnow() + timedelta(minutes=15)},
         settings.SECRET_KEY, algorithm=settings.ALGORITHM,
     )
-    return {"reset_token": reset_token, "message": "Copy this token and use it to reset your password"}
+
+    sent = send_password_reset_email(user.email, user.username, reset_token)
+    if not sent:
+        raise HTTPException(
+            status_code=503,
+            detail="Could not send the reset email right now. Please try again shortly or contact the admin.",
+        )
+
+    return {"message": f"A password reset link has been sent to {user.email}."}
 
 
 @router.post("/reset-password")
@@ -105,9 +114,9 @@ def reset_password(payload: ResetPasswordRequest, db: Session = Depends(get_db))
     try:
         claims = jwt.decode(payload.reset_token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
     except JWTError:
-        raise HTTPException(status_code=401, detail="Reset token expired or invalid")
+        raise HTTPException(status_code=401, detail="Reset link expired or invalid. Please request a new one.")
     if claims.get("purpose") != "password_reset":
-        raise HTTPException(status_code=401, detail="Invalid reset token")
+        raise HTTPException(status_code=401, detail="Invalid reset link")
     if len(payload.new_password) < 6:
         raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
     user = db.query(User).filter(User.id == int(claims["sub"])).first()
@@ -128,11 +137,9 @@ def update_me(payload: UserUpdate, current_user: User = Depends(get_current_user
     if payload.date_of_birth is not None:
         current_user.date_of_birth = payload.date_of_birth or None
     if payload.profile_picture is not None:
-        # Only allow data URLs (base64 images) or empty string to clear
         pic = payload.profile_picture
         if pic and not pic.startswith("data:image/"):
             raise HTTPException(status_code=400, detail="profile_picture must be a base64 data URL")
-        # Limit size: base64 of 200KB image ~= 280KB string
         if pic and len(pic) > 300_000:
             raise HTTPException(status_code=400, detail="Profile picture too large (max ~200 KB)")
         current_user.profile_picture = pic or None
@@ -144,7 +151,6 @@ def update_me(payload: UserUpdate, current_user: User = Depends(get_current_user
 def change_password(payload: PasswordChange, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     if len(payload.new_password) < 6:
         raise HTTPException(status_code=400, detail="New password must be at least 6 characters")
-    # If user has an existing password, require current_password to match
     if current_user.password:
         if not payload.current_password:
             raise HTTPException(status_code=400, detail="Current password is required")

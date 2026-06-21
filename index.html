@@ -432,6 +432,42 @@
 </div>
 <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
 
+<!-- Reset Password Modal (opened from emailed link) -->
+<div class="modal-backdrop" id="resetPasswordModal" style="display:none;align-items:center;justify-content:center">
+  <div class="modal" style="max-width:380px">
+    <div id="resetPwFormView">
+      <h2 style="margin:0 0 6px;font-size:18px">🔑 Set a New Password</h2>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:18px">Choose a new password for your account.</p>
+      <div class="alert" id="resetPwErr"></div>
+      <div class="form-group">
+        <label>New Password</label>
+        <div style="position:relative">
+          <input type="password" id="resetPwNew" placeholder="min 6 characters" style="padding-right:42px" />
+          <button type="button" onclick="togglePasswordVisibility('resetPwNew',this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);padding:4px;display:flex">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Confirm New Password</label>
+        <div style="position:relative">
+          <input type="password" id="resetPwConfirm" placeholder="repeat new password" style="padding-right:42px" />
+          <button type="button" onclick="togglePasswordVisibility('resetPwConfirm',this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);padding:4px;display:flex">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+      <button class="btn btn-success" style="width:100%;justify-content:center" id="resetPwSubmitBtn" onclick="submitResetPassword()">Reset Password</button>
+    </div>
+    <div id="resetPwSuccessView" style="display:none;text-align:center;padding:8px 0">
+      <div style="font-size:40px;margin-bottom:10px">✅</div>
+      <h2 style="margin:0 0 8px;font-size:18px">Password Updated!</h2>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:20px">You can now log in with your new password.</p>
+      <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="closeResetPasswordModal(true)">Go to Login</button>
+    </div>
+  </div>
+</div>
+
 <!-- Submission Code Viewer Modal -->
 <div class="modal-backdrop" id="codeViewerModal" onclick="if(event.target===this)closeCodeViewer()" style="display:none;align-items:center;justify-content:center">
   <div class="modal" style="max-width:800px;width:95vw;max-height:85vh;display:flex;flex-direction:column">
@@ -521,26 +557,12 @@
     <!-- Forgot Password form -->
     <div id="forgotPasswordForm" style="display:none">
       <div class="alert" id="forgotErr"></div>
-      <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Enter your email. If it matches an account, you'll get a reset token to use below.</p>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Enter your email and we'll send you a password reset link.</p>
       <div class="form-group">
         <label>Email</label>
         <input type="email" id="forgotEmail" placeholder="you@example.com" />
       </div>
-      <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="doForgotPassword()">Get Reset Token</button>
-      <div id="forgotTokenBox" style="display:none;margin-top:14px">
-        <p style="font-size:12px;color:var(--muted);margin-bottom:8px">Copy this token — it expires in 15 minutes:</p>
-        <div id="forgotTokenDisplay" style="font-family:var(--mono);font-size:11px;background:var(--surface2);padding:10px;border-radius:6px;word-break:break-all;color:var(--accent)"></div>
-        <div class="form-group" style="margin-top:14px">
-          <label>New Password</label>
-          <div style="position:relative">
-            <input type="password" id="forgotNewPassword" placeholder="min 6 characters" style="padding-right:42px" />
-            <button type="button" onclick="togglePasswordVisibility('forgotNewPassword',this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);padding:4px;display:flex">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-            </button>
-          </div>
-        </div>
-        <button class="btn btn-success" style="width:100%;justify-content:center" onclick="doResetPassword()">Reset Password</button>
-      </div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center" id="forgotSendBtn" onclick="doForgotPassword()">Send Reset Link</button>
       <div style="text-align:center;margin-top:10px">
         <a href="#" onclick="showForgotPassword(false)" style="font-size:12px;color:var(--muted);text-decoration:none">← Back to login</a>
       </div>
@@ -1387,6 +1409,11 @@ function goToProblem(problemObj) {
 function handleHashNav() {
   const hash = window.location.hash.replace('#', '');
   if (!hash || hash === 'dashboard') { goTo('dashboard', false); return; }
+  if (hash.startsWith('reset-password/')) {
+    const resetToken = hash.split('/').slice(1).join('/');
+    if (resetToken) openResetPasswordModal(decodeURIComponent(resetToken));
+    return;
+  }
   if (hash.startsWith('contest/')) {
     const id = parseInt(hash.split('/')[1]);
     if (id && token) { goTo('contests', false); openContest(id); }
@@ -2792,8 +2819,6 @@ async function changePassword() {
 }
 
 // ── Forgot Password ─────────────────────────────────────────────────
-let _forgotResetToken = null;
-
 function showForgotPassword(show = true) {
   document.getElementById('loginForm').style.display = show ? 'none' : 'block';
   document.getElementById('forgotPasswordForm').style.display = show ? 'block' : 'none';
@@ -2801,16 +2826,18 @@ function showForgotPassword(show = true) {
     document.getElementById('forgotEmail').value = '';
     document.getElementById('forgotErr').className = 'alert';
     document.getElementById('forgotErr').textContent = '';
-    document.getElementById('forgotTokenBox').style.display = 'none';
-    _forgotResetToken = null;
+    document.getElementById('forgotSendBtn').disabled = false;
+    document.getElementById('forgotSendBtn').textContent = 'Send Reset Link';
   }
 }
 
 async function doForgotPassword() {
   const email = document.getElementById('forgotEmail').value.trim();
   const alertEl = document.getElementById('forgotErr');
+  const btn = document.getElementById('forgotSendBtn');
   alertEl.className = 'alert'; alertEl.textContent = '';
   if (!email) { showAlert(alertEl, 'Please enter your email', 'error'); return; }
+  btn.disabled = true; btn.textContent = 'Sending…';
   try {
     const res = await fetch(`${API}/auth/forgot-password`, {
       method: 'POST',
@@ -2818,35 +2845,68 @@ async function doForgotPassword() {
       body: JSON.stringify({ email }),
     });
     const data = await res.json();
-    if (!res.ok) { showAlert(alertEl, data.detail || 'Not found', 'error'); return; }
-    _forgotResetToken = data.reset_token;
-    document.getElementById('forgotTokenDisplay').textContent = data.reset_token;
-    document.getElementById('forgotTokenBox').style.display = 'block';
-    showAlert(alertEl, 'Token generated — copy it and set your new password below.', 'success');
+    if (!res.ok) { showAlert(alertEl, data.detail || 'Could not send reset email', 'error'); btn.disabled = false; btn.textContent = 'Send Reset Link'; return; }
+    showAlert(alertEl, '✓ Check your inbox — a reset link has been sent to ' + email + '.', 'success');
+    btn.textContent = 'Link Sent ✓';
   } catch(e) {
     showAlert(alertEl, 'Cannot reach API', 'error');
+    btn.disabled = false; btn.textContent = 'Send Reset Link';
   }
 }
 
-async function doResetPassword() {
-  const alertEl = document.getElementById('forgotErr');
-  const newPw = document.getElementById('forgotNewPassword').value;
+// ── Reset Password (landing from the emailed link) ──────────────────
+let _resetPwToken = null;
+
+function openResetPasswordModal(resetToken) {
+  closeAuthModal();
+  _resetPwToken = resetToken;
+  document.getElementById('resetPwFormView').style.display = 'block';
+  document.getElementById('resetPwSuccessView').style.display = 'none';
+  document.getElementById('resetPwErr').className = 'alert';
+  document.getElementById('resetPwErr').textContent = '';
+  document.getElementById('resetPwNew').value = '';
+  document.getElementById('resetPwConfirm').value = '';
+  document.getElementById('resetPwSubmitBtn').disabled = false;
+  document.getElementById('resetPwSubmitBtn').textContent = 'Reset Password';
+  document.getElementById('resetPasswordModal').style.display = 'flex';
+}
+
+function closeResetPasswordModal(openLogin) {
+  document.getElementById('resetPasswordModal').style.display = 'none';
+  _resetPwToken = null;
+  history.replaceState({}, '', '#dashboard');
+  if (openLogin) openAuthModal();
+}
+
+async function submitResetPassword() {
+  const alertEl = document.getElementById('resetPwErr');
+  const btn = document.getElementById('resetPwSubmitBtn');
+  alertEl.className = 'alert'; alertEl.textContent = '';
+  const newPw = document.getElementById('resetPwNew').value;
+  const confirmPw = document.getElementById('resetPwConfirm').value;
+
   if (!newPw || newPw.length < 6) { showAlert(alertEl, 'Password must be at least 6 characters', 'error'); return; }
-  if (!_forgotResetToken) { showAlert(alertEl, 'Get a reset token first', 'error'); return; }
+  if (newPw !== confirmPw) { showAlert(alertEl, 'Passwords do not match', 'error'); return; }
+  if (!_resetPwToken) { showAlert(alertEl, 'Reset link is invalid or missing a token', 'error'); return; }
+
+  btn.disabled = true; btn.textContent = 'Resetting…';
   try {
     const res = await fetch(`${API}/auth/reset-password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ reset_token: _forgotResetToken, new_password: newPw }),
+      body: JSON.stringify({ reset_token: _resetPwToken, new_password: newPw }),
     });
     const data = await res.json();
-    if (!res.ok) { showAlert(alertEl, data.detail || 'Reset failed', 'error'); return; }
-    showAlert(alertEl, '✓ Password reset! You can now log in.', 'success');
-    document.getElementById('forgotTokenBox').style.display = 'none';
-    _forgotResetToken = null;
-    setTimeout(() => showForgotPassword(false), 1800);
+    if (!res.ok) {
+      showAlert(alertEl, data.detail || 'Reset failed — the link may have expired. Request a new one.', 'error');
+      btn.disabled = false; btn.textContent = 'Reset Password';
+      return;
+    }
+    document.getElementById('resetPwFormView').style.display = 'none';
+    document.getElementById('resetPwSuccessView').style.display = 'block';
   } catch(e) {
     showAlert(alertEl, 'Cannot reach API', 'error');
+    btn.disabled = false; btn.textContent = 'Reset Password';
   }
 }
 
