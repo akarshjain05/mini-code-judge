@@ -423,6 +423,15 @@
 </head>
 <body>
 
+<!-- Full-page loading overlay -->
+<div id="pageLoader" style="display:none;position:fixed;inset:0;background:rgba(13,17,23,0.85);backdrop-filter:blur(2px);z-index:9999;align-items:center;justify-content:center">
+  <div style="display:flex;flex-direction:column;align-items:center;gap:14px">
+    <div style="width:42px;height:42px;border:3px solid rgba(88,166,255,0.2);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite"></div>
+    <div style="color:var(--muted);font-size:13px;font-weight:500">Loading…</div>
+  </div>
+</div>
+<style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+
 <!-- Submission Code Viewer Modal -->
 <div class="modal-backdrop" id="codeViewerModal" onclick="if(event.target===this)closeCodeViewer()" style="display:none;align-items:center;justify-content:center">
   <div class="modal" style="max-width:800px;width:95vw;max-height:85vh;display:flex;flex-direction:column">
@@ -1216,12 +1225,15 @@ let currentProblem = null;
 let pollInterval = null;
 let pendingGoogleSetupToken = null;
 // ── Init ───────────────────────────────────────────────────────────
-window.onload = () => {
+window.onload = async () => {
   updateAuthUI();
   fetchCurrentUser();
-  loadProblems();
-  loadDashboard();
   initGoogleSignIn();
+  showPageLoader();
+  try {
+    await Promise.all([loadProblems(), loadDashboard()]);
+  } catch(e) { console.error('Initial load error:', e); }
+  finally { hidePageLoader(); }
   // Navigate to the page in the URL hash (if any)
   if (window.location.hash) handleHashNav();
 };
@@ -1335,25 +1347,36 @@ async function completeGoogleSignup() {
 }
 
 // ── Navigation ─────────────────────────────────────────────────────
-function goTo(page, pushState = true) {
+function showPageLoader() { document.getElementById('pageLoader').style.display = 'flex'; }
+function hidePageLoader() { document.getElementById('pageLoader').style.display = 'none'; }
+
+async function goTo(page, pushState = true) {
   if (!token && ['history','analytics','contests','account','leaderboard'].includes(page)) { openAuthModal(); return; }
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   const pageEl = document.getElementById('page-' + page);
   if (!pageEl) return;
+
+  const loaders = {
+    history: loadHistory, problems: loadProblems, dashboard: loadDashboard,
+    admin: loadAdminDashboard, analytics: loadAnalytics, contests: loadContests,
+    account: loadAccount, leaderboard: loadLeaderboard,
+  };
+  const loaderFn = loaders[page];
+
+  if (loaderFn) showPageLoader();
+
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   pageEl.classList.add('active');
   const items = document.querySelectorAll('.nav-item');
   const map = { dashboard: 0, problems: 1, submit: 2, history: 3 };
   if (map[page] !== undefined) items[map[page]].classList.add('active');
   if (pushState) history.pushState({ page }, '', '#' + page);
-  if (page === 'history') loadHistory();
-  if (page === 'problems') loadProblems();
-  if (page === 'dashboard') loadDashboard();
-  if (page === 'admin') loadAdminDashboard();
-  if (page === 'analytics') loadAnalytics();
-  if (page === 'contests') loadContests();
-  if (page === 'account') loadAccount();
-  if (page === 'leaderboard') loadLeaderboard();
+
+  if (loaderFn) {
+    try { await loaderFn(); }
+    catch(e) { console.error('Page load error:', e); }
+    finally { hidePageLoader(); }
+  }
 }
 
 function goToProblem(problemObj) {
@@ -2037,6 +2060,8 @@ async function loadSampleTestCases(problemId) {
   } catch(e) { card.style.display = 'none'; }
 }
 
+let runPollInterval = null;
+
 async function runCode() {
   if (!token) { openAuthModal(); return; }
   if (!currentProblem) { alert('Select a problem first'); return; }
@@ -2064,53 +2089,55 @@ async function runCode() {
   if (aiPanel) aiPanel.style.display = 'none';
 
   try {
-    const res = await fetch(`${API}/run`, {
+    const res = await fetch(`${API}/submissions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify({ problem_id: currentProblem.id, language: lang, code }),
+      body: JSON.stringify({ problem_id: currentProblem.id, language: lang, code, sample_only: true }),
     });
-    const data = await res.json();
+    const sub = await res.json();
     if (!res.ok) {
       vtitle.className = 'verdict-title verdict-wrong_answer';
       vtitle.textContent = '✗ Error';
-      vsub.textContent = data.detail || 'Run failed';
+      vsub.textContent = sub.detail || 'Run failed';
       return;
     }
-    if (data.verdict === 'accepted') {
+
+    if (runPollInterval) clearInterval(runPollInterval);
+    runPollInterval = setInterval(() => pollSampleRun(sub.id, vtitle, vsub, vmeta, verr), 1200);
+  } catch(e) {
+    vtitle.className = 'verdict-title verdict-wrong_answer';
+    vtitle.textContent = '⚠ Cannot reach API';
+    vsub.textContent = '';
+  }
+}
+
+async function pollSampleRun(id, vtitle, vsub, vmeta, verr) {
+  try {
+    const res = await fetch(`${API}/submissions/${id}`, { headers: { 'Authorization': `Bearer ${token}` } });
+    const sub = await res.json();
+    if (sub.status === 'pending' || sub.status === 'running') return;
+    clearInterval(runPollInterval);
+
+    if (sub.verdict === 'accepted') {
       vtitle.className = 'verdict-title verdict-accepted';
       vtitle.textContent = '✓ All sample tests passed!';
-      vsub.textContent = `Passed ${data.passed}/${data.total} sample test cases · not submitted`;
-      vmeta.innerHTML = data.runtime_ms ? `<span>⚡ ${data.runtime_ms.toFixed(1)} ms</span>` : '';
-    } else if (data.verdict === 'compile_error') {
+      vsub.textContent = 'Sample test cases passed · not submitted';
+      vmeta.innerHTML = sub.runtime_ms ? `<span>⚡ ${sub.runtime_ms.toFixed(1)} ms</span>` : '';
+    } else if (sub.verdict === 'compile_error') {
       vtitle.className = 'verdict-title verdict-compile_error';
       vtitle.textContent = '✗ Compile Error';
       vsub.textContent = '';
-      verr.textContent = data.error || '';
-      verr.style.display = 'block';
+      if (sub.error_output && sub.error_output !== 'SAMPLE_ONLY') { verr.textContent = sub.error_output; verr.style.display = 'block'; }
     } else {
       const labels = { wrong_answer: '✗ Wrong Answer', time_limit_exceeded: '⏱ Time Limit Exceeded', runtime_error: '✗ Runtime Error' };
       vtitle.className = 'verdict-title verdict-wrong_answer';
-      vtitle.textContent = labels[data.verdict] || '✗ ' + data.verdict;
-      vsub.textContent = `Failed on Sample Test Case #${data.failed_case} · not submitted`;
-      if (data.input !== undefined) {
-    verr.textContent = `Input:
-${data.input}
-
-Expected Output:
-${data.expected}
-
-Your Output:
-${data.actual || '(no output)'}`;
-    verr.style.display = 'block';
-}
-else if (data.error) {
-    verr.textContent = data.error;
-    verr.style.display = 'block';
-
-      }
-      vmeta.innerHTML = data.runtime_ms ? `<span>⚡ ${data.runtime_ms.toFixed(1)} ms</span>` : '';
+      vtitle.textContent = labels[sub.verdict] || '✗ ' + formatVerdict(sub.verdict || sub.status);
+      vsub.textContent = 'Failed on a sample test case · not submitted';
+      if (sub.error_output && sub.error_output !== 'SAMPLE_ONLY') { verr.textContent = sub.error_output; verr.style.display = 'block'; }
+      vmeta.innerHTML = sub.runtime_ms ? `<span>⚡ ${sub.runtime_ms.toFixed(1)} ms</span>` : '';
     }
   } catch(e) {
+    clearInterval(runPollInterval);
     vtitle.className = 'verdict-title verdict-wrong_answer';
     vtitle.textContent = '⚠ Cannot reach API';
     vsub.textContent = '';
