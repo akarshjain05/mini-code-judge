@@ -3,6 +3,8 @@ AI Code Review endpoint using Google Gemini (free tier).
 POST /submissions/{id}/ai-review
 """
 import os
+import json
+import asyncio
 import httpx
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -15,7 +17,11 @@ from app.models.problem import Problem
 router = APIRouter(tags=["ai-review"])
 
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
-GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
+# gemini-2.0-flash was deprecated Feb 2026 and fully retired June 1 2026.
+# gemini-2.5-flash-lite is Google's recommended free-tier migration target —
+# same pricing tier as 2.0-flash but with a higher daily/per-minute quota,
+# which gives more headroom against repeated testing.
+GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent"
 
 
 def _build_prompt(submission: Submission, problem: Problem) -> str:
@@ -77,6 +83,39 @@ Be concise, specific, and encouraging. Use backticks for code snippets."""
     return prompt
 
 
+def _friendly_error(status_code: int, body_text: str) -> str:
+    """Turn Gemini's raw JSON error body into a short, human-readable message."""
+    try:
+        body = json.loads(body_text)
+        message = body.get("error", {}).get("message", "")
+    except Exception:
+        message = ""
+
+    if status_code == 429:
+        if "PerDay" in message or "daily" in message.lower():
+            return "AI review has hit its daily limit. Please try again tomorrow."
+        return "AI service is busy right now (rate limit). Please wait a minute and try again."
+    if status_code == 503:
+        return "AI service is temporarily overloaded. Please try again shortly."
+    if status_code in (400, 401, 403):
+        return "AI review is misconfigured (invalid or unauthorized API key). Contact the admin."
+    return f"AI review failed (error {status_code}). Please try again."
+
+
+async def _call_gemini(client: httpx.AsyncClient, prompt: str):
+    return await client.post(
+        f"{GEMINI_URL}?key={GEMINI_API_KEY}",
+        headers={"Content-Type": "application/json"},
+        json={
+            "contents": [{"parts": [{"text": prompt}]}],
+            "generationConfig": {
+                "temperature": 0.7,
+                "maxOutputTokens": 1024,
+            }
+        },
+    )
+
+
 @router.post("/submissions/{submission_id}/ai-review")
 async def get_ai_review(
     submission_id: int,
@@ -106,19 +145,19 @@ async def get_ai_review(
 
     try:
         async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.post(
-                f"{GEMINI_URL}?key={GEMINI_API_KEY}",
-                headers={"Content-Type": "application/json"},
-                json={
-                    "contents": [{"parts": [{"text": prompt}]}],
-                    "generationConfig": {
-                        "temperature": 0.7,
-                        "maxOutputTokens": 1024,
-                    }
-                },
-            )
+            response = await _call_gemini(client, prompt)
+
+            # One short retry specifically for 429 — RPM limits are a rolling
+            # window and often clear within a couple seconds.
+            if response.status_code == 429:
+                await asyncio.sleep(3)
+                response = await _call_gemini(client, prompt)
+
             if response.status_code != 200:
-                raise HTTPException(status_code=502, detail=f"Gemini API error: {response.text[:300]}")
+                raise HTTPException(
+                    status_code=502,
+                    detail=_friendly_error(response.status_code, response.text),
+                )
 
             data = response.json()
             review_text = data["candidates"][0]["content"]["parts"][0]["text"]
@@ -127,8 +166,8 @@ async def get_ai_review(
         raise HTTPException(status_code=504, detail="AI review timed out. Try again.")
     except HTTPException:
         raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"AI review failed: {str(e)}")
+    except Exception:
+        raise HTTPException(status_code=500, detail="AI review failed unexpectedly. Try again.")
 
     # Cache in DB
     try:
