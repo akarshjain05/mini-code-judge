@@ -424,7 +424,7 @@
 <body>
 
 <!-- Full-page loading overlay -->
-<div id="pageLoader" style="display:none;position:fixed;inset:0;background:rgba(13,17,23,0.85);backdrop-filter:blur(2px);z-index:9999;align-items:center;justify-content:center">
+<div id="pageLoader" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:9999;align-items:center;justify-content:center">
   <div style="display:flex;flex-direction:column;align-items:center;gap:14px">
     <div style="width:42px;height:42px;border:3px solid rgba(88,166,255,0.2);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite"></div>
     <div style="color:var(--muted);font-size:13px;font-weight:500">Loading…</div>
@@ -1312,7 +1312,11 @@ async function finishLogin(accessToken) {
   username = me.username;
   localStorage.setItem('jwt', token);
   localStorage.setItem('username', username);
-  closeAuthModal(); updateAuthUI(); fetchCurrentUser(); loadDashboard(); loadHistory();
+  closeAuthModal(); updateAuthUI(); fetchCurrentUser();
+  // Refresh whatever data is currently visible so switching accounts never
+  // leaves a previous user's stale data on screen.
+  await loadDashboard();
+  await refreshCurrentPage();
 }
 
 function showGoogleSetupForm() {
@@ -1372,17 +1376,33 @@ async function completeGoogleSignup() {
 function showPageLoader() { document.getElementById('pageLoader').style.display = 'flex'; }
 function hidePageLoader() { document.getElementById('pageLoader').style.display = 'none'; }
 
+const PAGE_LOADERS = {
+  history: loadHistory, problems: loadProblems, dashboard: loadDashboard,
+  admin: loadAdminDashboard, analytics: loadAnalytics, contests: loadContests,
+  account: loadAccount, leaderboard: loadLeaderboard,
+};
+
+function getCurrentPageId() {
+  const el = document.querySelector('.page.active');
+  return el ? el.id.replace('page-', '') : null;
+}
+
+async function refreshCurrentPage() {
+  const id = getCurrentPageId();
+  const fn = PAGE_LOADERS[id];
+  if (!fn) return;
+  showPageLoader();
+  try { await fn(); }
+  catch(e) { console.error('Refresh error:', e); }
+  finally { hidePageLoader(); }
+}
+
 async function goTo(page, pushState = true) {
   if (!token && ['history','analytics','contests','account','leaderboard'].includes(page)) { openAuthModal(); return; }
   const pageEl = document.getElementById('page-' + page);
   if (!pageEl) return;
 
-  const loaders = {
-    history: loadHistory, problems: loadProblems, dashboard: loadDashboard,
-    admin: loadAdminDashboard, analytics: loadAnalytics, contests: loadContests,
-    account: loadAccount, leaderboard: loadLeaderboard,
-  };
-  const loaderFn = loaders[page];
+  const loaderFn = PAGE_LOADERS[page];
 
   if (loaderFn) showPageLoader();
 
@@ -1478,7 +1498,10 @@ function handleAuthNav() {
   if (token) {
     token = null; username = null; isAdmin = false;
     localStorage.removeItem('jwt'); localStorage.removeItem('username');
-    updateAuthUI(); updateAdminUI(); loadDashboard(); loadHistory();
+    updateAuthUI(); updateAdminUI();
+    // Leave whatever page was active (it may show another user's data, or
+    // require login) and land on the public Dashboard view.
+    goTo('dashboard');
   } else {
     openAuthModal();
   }
@@ -1548,9 +1571,7 @@ async function doLogin() {
       return;
     }
 
-    token = data.access_token; username = u;
-    localStorage.setItem('jwt', token); localStorage.setItem('username', u);
-    closeAuthModal(); updateAuthUI(); fetchCurrentUser(); loadDashboard(); loadHistory();
+    await finishLogin(data.access_token);
 
   } catch (e) {
     showAlert(err, 'Cannot reach API — is the server running? (or CORS blocked)', 'error');
