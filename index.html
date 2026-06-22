@@ -37,64 +37,71 @@
   }
 
   /* ── Layout ───────────────────────────────────────────────────── */
-  .app { display: flex; height: 100vh; overflow: hidden; }
+  .app { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
 
-  /* ── Sidebar ──────────────────────────────────────────────────── */
-  .sidebar {
-    width: 220px;
-    min-width: 220px;
+  /* ── Top navbar ───────────────────────────────────────────────── */
+  .topbar {
+    width: 100%;
     background: var(--surface);
-    border-right: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
-    padding: 20px 0;
-    gap: 4px;
-  }
-  .sidebar-logo {
-    padding: 0 20px 20px;
     border-bottom: 1px solid var(--border);
-    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    padding: 10px 24px;
+    gap: 16px 24px;
+    flex-wrap: wrap;
   }
-  .sidebar-logo .logo-text {
+  .topbar-logo {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    cursor: pointer;
+    user-select: none;
+    flex-shrink: 0;
+  }
+  .topbar-logo .logo-text {
     font-size: 15px;
     font-weight: 700;
     color: var(--text);
     letter-spacing: -0.3px;
+    transition: color 0.15s;
   }
-  .sidebar-logo .logo-tag {
-    font-size: 10px;
-    color: var(--accent);
-    font-family: var(--mono);
-    background: rgba(88,166,255,0.1);
-    border: 1px solid rgba(88,166,255,0.25);
-    padding: 1px 6px;
-    border-radius: 4px;
-    display: inline-block;
-    margin-top: 4px;
+  .topbar-logo:hover .logo-text { color: var(--accent); }
+  .topbar-nav {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 2px;
+  }
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-left: auto;
   }
   .nav-item {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 9px 20px;
+    gap: 8px;
+    padding: 8px 14px;
     cursor: pointer;
     color: var(--muted);
     font-size: 13px;
     font-weight: 500;
-    border-left: 3px solid transparent;
+    border-radius: 6px;
     transition: all 0.15s;
     user-select: none;
+    white-space: nowrap;
   }
   .nav-item:hover { color: var(--text); background: rgba(255,255,255,0.04); }
-  .nav-item.active { color: var(--accent); border-left-color: var(--accent); background: rgba(88,166,255,0.07); }
+  .nav-item.active { color: var(--accent); background: rgba(88,166,255,0.12); }
   .nav-item .icon { font-size: 15px; }
   .nav-section-label {
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: var(--muted);
-    padding: 16px 20px 6px;
-    font-weight: 600;
+    width: 1px;
+    height: 22px;
+    background: var(--border);
+    margin: 0 4px;
+    flex-shrink: 0;
   }
 
   /* ── Main panel ───────────────────────────────────────────────── */
@@ -271,18 +278,7 @@
   .stat-card .stat-green  { color: var(--accent2); }
   .stat-card .stat-yellow { color: var(--yellow); }
 
-  /* ── Auth header ──────────────────────────────────────────────── */
-  .auth-header {
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    padding: 10px 32px;
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    gap: 12px;
-    font-size: 12px;
-    color: var(--muted);
-  }
+  /* ── User pill (account button, top right) ──────────────────────── */
   .user-pill {
     display: flex;
     align-items: center;
@@ -415,7 +411,7 @@
 
   /* ── Responsive ───────────────────────────────────────────────── */
   @media(max-width: 700px) {
-    .sidebar { display: none; }
+    .topbar { display: none; }
     .stats-row { grid-template-columns: 1fr 1fr; }
     .main { padding: 16px; }
   }
@@ -598,52 +594,44 @@
 <!-- App Shell -->
 <div class="app">
 
-  <!-- Sidebar -->
-  <aside class="sidebar">
-    <div class="sidebar-logo" style="display:flex;align-items:center;gap:9px">
+  <!-- Top navbar -->
+  <header class="topbar">
+    <div class="topbar-logo" onclick="goTo('dashboard')" title="Go to Dashboard">
       <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj4KPGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnIiB4MT0iMCIgeTE9IjAiIHgyPSIxMDAiIHkyPSIxMDAiPgo8c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiM1OGE2ZmYiLz4KPHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjM2ZiOTUwIi8+CjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPgo8cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjI0IiBmaWxsPSJ1cmwoI2cpIi8+Cjx0ZXh0IHg9IjUwIiB5PSI2OCIgZm9udC1mYW1pbHk9Ik1lbmxvLENvbnNvbGFzLG1vbm9zcGFjZSIgZm9udC1zaXplPSI0NiIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPiZsdDsvJmd0OzwvdGV4dD4KPC9zdmc+Cg=="
         alt="Code Judge" style="width:28px;height:28px;border-radius:7px;flex-shrink:0" />
       <div class="logo-text">Code Judge</div>
     </div>
 
-    <div class="nav-section-label">Navigate</div>
-    <div class="nav-item active" onclick="goTo('dashboard')">
-      <span class="icon">◈</span> Dashboard
-    </div>
-    <div class="nav-item" onclick="goTo('problems')">
-      <span class="icon">≡</span> Problems
-    </div>
-    <div class="nav-item" id="navSubmitCode" onclick="goTo('problems')" style="display:none">
-      <span class="icon">▷</span> Submit Code
-    </div>
-    <div class="nav-item" onclick="goTo('history')">
-      <span class="icon">◷</span> My Submissions
-    </div>
+    <nav class="topbar-nav">
+      <div class="nav-item" onclick="goTo('problems')">
+        <span class="icon">≡</span> Problems
+      </div>
+      <div class="nav-item" id="navSubmitCode" onclick="goTo('problems')" style="display:none">
+        <span class="icon">▷</span> Submit Code
+      </div>
+      <div class="nav-item" onclick="goTo('history')">
+        <span class="icon">◷</span> My Submissions
+      </div>
+      <div class="nav-item" onclick="goTo('analytics')">
+        <span>📊</span> My Analytics
+      </div>
+      <div class="nav-item" onclick="goTo('leaderboard')">
+        <span>🥇</span> Leaderboard
+      </div>
+      <div class="nav-item" onclick="goTo('contests')">
+        <span>🏆</span> Contests
+      </div>
+      <div class="nav-item" id="navAdmin" onclick="goTo('admin')" style="display:none"><span>🛡</span> Admin Dashboard</div>
+      <div class="nav-section-label" id="settingsSectionLabel" style="display:none"></div>
+      <div class="nav-item" id="navAddProblem" onclick="goTo('addproblem')" style="display:none">
+        <span class="icon">＋</span> Add Problem
+      </div>
+    </nav>
 
-    <div class="nav-item" onclick="goTo('analytics')">
-      <span>📊</span> My Analytics
-    </div>
-    <div class="nav-item" onclick="goTo('leaderboard')">
-      <span>🥇</span> Leaderboard
-    </div>
-    <div class="nav-item" onclick="goTo('contests')">
-      <span>🏆</span> Contests
-    </div>
-    <div class="nav-item" id="navAdmin" onclick="goTo('admin')" style="display:none"><span>🛡</span> Admin Dashboard</div>
-    <div class="nav-section-label" id="settingsSectionLabel" style="margin-top:auto;display:none">Settings</div>
-    <div class="nav-item" id="navAddProblem" onclick="goTo('addproblem')" style="display:none">
-      <span class="icon">＋</span> Add Problem
-    </div>
-    <div class="nav-item" id="authNavBtn" onclick="handleAuthNav()">
-      <span class="icon">◉</span> <span id="authNavLabel">Login</span>
-    </div>
-  </aside>
-
-  <!-- Right panel -->
-  <div style="flex:1;display:flex;flex-direction:column;overflow:hidden">
-
-    <!-- Top bar -->
-    <div class="auth-header">
+    <div class="topbar-right">
+      <div class="nav-item" id="authNavBtn" onclick="handleAuthNav()">
+        <span class="icon">◉</span> <span id="authNavLabel">Login</span>
+      </div>
       <div id="userPillWrap" style="display:none" class="user-pill" onclick="goTo('account')" title="My Account">
         <div class="avatar" id="userAvatar">A</div>
         <span id="userPillName">akarsh</span>
@@ -651,6 +639,7 @@
       </div>
       <button class="btn btn-ghost btn-sm" id="topAuthBtn" onclick="openAuthModal()">Login / Register</button>
     </div>
+  </header>
 
     <!-- Main content -->
     <div class="main">
@@ -679,32 +668,6 @@
         <div class="card">
           <div class="card-title">🚀 Recent submissions</div>
           <div id="dashRecentList"><p style="color:var(--muted);font-size:13px">Login to see your recent submissions.</p></div>
-        </div>
-
-        <div class="card" style="margin-top:16px">
-          <div class="card-title">📋 How it works</div>
-          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:4px">
-            <div style="text-align:center;padding:14px 8px">
-              <div style="font-size:26px;margin-bottom:8px">①</div>
-              <div style="font-size:12px;font-weight:600;color:var(--text)">Pick a Problem</div>
-              <div style="font-size:11px;color:var(--muted);margin-top:4px">Browse problems by difficulty</div>
-            </div>
-            <div style="text-align:center;padding:14px 8px">
-              <div style="font-size:26px;margin-bottom:8px">②</div>
-              <div style="font-size:12px;font-weight:600;color:var(--text)">Write C++ Code</div>
-              <div style="font-size:11px;color:var(--muted);margin-top:4px">Use the built-in code editor</div>
-            </div>
-            <div style="text-align:center;padding:14px 8px">
-              <div style="font-size:26px;margin-bottom:8px">③</div>
-              <div style="font-size:12px;font-weight:600;color:var(--text)">Submit</div>
-              <div style="font-size:11px;color:var(--muted);margin-top:4px">Compiled & judged automatically</div>
-            </div>
-            <div style="text-align:center;padding:14px 8px">
-              <div style="font-size:26px;margin-bottom:8px">④</div>
-              <div style="font-size:12px;font-weight:600;color:var(--text)">Get Verdict</div>
-              <div style="font-size:11px;color:var(--muted);margin-top:4px">AC / WA / TLE / CE in seconds</div>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -1228,7 +1191,6 @@ int main(){
       </div>
 
     </div><!-- /main -->
-  </div>
 </div>
 
 <script>
@@ -1313,10 +1275,9 @@ async function finishLogin(accessToken) {
   localStorage.setItem('jwt', token);
   localStorage.setItem('username', username);
   closeAuthModal(); updateAuthUI(); fetchCurrentUser();
-  // Refresh whatever data is currently visible so switching accounts never
-  // leaves a previous user's stale data on screen.
-  await loadDashboard();
-  await refreshCurrentPage();
+  // Dashboard has no nav item anymore (only reachable via the logo, first
+  // page load, or login) — so land there with fresh account data on login.
+  await goTo('dashboard');
 }
 
 function showGoogleSetupForm() {
@@ -1410,7 +1371,7 @@ async function goTo(page, pushState = true) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   pageEl.classList.add('active');
   const items = document.querySelectorAll('.nav-item');
-  const map = { dashboard: 0, problems: 1, submit: 2, history: 3 };
+  const map = { problems: 0, submit: 1, history: 2 };
   if (map[page] !== undefined) items[map[page]].classList.add('active');
   if (pushState) history.pushState({ page }, '', '#' + page);
 
