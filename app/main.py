@@ -29,16 +29,13 @@ app.add_middleware(
 
 @app.on_event("startup")
 def on_startup():
-    # Safe ALTER TABLE migrations — ADD COLUMN IF NOT EXISTS (SQLite compatible)
+    # Safe column migrations using PostgreSQL's native ADD COLUMN IF NOT EXISTS
     with engine.connect() as conn:
-        existing = {row[1] for row in conn.execute(text("PRAGMA table_info(users)"))}
-        migrations = {
-            "full_name":    "ALTER TABLE users ADD COLUMN full_name VARCHAR(100)",
-            "phone_number": "ALTER TABLE users ADD COLUMN phone_number VARCHAR(30)",
-        }
-        for col, sql in migrations.items():
-            if col not in existing:
-                conn.execute(text(sql))
+        for sql in [
+            "ALTER TABLE users ADD COLUMN IF NOT EXISTS full_name VARCHAR(100)",
+            "ALTER TABLE users ADD COLUMN IF NOT EXISTS phone_number VARCHAR(30)",
+        ]:
+            conn.execute(text(sql))
         conn.commit()
     start_background_worker()
 
