@@ -16,6 +16,7 @@ from app.models.user import User
 from app.schemas.user import (
     UserRegister, UserOut, Token, GoogleLoginRequest, GoogleCompleteSignup,
     UserUpdate, PasswordChange, ForgotPasswordRequest, ResetPasswordRequest,
+    DeleteAccountRequest,
 )
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -129,13 +130,26 @@ def reset_password(payload: ResetPasswordRequest, db: Session = Depends(get_db))
 
 @router.get("/me", response_model=UserOut)
 def get_me(current_user: User = Depends(get_current_user)):
+    # Attach computed fields not stored as columns
+    current_user.has_google = current_user.google_id is not None
+    current_user.has_password = current_user.password is not None
     return current_user
 
 
 @router.put("/me", response_model=UserOut)
 def update_me(payload: UserUpdate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if payload.full_name is not None:
+        name = payload.full_name.strip()
+        if len(name) > 100:
+            raise HTTPException(status_code=400, detail="Full name must be 100 characters or fewer")
+        current_user.full_name = name or None
     if payload.date_of_birth is not None:
         current_user.date_of_birth = payload.date_of_birth or None
+    if payload.phone_number is not None:
+        phone = payload.phone_number.strip()
+        if phone and not re.match(r'^\+?[\d\s\-().]{7,20}$', phone):
+            raise HTTPException(status_code=400, detail="Invalid phone number format")
+        current_user.phone_number = phone or None
     if payload.profile_picture is not None:
         pic = payload.profile_picture
         if pic and not pic.startswith("data:image/"):
@@ -144,7 +158,31 @@ def update_me(payload: UserUpdate, current_user: User = Depends(get_current_user
             raise HTTPException(status_code=400, detail="Profile picture too large (max ~200 KB)")
         current_user.profile_picture = pic or None
     db.commit(); db.refresh(current_user)
+    current_user.has_google = current_user.google_id is not None
+    current_user.has_password = current_user.password is not None
     return current_user
+
+
+@router.delete("/me")
+def delete_account(
+    payload: DeleteAccountRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Permanently delete the calling user's account and all associated data."""
+    # Password-based accounts must confirm with their password
+    if current_user.password:
+        if not payload.password:
+            raise HTTPException(status_code=400, detail="Password confirmation is required to delete your account")
+        if not verify_password(payload.password, current_user.password):
+            raise HTTPException(status_code=400, detail="Incorrect password")
+
+    # Delete submissions (foreign key dependency)
+    from app.models.submission import Submission
+    db.query(Submission).filter(Submission.user_id == current_user.id).delete()
+    db.delete(current_user)
+    db.commit()
+    return {"message": "Account deleted successfully"}
 
 
 @router.put("/change-password")

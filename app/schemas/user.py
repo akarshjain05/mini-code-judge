@@ -45,7 +45,9 @@ class GoogleCompleteSignup(BaseModel):
         return v
 
 class UserUpdate(BaseModel):
+    full_name: Optional[str] = None
     date_of_birth: Optional[str] = None
+    phone_number: Optional[str] = None
     profile_picture: Optional[str] = None
 
 class PasswordChange(BaseModel):
@@ -59,13 +61,20 @@ class ResetPasswordRequest(BaseModel):
     reset_token: str
     new_password: str
 
+class DeleteAccountRequest(BaseModel):
+    password: Optional[str] = None   # required only if user has a password set
+
 class UserOut(BaseModel):
     id: int
     username: str
+    full_name: Optional[str] = None
     email: str
+    phone_number: Optional[str] = None
     is_admin: bool = False
     profile_picture: Optional[str] = None
     date_of_birth: Optional[str] = None
+    has_google: bool = False         # true when google_id is linked
+    has_password: bool = True        # false for pure-Google accounts with no password set
     model_config = {"from_attributes": True}
 
 class Token(BaseModel):
