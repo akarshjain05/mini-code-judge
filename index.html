@@ -278,18 +278,15 @@
   .stat-card .stat-green  { color: var(--accent2); }
   .stat-card .stat-yellow { color: var(--yellow); }
 
-  /* ── User pill (account button, top right) ──────────────────────── */
+  /* ── User avatar button + dropdown ──────────────────────────────── */
   .user-pill {
     display: flex;
     align-items: center;
-    gap: 7px;
+    gap: 6px;
     background: var(--surface2);
     border: 1px solid var(--border);
     border-radius: 20px;
-    padding: 4px 12px 4px 8px;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--text);
+    padding: 4px 8px 4px 4px;
     cursor: pointer;
     transition: border-color 0.15s, background 0.15s;
   }
@@ -298,12 +295,68 @@
     background: rgba(88,166,255,0.07);
   }
   .avatar {
-    width: 22px; height: 22px;
+    width: 26px; height: 26px;
     border-radius: 50%;
     background: linear-gradient(135deg, var(--accent), #bc8cff);
     display: flex; align-items: center; justify-content: center;
-    font-size: 11px; font-weight: 700; color: #fff;
+    font-size: 12px; font-weight: 700; color: #fff;
+    flex-shrink: 0;
   }
+  /* Dropdown */
+  .user-dropdown {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    width: 230px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+    z-index: 2000;
+    overflow: hidden;
+    animation: dropIn 0.12s ease;
+  }
+  @keyframes dropIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .user-dropdown-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+  }
+  .user-dropdown-avatar {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), #bc8cff);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; font-weight: 700; color: #fff;
+    flex-shrink: 0;
+  }
+  .user-dropdown-name {
+    font-size: 13px; font-weight: 700; color: var(--text);
+  }
+  .user-dropdown-email {
+    font-size: 11px; color: var(--muted); margin-top: 2px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px;
+  }
+  .user-dropdown-divider {
+    height: 1px; background: var(--border); margin: 0;
+  }
+  .user-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    font-size: 13px;
+    color: var(--text);
+    cursor: pointer;
+    transition: background 0.12s;
+  }
+  .user-dropdown-item:hover { background: rgba(255,255,255,0.05); }
+  .user-dropdown-item.danger { color: #f85149; }
+  .user-dropdown-item.danger:hover { background: rgba(248,81,73,0.08); }
 
   /* ── Verdict result box ───────────────────────────────────────── */
   .verdict-box {
@@ -632,10 +685,36 @@
       <div class="nav-item" id="authNavBtn" onclick="handleAuthNav()">
         <span class="icon">◉</span> <span id="authNavLabel">Login</span>
       </div>
-      <div id="userPillWrap" style="display:none" class="user-pill" onclick="goTo('account')" title="My Account">
-        <div class="avatar" id="userAvatar">A</div>
-        <span id="userPillName">akarsh</span>
-        <span id="adminBadge" style="display:none;font-size:10px;background:rgba(227,179,65,0.15);color:var(--yellow);border:1px solid rgba(227,179,65,0.3);padding:1px 6px;border-radius:10px;margin-left:4px">ADMIN</span>
+      <!-- Avatar button + dropdown -->
+      <div id="userPillWrap" style="display:none;position:relative">
+        <div class="user-pill" id="avatarBtn" onclick="toggleUserMenu(event)" title="My Account">
+          <div class="avatar" id="userAvatar">A</div>
+          <span id="adminBadge" style="display:none;font-size:10px;background:rgba(227,179,65,0.15);color:var(--yellow);border:1px solid rgba(227,179,65,0.3);padding:1px 6px;border-radius:10px">ADMIN</span>
+        </div>
+        <!-- Dropdown menu -->
+        <div id="userDropdown" class="user-dropdown" style="display:none">
+          <div class="user-dropdown-header">
+            <div class="user-dropdown-avatar" id="dropdownAvatar">A</div>
+            <div>
+              <div class="user-dropdown-name" id="dropdownName">—</div>
+              <div class="user-dropdown-email" id="dropdownEmail">—</div>
+            </div>
+          </div>
+          <div class="user-dropdown-divider"></div>
+          <div class="user-dropdown-item" onclick="closeUserMenu(); goTo('account')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+            My Profile
+          </div>
+          <div class="user-dropdown-item" onclick="closeUserMenu(); openSettings()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            Settings
+          </div>
+          <div class="user-dropdown-divider"></div>
+          <div class="user-dropdown-item danger" onclick="closeUserMenu(); handleAuthNav()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Logout
+          </div>
+        </div>
       </div>
       <button class="btn btn-ghost btn-sm" id="topAuthBtn" onclick="openAuthModal()">Login / Register</button>
     </div>
@@ -1193,6 +1272,64 @@ int main(){
     </div><!-- /main -->
 </div>
 
+<!-- ── Settings Modal ─────────────────────────────────────────────── -->
+<div class="modal-backdrop" id="settingsModal" style="display:none;align-items:center;justify-content:center" onclick="if(event.target===this)closeSettings()">
+  <div class="modal" style="width:100%;max-width:480px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px">
+      <h2 style="font-size:18px;font-weight:700;margin:0">Settings</h2>
+      <button onclick="closeSettings()" style="background:none;border:none;cursor:pointer;color:var(--muted);padding:4px;display:flex;border-radius:6px" title="Close">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <!-- Profile info section -->
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px 20px;margin-bottom:18px">
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-weight:600;margin-bottom:14px">Account Info</div>
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">
+        <div id="settingsAvatar" style="width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#bc8cff);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#fff;flex-shrink:0">A</div>
+        <div>
+          <div style="font-size:15px;font-weight:700;color:var(--text)" id="settingsUsername">—</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px" id="settingsEmail">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Change Password section -->
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px 20px">
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-weight:600;margin-bottom:14px">Change Password</div>
+      <div class="alert" id="settingsPwAlert"></div>
+      <div class="form-group">
+        <label>Current Password</label>
+        <div style="position:relative">
+          <input type="password" id="settingsPwCurrent" placeholder="••••••••" style="padding-right:42px" />
+          <button type="button" onclick="togglePasswordVisibility('settingsPwCurrent',this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);padding:4px;display:flex">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>New Password</label>
+        <div style="position:relative">
+          <input type="password" id="settingsPwNew" placeholder="min 6 characters" style="padding-right:42px" />
+          <button type="button" onclick="togglePasswordVisibility('settingsPwNew',this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);padding:4px;display:flex">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Confirm New Password</label>
+        <div style="position:relative">
+          <input type="password" id="settingsPwConfirm" placeholder="repeat new password" style="padding-right:42px" />
+          <button type="button" onclick="togglePasswordVisibility('settingsPwConfirm',this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);padding:4px;display:flex">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="settingsChangePassword()">Update Password</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ── Config ─────────────────────────────────────────────────────────
 const API = 'https://mini-code-judge.onrender.com';
@@ -1471,11 +1608,15 @@ function handleAuthNav() {
 function updateAuthUI() {
   const loggedIn = !!token;
   document.getElementById('authNavLabel').textContent = loggedIn ? 'Logout' : 'Login';
-  document.getElementById('userPillWrap').style.display = loggedIn ? 'flex' : 'none';
+  document.getElementById('userPillWrap').style.display = loggedIn ? 'block' : 'none';
   document.getElementById('topAuthBtn').style.display = loggedIn ? 'none' : 'inline-flex';
   if (loggedIn) {
-    document.getElementById('userPillName').textContent = username;
-    document.getElementById('userAvatar').textContent = username[0].toUpperCase();
+    const initial = (username || '?')[0].toUpperCase();
+    document.getElementById('userAvatar').textContent = initial;
+    document.getElementById('dropdownAvatar').textContent = initial;
+    document.getElementById('dropdownName').textContent = username || '—';
+    document.getElementById('settingsAvatar').textContent = initial;
+    document.getElementById('settingsUsername').textContent = username || '—';
   }
 }
 
@@ -1486,6 +1627,11 @@ async function fetchCurrentUser() {
     if (!res.ok) { isAdmin = false; updateAdminUI(); return; }
     const data = await res.json();
     isAdmin = !!data.is_admin;
+    // Populate email in dropdown and settings
+    if (data.email) {
+      document.getElementById('dropdownEmail').textContent = data.email;
+      document.getElementById('settingsEmail').textContent = data.email;
+    }
   } catch(e) { isAdmin = false; }
   updateAdminUI();
 }
@@ -1500,6 +1646,84 @@ function updateAdminUI() {
   if (adminNav) adminNav.style.display = _u === 'akarsh' ? 'flex' : 'none';
   const createBtn = document.getElementById('createContestBtn');
   if (createBtn) createBtn.style.display = _u === 'akarsh' ? 'block' : 'none';
+}
+
+/* ── User dropdown ────────────────────────────────────────────── */
+function toggleUserMenu(e) {
+  e.stopPropagation();
+  const d = document.getElementById('userDropdown');
+  const open = d.style.display === 'block';
+  d.style.display = open ? 'none' : 'block';
+  if (!open) {
+    // close when clicking anywhere else
+    setTimeout(() => document.addEventListener('click', closeUserMenuHandler, { once: true }), 0);
+  }
+}
+function closeUserMenuHandler() {
+  document.getElementById('userDropdown').style.display = 'none';
+}
+function closeUserMenu() {
+  document.getElementById('userDropdown').style.display = 'none';
+}
+
+/* ── Settings modal ───────────────────────────────────────────── */
+function openSettings() {
+  // Sync avatar/name/email from what's already loaded
+  const initial = (username || '?')[0].toUpperCase();
+  document.getElementById('settingsAvatar').textContent = initial;
+  document.getElementById('settingsUsername').textContent = username || '—';
+  const email = document.getElementById('dropdownEmail').textContent;
+  document.getElementById('settingsEmail').textContent = email || '—';
+  // Clear password fields
+  ['settingsPwCurrent','settingsPwNew','settingsPwConfirm'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  const alert = document.getElementById('settingsPwAlert');
+  alert.className = 'alert'; alert.textContent = '';
+  document.getElementById('settingsModal').style.display = 'flex';
+}
+function closeSettings() {
+  document.getElementById('settingsModal').style.display = 'none';
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    closeSettings();
+    closeUserMenu();
+  }
+});
+async function settingsChangePassword() {
+  const current = document.getElementById('settingsPwCurrent').value;
+  const newPw   = document.getElementById('settingsPwNew').value;
+  const confirm = document.getElementById('settingsPwConfirm').value;
+  const alert   = document.getElementById('settingsPwAlert');
+  alert.className = 'alert'; alert.textContent = '';
+  if (!current || !newPw || !confirm) {
+    alert.className = 'alert error'; alert.textContent = 'Please fill in all fields.'; return;
+  }
+  if (newPw.length < 6) {
+    alert.className = 'alert error'; alert.textContent = 'New password must be at least 6 characters.'; return;
+  }
+  if (newPw !== confirm) {
+    alert.className = 'alert error'; alert.textContent = 'New passwords do not match.'; return;
+  }
+  try {
+    const res = await fetch(`${API}/auth/change-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ current_password: current, new_password: newPw })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      alert.className = 'alert error'; alert.textContent = data.detail || 'Error updating password.';
+    } else {
+      alert.className = 'alert success'; alert.textContent = 'Password updated successfully!';
+      ['settingsPwCurrent','settingsPwNew','settingsPwConfirm'].forEach(id => {
+        document.getElementById(id).value = '';
+      });
+    }
+  } catch(e) {
+    alert.className = 'alert error'; alert.textContent = 'Network error. Please try again.';
+  }
 }
 
 async function doLogin() {
