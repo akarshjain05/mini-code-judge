@@ -21,3 +21,6 @@ build/
 
 # Compiled C extensions (from venv)
 *.so
+node_modules/
+package-lock.json
+package.json
