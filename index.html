@@ -698,7 +698,6 @@
     </nav>
 
     <div class="topbar-right">
-      <button class="btn btn-ghost btn-sm" id="topAuthBtn" onclick="openAuthModal()">Login / Register</button>
       <!-- Avatar button + dropdown -->
       <div id="userPillWrap" style="display:none;position:relative">
         <div class="user-pill" id="avatarBtn" onclick="toggleUserMenu(event)" title="My Account">
@@ -1284,178 +1283,173 @@ int main(){
         </div>
       </div>
 
-    </div><!-- /main -->
-</div>
-
-<!-- ── Settings Modal ─────────────────────────────────────────────── -->
-<div class="modal-backdrop" id="settingsModal" style="display:none;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto" onclick="if(event.target===this)closeSettings()">
-  <div style="width:100%;max-width:680px;background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,0.4)">
-
-    <!-- Settings header -->
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid var(--border)">
-      <div style="display:flex;align-items:center;gap:12px">
-        <div id="settingsAvatar" style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#bc8cff);display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700;color:#fff;flex-shrink:0">A</div>
-        <div>
-          <div style="font-size:15px;font-weight:700;color:var(--text)" id="settingsUsername">—</div>
-          <div style="font-size:12px;color:var(--muted)" id="settingsEmail">—</div>
+      <!-- ── Settings Page ── -->
+      <div class="page" id="page-settings">
+        <div class="page-header">
+          <h1>⚙ Settings</h1>
+          <p>Manage your account, password, and connected services.</p>
         </div>
-      </div>
-      <button onclick="closeSettings()" style="background:none;border:none;cursor:pointer;color:var(--muted);padding:6px;display:flex;border-radius:6px;transition:background 0.15s" onmouseover="this.style.background='rgba(255,255,255,0.07)'" onmouseout="this.style.background='none'" title="Close">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
-    </div>
 
-    <!-- Tabs + content -->
-    <div style="display:flex;min-height:400px">
-      <!-- Sidebar tabs -->
-      <div style="width:160px;flex-shrink:0;border-right:1px solid var(--border);padding:16px 0">
-        <div class="settings-tab active" id="stab-general" onclick="switchSettingsTab('general')">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-          General
-        </div>
-        <div class="settings-tab" id="stab-social" onclick="switchSettingsTab('social')">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-          Social
-        </div>
-        <div class="settings-tab danger" id="stab-delete" onclick="switchSettingsTab('delete')">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
-          Delete Account
-        </div>
-      </div>
-
-      <!-- Tab panels -->
-      <div style="flex:1;padding:24px;overflow-y:auto">
-
-        <!-- GENERAL tab -->
-        <div id="spanel-general">
-          <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:20px">General</div>
-
-          <!-- Identity row -->
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
-            <div class="form-group" style="margin:0">
-              <label>Username</label>
-              <input type="text" id="sUsername" placeholder="username" style="background:var(--surface2)" readonly title="Username cannot be changed" />
-              <div style="font-size:11px;color:var(--muted);margin-top:4px">Username cannot be changed</div>
+        <div style="display:flex;gap:24px;max-width:860px">
+          <!-- Sidebar tabs -->
+          <div style="width:180px;flex-shrink:0;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 0;height:fit-content">
+            <div class="settings-tab active" id="stab-general" onclick="switchSettingsTab('general')">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+              General
             </div>
-            <div class="form-group" style="margin:0">
-              <label>Full Name</label>
-              <input type="text" id="sFullName" placeholder="Your full name" maxlength="100" />
+            <div class="settings-tab" id="stab-social" onclick="switchSettingsTab('social')">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+              Social
+            </div>
+            <div style="height:1px;background:var(--border);margin:8px 0"></div>
+            <div class="settings-tab danger" id="stab-delete" onclick="switchSettingsTab('delete')">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+              Delete Account
             </div>
           </div>
 
-          <div class="form-group">
-            <label>Email</label>
-            <input type="email" id="sEmail" placeholder="email@example.com" readonly style="background:var(--surface2)" title="Email cannot be changed here" />
-            <div style="font-size:11px;color:var(--muted);margin-top:4px">Email is tied to your account and cannot be changed</div>
-          </div>
+          <!-- Tab panels -->
+          <div style="flex:1;min-width:0">
 
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
-            <div class="form-group" style="margin:0">
-              <label>Phone Number</label>
-              <input type="tel" id="sPhone" placeholder="+91 98765 43210" maxlength="20" />
-            </div>
-            <div class="form-group" style="margin:0">
-              <label>Date of Birth</label>
-              <input type="date" id="sDob" style="color:var(--text);background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;width:100%" />
-            </div>
-          </div>
-
-          <div class="alert" id="sGeneralAlert" style="margin-top:14px"></div>
-          <button class="btn btn-primary" style="margin-top:4px;padding:10px 28px" onclick="saveGeneralSettings()">Save Changes</button>
-
-          <!-- Change Password subsection -->
-          <div style="border-top:1px solid var(--border);margin-top:28px;padding-top:24px">
-            <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:16px">Password</div>
-            <div id="sPwNoPasswordNote" style="display:none;font-size:12px;color:var(--muted);margin-bottom:12px;background:rgba(88,166,255,0.08);border:1px solid rgba(88,166,255,0.2);border-radius:8px;padding:10px 14px">
-              You signed in with Google and haven't set a password yet. Set one below to also enable username/password login.
-            </div>
-            <div class="alert" id="settingsPwAlert"></div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
-              <div class="form-group" style="margin:0">
-                <label>Current Password</label>
-                <div style="position:relative">
-                  <input type="password" id="settingsPwCurrent" placeholder="••••••••" style="padding-right:42px" />
-                  <button type="button" onclick="togglePasswordVisibility('settingsPwCurrent',this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);padding:4px;display:flex">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                  </button>
+            <!-- GENERAL panel -->
+            <div id="spanel-general">
+              <div class="card" style="margin-bottom:18px">
+                <!-- Avatar + identity header -->
+                <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid var(--border)">
+                  <div id="settingsAvatar" style="width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#bc8cff);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:#fff;flex-shrink:0">A</div>
+                  <div>
+                    <div style="font-size:16px;font-weight:700;color:var(--text)" id="settingsUsername">—</div>
+                    <div style="font-size:12px;color:var(--muted);margin-top:2px" id="settingsEmail">—</div>
+                  </div>
                 </div>
-              </div>
-              <div class="form-group" style="margin:0">
-                <label>New Password</label>
-                <div style="position:relative">
-                  <input type="password" id="settingsPwNew" placeholder="min 6 characters" style="padding-right:42px" />
-                  <button type="button" onclick="togglePasswordVisibility('settingsPwNew',this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);padding:4px;display:flex">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                  </button>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+                  <div class="form-group" style="margin:0">
+                    <label>Username</label>
+                    <input type="text" id="sUsername" style="background:var(--surface2);opacity:0.7" readonly title="Username cannot be changed" />
+                    <div style="font-size:11px;color:var(--muted);margin-top:4px">Cannot be changed</div>
+                  </div>
+                  <div class="form-group" style="margin:0">
+                    <label>Full Name</label>
+                    <input type="text" id="sFullName" placeholder="Your full name" maxlength="100" />
+                  </div>
                 </div>
+
+                <div class="form-group">
+                  <label>Email</label>
+                  <input type="email" id="sEmail" style="background:var(--surface2);opacity:0.7" readonly title="Email cannot be changed" />
+                  <div style="font-size:11px;color:var(--muted);margin-top:4px">Email is tied to your account and cannot be changed</div>
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+                  <div class="form-group" style="margin:0">
+                    <label>Phone Number</label>
+                    <input type="tel" id="sPhone" placeholder="+91 98765 43210" maxlength="20" />
+                  </div>
+                  <div class="form-group" style="margin:0">
+                    <label>Date of Birth</label>
+                    <input type="date" id="sDob" style="color:var(--text);background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;width:100%" />
+                  </div>
+                </div>
+
+                <div class="alert" id="sGeneralAlert" style="margin-top:16px"></div>
+                <button class="btn btn-primary" style="margin-top:8px;padding:10px 28px" onclick="saveGeneralSettings()">Save Changes</button>
+              </div>
+
+              <!-- Password card -->
+              <div class="card">
+                <div class="card-title" style="margin-bottom:16px">Password</div>
+                <div id="sPwNoPasswordNote" style="display:none;font-size:12px;color:var(--muted);margin-bottom:14px;background:rgba(88,166,255,0.08);border:1px solid rgba(88,166,255,0.2);border-radius:8px;padding:10px 14px">
+                  You signed in with Google and haven't set a password yet. Set one below to also enable username/password login.
+                </div>
+                <div class="alert" id="settingsPwAlert"></div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+                  <div class="form-group" style="margin:0">
+                    <label>Current Password</label>
+                    <div style="position:relative">
+                      <input type="password" id="settingsPwCurrent" placeholder="••••••••" style="padding-right:42px" />
+                      <button type="button" onclick="togglePasswordVisibility('settingsPwCurrent',this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);padding:4px;display:flex">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="form-group" style="margin:0">
+                    <label>New Password</label>
+                    <div style="position:relative">
+                      <input type="password" id="settingsPwNew" placeholder="min 6 characters" style="padding-right:42px" />
+                      <button type="button" onclick="togglePasswordVisibility('settingsPwNew',this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);padding:4px;display:flex">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>Confirm New Password</label>
+                  <div style="position:relative">
+                    <input type="password" id="settingsPwConfirm" placeholder="repeat new password" style="padding-right:42px" />
+                    <button type="button" onclick="togglePasswordVisibility('settingsPwConfirm',this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);padding:4px;display:flex">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </button>
+                  </div>
+                </div>
+                <button class="btn btn-primary" style="padding:10px 28px" onclick="settingsChangePassword()">Update Password</button>
               </div>
             </div>
-            <div class="form-group">
-              <label>Confirm New Password</label>
-              <div style="position:relative">
-                <input type="password" id="settingsPwConfirm" placeholder="repeat new password" style="padding-right:42px" />
-                <button type="button" onclick="togglePasswordVisibility('settingsPwConfirm',this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);padding:4px;display:flex">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+
+            <!-- SOCIAL panel -->
+            <div id="spanel-social" style="display:none">
+              <div class="card">
+                <div class="card-title" style="margin-bottom:4px">Social Accounts</div>
+                <p style="color:var(--muted);font-size:13px;margin-bottom:20px">Connect a social account to enable one-click sign-in.</p>
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:16px;background:var(--surface2);border:1px solid var(--border);border-radius:10px">
+                  <div style="display:flex;align-items:center;gap:14px">
+                    <svg width="22" height="22" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+                    <div>
+                      <div style="font-size:13px;font-weight:600;color:var(--text)">Google</div>
+                      <div style="font-size:12px;color:var(--muted)" id="sGoogleStatus">Not connected</div>
+                    </div>
+                  </div>
+                  <button id="sGoogleBtn" class="btn btn-ghost btn-sm" onclick="handleGoogleConnect()" style="min-width:90px">Connect</button>
+                </div>
+                <div class="alert" id="sSocialAlert" style="margin-top:12px"></div>
+              </div>
+            </div>
+
+            <!-- DELETE ACCOUNT panel -->
+            <div id="spanel-delete" style="display:none">
+              <div class="card">
+                <div style="font-size:16px;font-weight:700;color:#f85149;margin-bottom:6px">Delete Account</div>
+                <p style="font-size:13px;color:var(--muted);margin-bottom:20px">This action is permanent and cannot be undone. All your data will be erased immediately.</p>
+                <div style="background:rgba(248,81,73,0.07);border:1px solid rgba(248,81,73,0.25);border-radius:10px;padding:20px;margin-bottom:20px">
+                  <div style="font-size:13px;font-weight:600;color:#f85149;margin-bottom:10px">⚠ What will be deleted:</div>
+                  <ul style="color:var(--muted);font-size:13px;padding-left:20px;line-height:1.9;margin:0">
+                    <li>Your account and all profile info</li>
+                    <li>All code submissions and verdicts</li>
+                    <li>Leaderboard ranking and analytics</li>
+                    <li>Contest participation history</li>
+                  </ul>
+                </div>
+                <div class="alert" id="sDeleteAlert"></div>
+                <div class="form-group" id="sDeletePwGroup">
+                  <label>Confirm your password to proceed</label>
+                  <div style="position:relative;max-width:340px">
+                    <input type="password" id="sDeletePassword" placeholder="Enter your current password" style="padding-right:42px" />
+                    <button type="button" onclick="togglePasswordVisibility('sDeletePassword',this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);padding:4px;display:flex">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </button>
+                  </div>
+                </div>
+                <button class="btn" style="background:rgba(248,81,73,0.15);color:#f85149;border:1px solid rgba(248,81,73,0.3);padding:10px 24px;font-weight:600" onclick="confirmDeleteAccount()">
+                  Permanently Delete My Account
                 </button>
               </div>
             </div>
-            <button class="btn btn-primary" style="padding:10px 28px" onclick="settingsChangePassword()">Update Password</button>
-          </div>
-        </div>
 
-        <!-- SOCIAL tab -->
-        <div id="spanel-social" style="display:none">
-          <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px">Social Accounts</div>
-          <div style="font-size:13px;color:var(--muted);margin-bottom:24px">Connect a social account to enable one-click sign-in.</div>
+          </div><!-- /tab panels -->
+        </div><!-- /flex row -->
+      </div><!-- /page-settings -->
 
-          <!-- Google row -->
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:16px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;margin-bottom:12px">
-            <div style="display:flex;align-items:center;gap:14px">
-              <svg width="22" height="22" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-              <div>
-                <div style="font-size:13px;font-weight:600;color:var(--text)">Google</div>
-                <div style="font-size:12px;color:var(--muted)" id="sGoogleStatus">Not connected</div>
-              </div>
-            </div>
-            <button id="sGoogleBtn" class="btn btn-ghost btn-sm" onclick="handleGoogleConnect()" style="min-width:90px">Connect</button>
-          </div>
-
-          <div class="alert" id="sSocialAlert" style="margin-top:8px"></div>
-        </div>
-
-        <!-- DELETE ACCOUNT tab -->
-        <div id="spanel-delete" style="display:none">
-          <div style="font-size:16px;font-weight:700;color:#f85149;margin-bottom:6px">Delete Account</div>
-          <div style="font-size:13px;color:var(--muted);margin-bottom:24px">This action is permanent and cannot be undone. All your submissions, analytics, and account data will be erased.</div>
-
-          <div style="background:rgba(248,81,73,0.07);border:1px solid rgba(248,81,73,0.25);border-radius:10px;padding:20px;margin-bottom:20px">
-            <div style="font-size:13px;font-weight:600;color:#f85149;margin-bottom:12px">⚠ What will be deleted:</div>
-            <ul style="color:var(--muted);font-size:13px;padding-left:20px;line-height:1.8;margin:0">
-              <li>Your account and all profile info</li>
-              <li>All code submissions and verdicts</li>
-              <li>Leaderboard ranking and analytics</li>
-              <li>Contest participation history</li>
-            </ul>
-          </div>
-
-          <div class="alert" id="sDeleteAlert"></div>
-          <div class="form-group" id="sDeletePwGroup">
-            <label>Confirm your password</label>
-            <div style="position:relative">
-              <input type="password" id="sDeletePassword" placeholder="Enter your current password" style="padding-right:42px" />
-              <button type="button" onclick="togglePasswordVisibility('sDeletePassword',this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);padding:4px;display:flex">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-              </button>
-            </div>
-          </div>
-          <button class="btn" style="background:rgba(248,81,73,0.15);color:#f85149;border:1px solid rgba(248,81,73,0.3);padding:10px 24px;font-weight:600" onclick="confirmDeleteAccount()">
-            Permanently Delete My Account
-          </button>
-        </div>
-
-      </div>
-    </div>
-  </div>
+    </div><!-- /main -->
 </div>
 
 <script>
@@ -1605,7 +1599,7 @@ function hidePageLoader() { document.getElementById('pageLoader').style.display 
 const PAGE_LOADERS = {
   history: loadHistory, problems: loadProblems, dashboard: loadDashboard,
   admin: loadAdminDashboard, analytics: loadAnalytics, contests: loadContests,
-  account: loadAccount, leaderboard: loadLeaderboard,
+  account: loadAccount, leaderboard: loadLeaderboard, settings: loadSettings,
 };
 
 function getCurrentPageId() {
@@ -1687,7 +1681,7 @@ function handleHashNav() {
     } else if (id) { openAuthModal(); }
     return;
   }
-  const validPages = ['dashboard','problems','submit','history','analytics','account','leaderboard','contests','admin','addproblem'];
+  const validPages = ['dashboard','problems','submit','history','analytics','account','leaderboard','contests','admin','addproblem','settings'];
   if (validPages.includes(hash)) goTo(hash, false);
   else goTo('dashboard', false);
 }
@@ -1794,8 +1788,8 @@ function closeUserMenu() {
 }
 
 /* ── Settings modal ───────────────────────────────────────────── */
-/* ── Settings modal state ─────────────────────────────────────── */
-let _settingsData = null; // cache from /auth/me
+/* ── Settings page ────────────────────────────────────────────── */
+let _settingsData = null;
 
 function switchSettingsTab(tab) {
   ['general','social','delete'].forEach(t => {
@@ -1806,11 +1800,21 @@ function switchSettingsTab(tab) {
   document.getElementById('spanel-' + tab).style.display = '';
 }
 
-async function openSettings() {
-  // Default to General tab
+function openSettings() {
+  closeUserMenu();
+  goTo('settings');
+}
+
+function closeSettings() {
+  history.back();
+}
+
+async function loadSettings() {
+  if (!token) { openAuthModal(); return; }
+
   switchSettingsTab('general');
 
-  // Reset all alerts + password fields
+  // Reset alerts + password fields
   ['settingsPwAlert','sGeneralAlert','sSocialAlert','sDeleteAlert'].forEach(id => {
     const el = document.getElementById(id);
     if (el) { el.className = 'alert'; el.textContent = ''; }
@@ -1820,17 +1824,13 @@ async function openSettings() {
     if (el) el.value = '';
   });
 
-  // Show modal first with whatever we have
+  // Prefill from cached state
   const initial = (username || '?')[0].toUpperCase();
   document.getElementById('settingsAvatar').textContent = initial;
   document.getElementById('settingsUsername').textContent = username || '—';
   document.getElementById('sUsername').value = username || '';
-  document.getElementById('sEmail').value = document.getElementById('dropdownEmail').textContent || '';
-  document.getElementById('settingsEmail').textContent = document.getElementById('dropdownEmail').textContent || '—';
-  document.getElementById('settingsModal').style.display = 'flex';
 
-  // Fetch fresh data from API
-  if (!token) return;
+  // Fetch fresh data
   try {
     const res = await fetch(`${API}/auth/me`, { headers: { 'Authorization': `Bearer ${token}` } });
     if (!res.ok) return;
@@ -1843,32 +1843,20 @@ async function openSettings() {
     document.getElementById('sPhone').value = d.phone_number || '';
     document.getElementById('sDob').value = d.date_of_birth || '';
 
-    // Google social tab
     const hasGoogle = !!d.has_google;
-    document.getElementById('sGoogleStatus').textContent = hasGoogle
-      ? `Connected as ${d.email}` : 'Not connected';
+    document.getElementById('sGoogleStatus').textContent = hasGoogle ? `Connected as ${d.email}` : 'Not connected';
     document.getElementById('sGoogleBtn').textContent = hasGoogle ? 'Connected' : 'Connect';
     document.getElementById('sGoogleBtn').disabled = hasGoogle;
 
-    // Password section hint for Google-only users
     const noPassword = !d.has_password;
     document.getElementById('sPwNoPasswordNote').style.display = noPassword ? 'block' : 'none';
-    document.getElementById('settingsPwCurrent').placeholder = noPassword ? 'Leave blank (no password set yet)' : '••••••••';
-
-    // Delete page: hide password field if no password
+    document.getElementById('settingsPwCurrent').placeholder = noPassword ? 'Leave blank (no password yet)' : '••••••••';
     document.getElementById('sDeletePwGroup').style.display = noPassword ? 'none' : 'block';
   } catch(e) { console.error('Settings fetch error', e); }
 }
 
-function closeSettings() {
-  document.getElementById('settingsModal').style.display = 'none';
-}
-
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') {
-    closeSettings();
-    closeUserMenu();
-  }
+  if (e.key === 'Escape') closeUserMenu();
 });
 
 async function saveGeneralSettings() {
@@ -1970,7 +1958,6 @@ async function confirmDeleteAccount() {
       al.className = 'alert error'; al.textContent = data.detail || 'Error deleting account.';
     } else {
       // Log out and go to dashboard
-      closeSettings();
       token = null; username = null; isAdmin = false;
       localStorage.removeItem('jwt'); localStorage.removeItem('username');
       updateAuthUI(); updateAdminUI();
