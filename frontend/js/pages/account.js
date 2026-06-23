@@ -8,9 +8,12 @@ async function loadAccount() {
     const res = await fetch(`${API}/auth/me`, { headers: { 'Authorization': `Bearer ${token}` } });
     const data = await res.json();
     _accountData = data;
-    document.getElementById('accountUsername').textContent = data.username;
-    document.getElementById('accountEmail').textContent = data.email;
-    if (data.date_of_birth) document.getElementById('accountDob').value = data.date_of_birth;
+    // Show display name (full_name) as headline, username below it
+    const displayName = data.full_name || data.username;
+    document.getElementById('accountDisplayName').textContent = displayName;
+    document.getElementById('accountUsername').textContent = '@' + data.username;
+    // DOB kept in hidden field for compat
+    if (data.date_of_birth) { const el = document.getElementById('accountDob'); if(el) el.value = data.date_of_birth; }
     _renderAccountAvatar(data.profile_picture, data.username);
     document.getElementById('profileAlert').className = 'alert';
     document.getElementById('profileAlert').textContent = '';
@@ -37,7 +40,7 @@ function _renderAccountAvatar(profilePicture, uname) {
     img.style.display = 'none';
     txt.style.display = '';
     txt.textContent = (uname || '?')[0].toUpperCase();
-    wrap.style.background = 'var(--accent)';
+    wrap.style.background = 'linear-gradient(135deg,var(--accent),#bc8cff)';
   }
 }
 

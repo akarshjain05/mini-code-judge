@@ -105,6 +105,8 @@ async function completeGoogleSignup() {
     }
     pendingGoogleSetupToken = null;
     await finishLogin(data.access_token);
+    closeAuthModal();
+    openOnboarding(); // new Google user: collect display name + DOB
   } catch (e) {
     showAlert(err, 'Cannot reach API — is the server running?', 'error');
   }

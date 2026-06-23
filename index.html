@@ -653,75 +653,45 @@ int main(){
       <div class="page" id="page-account">
         <div class="page-header">
           <h1>👤 My Account</h1>
-          <p>Manage your profile, profile picture, and password.</p>
+          <p>Manage your profile picture and display name.</p>
         </div>
 
         <!-- Profile Card -->
-        <div class="card" style="margin-bottom:18px;padding:24px">
-          <div class="card-title" style="margin-bottom:18px">Profile</div>
-          <div style="display:flex;align-items:center;gap:24px;margin-bottom:24px">
+        <div class="card" style="padding:28px;max-width:580px">
+          <div style="display:flex;align-items:center;gap:24px;margin-bottom:24px;padding-bottom:22px;border-bottom:1px solid var(--border)">
             <!-- Avatar -->
             <div style="position:relative;flex-shrink:0">
-              <div id="accountAvatarWrapper" style="width:80px;height:80px;border-radius:50%;overflow:hidden;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:700;color:#fff;cursor:pointer;border:3px solid var(--border)" onclick="document.getElementById('avatarFileInput').click()" title="Click to change photo">
+              <div id="accountAvatarWrapper" style="width:84px;height:84px;border-radius:50%;overflow:hidden;background:linear-gradient(135deg,var(--accent),#bc8cff);display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:700;color:#fff;cursor:pointer;border:3px solid var(--border);transition:border-color 0.15s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'" onclick="document.getElementById('avatarFileInput').click()" title="Click to change photo">
                 <span id="accountAvatarText"></span>
                 <img id="accountAvatarImg" src="" alt="" style="display:none;width:100%;height:100%;object-fit:cover" />
               </div>
-              <div style="position:absolute;bottom:0;right:0;background:var(--accent);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:2px solid var(--bg)" onclick="document.getElementById('avatarFileInput').click()">
+              <div style="position:absolute;bottom:2px;right:2px;background:var(--accent);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:2px solid var(--bg)" onclick="document.getElementById('avatarFileInput').click()">
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
               </div>
               <input type="file" id="avatarFileInput" accept="image/*" style="display:none" onchange="previewAvatar(this)" />
             </div>
-            <div>
-              <div style="font-size:20px;font-weight:700;color:var(--text)" id="accountUsername">—</div>
-              <div style="font-size:13px;color:var(--muted);margin-top:3px" id="accountEmail">—</div>
-              <div style="font-size:12px;color:var(--muted);margin-top:6px">Click the avatar to change your photo (max 200 KB)</div>
+            <div style="min-width:0">
+              <div style="font-size:20px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="accountDisplayName">—</div>
+              <div style="font-size:13px;color:var(--muted);margin-top:3px" id="accountUsername">—</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:8px;opacity:0.7">Click the avatar to change your photo (max 200 KB)</div>
             </div>
           </div>
 
           <div class="alert" id="profileAlert"></div>
 
-          <!-- Date of Birth -->
-          <div class="form-group" style="max-width:280px">
-            <label>Date of Birth</label>
-            <input type="date" id="accountDob" style="color:var(--text);background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;width:100%;" />
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn btn-primary" style="padding:10px 28px" onclick="saveProfile()">Save Photo</button>
+            <button class="btn btn-ghost" style="padding:10px 20px" onclick="goTo('settings')" title="Edit name, DOB, phone, password in Settings">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+              Edit in Settings
+            </button>
           </div>
 
-          <button class="btn btn-primary" style="padding:10px 28px" onclick="saveProfile()">Save Profile</button>
-        </div>
-
-        <!-- Change Password Card -->
-        <div class="card" style="padding:24px">
-          <div class="card-title" style="margin-bottom:18px">Change Password</div>
-          <div class="alert" id="pwAlert"></div>
-          <div class="form-group" style="max-width:340px">
-            <label>Current Password</label>
-            <div style="position:relative">
-              <input type="password" id="pwCurrent" placeholder="••••••••" style="padding-right:42px" />
-              <button type="button" onclick="togglePasswordVisibility('pwCurrent',this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);padding:4px;display:flex">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-              </button>
-            </div>
-          </div>
-          <div class="form-group" style="max-width:340px">
-            <label>New Password</label>
-            <div style="position:relative">
-              <input type="password" id="pwNew" placeholder="min 6 characters" style="padding-right:42px" />
-              <button type="button" onclick="togglePasswordVisibility('pwNew',this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);padding:4px;display:flex">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-              </button>
-            </div>
-          </div>
-          <div class="form-group" style="max-width:340px">
-            <label>Confirm New Password</label>
-            <div style="position:relative">
-              <input type="password" id="pwConfirm" placeholder="repeat new password" style="padding-right:42px" />
-              <button type="button" onclick="togglePasswordVisibility('pwConfirm',this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);padding:4px;display:flex">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-              </button>
-            </div>
-          </div>
-          <p style="font-size:12px;color:var(--muted);margin-bottom:14px">Google sign-in users: leave Current Password blank if you've never set one.</p>
-          <button class="btn btn-primary" style="padding:10px 28px" onclick="changePassword()">Update Password</button>
+          <!-- Hidden fields kept for saveProfile() compat -->
+          <input type="hidden" id="accountDob" />
+          <input type="hidden" id="accountEmail" />
+          <div id="pwAlert" style="display:none"></div>
+          <input type="hidden" id="pwCurrent" /><input type="hidden" id="pwNew" /><input type="hidden" id="pwConfirm" />
         </div>
       </div>
 
@@ -1010,5 +980,51 @@ int main(){
 <script src="frontend/js/pages/settings.js"></script>
 <script src="frontend/js/pages/contests.js"></script>
 <script src="frontend/js/main.js"></script>
+
+<!-- ── Onboarding Modal (shown after register / Google signup) ─────── -->
+<div class="modal-backdrop" id="onboardingModal" style="display:none;align-items:center;justify-content:center">
+  <div class="modal" style="width:100%;max-width:420px;text-align:center">
+
+    <!-- Step indicator -->
+    <div style="display:flex;justify-content:center;gap:6px;margin-bottom:24px">
+      <div id="ob-dot-1" style="width:8px;height:8px;border-radius:50%;background:var(--accent);transition:background 0.2s"></div>
+      <div id="ob-dot-2" style="width:8px;height:8px;border-radius:50%;background:var(--border);transition:background 0.2s"></div>
+    </div>
+
+    <!-- Avatar -->
+    <div id="obAvatar" style="width:62px;height:62px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#bc8cff);display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;color:#fff;margin:0 auto 14px">?</div>
+
+    <!-- Step 1: Full Name -->
+    <div id="ob-step-1">
+      <div style="font-size:18px;font-weight:700;color:var(--text);margin-bottom:6px">What's your name?</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:22px">This is your display name — shown on your profile and leaderboard.</div>
+      <div class="form-group" style="text-align:left">
+        <label>Full Name</label>
+        <input type="text" id="obFullName" placeholder="e.g. Akarsh Jain" maxlength="100" style="font-size:15px" />
+      </div>
+      <div class="alert" id="obStep1Alert" style="margin-top:8px"></div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:18px">
+        <button class="btn btn-primary" style="width:100%;justify-content:center;padding:12px" onclick="obNextStep()">Continue →</button>
+        <button class="btn btn-ghost" style="width:100%;justify-content:center;padding:10px;font-size:13px" onclick="obSkipStep()">Skip for now</button>
+      </div>
+    </div>
+
+    <!-- Step 2: Date of Birth -->
+    <div id="ob-step-2" style="display:none">
+      <div style="font-size:18px;font-weight:700;color:var(--text);margin-bottom:6px">When were you born?</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:22px">Optional — only used for your profile, never shown publicly.</div>
+      <div class="form-group" style="text-align:left">
+        <label>Date of Birth</label>
+        <input type="date" id="obDob" max="" style="color:var(--text);background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;font-size:14px;width:100%;outline:none" />
+      </div>
+      <div class="alert" id="obStep2Alert" style="margin-top:8px"></div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:18px">
+        <button class="btn btn-primary" style="width:100%;justify-content:center;padding:12px" onclick="obFinish()">Finish Setup 🎉</button>
+        <button class="btn btn-ghost" style="width:100%;justify-content:center;padding:10px;font-size:13px" onclick="obFinish(true)">Skip for now</button>
+      </div>
+    </div>
+
+  </div>
+</div>
 </body>
 </html>
