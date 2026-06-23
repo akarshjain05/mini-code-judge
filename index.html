@@ -831,88 +831,110 @@ int main(){
 
             <!-- GENERAL panel -->
             <div id="spanel-general">
-              <div class="card" style="margin-bottom:18px">
-                <!-- Avatar + identity header -->
-                <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid var(--border)">
-                  <div id="settingsAvatar" style="width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#bc8cff);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:#fff;flex-shrink:0">A</div>
+
+              <!-- Profile card: avatar + name/email + clickable rows -->
+              <div class="card" style="margin-bottom:18px;padding:0;overflow:hidden">
+
+                <!-- Avatar header -->
+                <div style="display:flex;align-items:center;gap:16px;padding:22px 24px;border-bottom:1px solid var(--border)">
+                  <div id="settingsAvatar" style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#bc8cff);display:flex;align-items:center;justify-content:center;font-size:21px;font-weight:700;color:#fff;flex-shrink:0">A</div>
                   <div>
-                    <div style="font-size:16px;font-weight:700;color:var(--text)" id="settingsUsername">—</div>
+                    <div style="font-size:15px;font-weight:700;color:var(--text)" id="settingsUsername">—</div>
                     <div style="font-size:12px;color:var(--muted);margin-top:2px" id="settingsEmail">—</div>
                   </div>
                 </div>
 
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
-                  <div class="form-group" style="margin:0">
-                    <label>Username</label>
-                    <input type="text" id="sUsername" style="background:var(--surface2);opacity:0.7" readonly title="Username cannot be changed" />
-                    <div style="font-size:11px;color:var(--muted);margin-top:4px">Cannot be changed</div>
+                <!-- Clickable field rows -->
+                <div class="sfield-row locked" title="Username cannot be changed">
+                  <div class="sfield-label">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+                    Username
                   </div>
-                  <div class="form-group" style="margin:0">
-                    <label>Full Name</label>
-                    <input type="text" id="sFullName" placeholder="Your full name" maxlength="100" />
-                  </div>
+                  <div class="sfield-value"><span id="sRowUsername">—</span></div>
+                  <div class="sfield-lock"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
                 </div>
 
-                <div class="form-group">
-                  <label>Email</label>
-                  <input type="email" id="sEmail" style="background:var(--surface2);opacity:0.7" readonly title="Email cannot be changed" />
-                  <div style="font-size:11px;color:var(--muted);margin-top:4px">Email is tied to your account and cannot be changed</div>
+                <div class="sfield-row" onclick="openFieldEdit('fullname')">
+                  <div class="sfield-label">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    Full Name
+                  </div>
+                  <div class="sfield-value"><span id="sRowFullName" style="color:var(--muted)">Not set</span></div>
+                  <svg class="sfield-arrow" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
                 </div>
 
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-                  <div class="form-group" style="margin:0">
-                    <label>Phone Number</label>
-                    <input type="tel" id="sPhone" placeholder="+91 98765 43210" maxlength="20" />
+                <div class="sfield-row locked" title="Email cannot be changed">
+                  <div class="sfield-label">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                    Email
                   </div>
-                  <div class="form-group" style="margin:0">
-                    <label>Date of Birth</label>
-                    <input type="date" id="sDob" style="color:var(--text);background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;width:100%" />
-                  </div>
+                  <div class="sfield-value"><span id="sRowEmail">—</span></div>
+                  <div class="sfield-lock"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
                 </div>
 
-                <div class="alert" id="sGeneralAlert" style="margin-top:16px"></div>
-                <button class="btn btn-primary" style="margin-top:8px;padding:10px 28px" onclick="saveGeneralSettings()">Save Changes</button>
+                <div class="sfield-row" onclick="openFieldEdit('phone')">
+                  <div class="sfield-label">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.55 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.18 6.18l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                    Phone Number
+                  </div>
+                  <div class="sfield-value"><span id="sRowPhone" style="color:var(--muted)">Not set</span></div>
+                  <svg class="sfield-arrow" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                </div>
+
+                <div class="sfield-row" onclick="openFieldEdit('dob')">
+                  <div class="sfield-label">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    Date of Birth
+                  </div>
+                  <div class="sfield-value"><span id="sRowDob" style="color:var(--muted)">Not set</span></div>
+                  <svg class="sfield-arrow" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                </div>
+
+                <div class="sfield-row" onclick="openFieldEdit('password')" style="border-bottom:none">
+                  <div class="sfield-label">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    Password
+                  </div>
+                  <div class="sfield-value"><span style="letter-spacing:3px;color:var(--muted);font-size:11px" id="sRowPassword">••••••••</span></div>
+                  <svg class="sfield-arrow" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                </div>
               </div>
 
-              <!-- Password card -->
-              <div class="card">
-                <div class="card-title" style="margin-bottom:16px">Password</div>
-                <div id="sPwNoPasswordNote" style="display:none;font-size:12px;color:var(--muted);margin-bottom:14px;background:rgba(88,166,255,0.08);border:1px solid rgba(88,166,255,0.2);border-radius:8px;padding:10px 14px">
-                  You signed in with Google and haven't set a password yet. Set one below to also enable username/password login.
+              <div class="alert" id="sGeneralAlert"></div>
+
+            </div>
+
+            <!-- Field edit popup overlay -->
+            <div id="sFieldOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:3000;align-items:center;justify-content:center" onclick="if(event.target===this)closeFieldEdit()">
+              <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;width:100%;max-width:420px;padding:0;overflow:hidden;box-shadow:0 16px 48px rgba(0,0,0,0.5)">
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid var(--border)">
+                  <div style="font-size:15px;font-weight:700;color:var(--text)" id="sFieldTitle">Edit</div>
+                  <button onclick="closeFieldEdit()" style="background:none;border:none;cursor:pointer;color:var(--muted);padding:4px;display:flex;border-radius:6px">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  </button>
                 </div>
-                <div class="alert" id="settingsPwAlert"></div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-                  <div class="form-group" style="margin:0">
-                    <label>Current Password</label>
-                    <div style="position:relative">
-                      <input type="password" id="settingsPwCurrent" placeholder="••••••••" style="padding-right:42px" />
-                      <button type="button" onclick="togglePasswordVisibility('settingsPwCurrent',this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);padding:4px;display:flex">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                      </button>
-                    </div>
-                  </div>
-                  <div class="form-group" style="margin:0">
-                    <label>New Password</label>
-                    <div style="position:relative">
-                      <input type="password" id="settingsPwNew" placeholder="min 6 characters" style="padding-right:42px" />
-                      <button type="button" onclick="togglePasswordVisibility('settingsPwNew',this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);padding:4px;display:flex">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                      </button>
-                    </div>
+                <div style="padding:22px">
+                  <div id="sFieldBody"></div>
+                  <div class="alert" id="sFieldAlert" style="margin-top:12px"></div>
+                  <div style="display:flex;gap:10px;margin-top:18px">
+                    <button class="btn btn-primary" style="flex:1;justify-content:center" id="sFieldSaveBtn" onclick="saveFieldEdit()">Save</button>
+                    <button class="btn btn-ghost" style="justify-content:center;padding:10px 20px" onclick="closeFieldEdit()">Cancel</button>
                   </div>
                 </div>
-                <div class="form-group">
-                  <label>Confirm New Password</label>
-                  <div style="position:relative">
-                    <input type="password" id="settingsPwConfirm" placeholder="repeat new password" style="padding-right:42px" />
-                    <button type="button" onclick="togglePasswordVisibility('settingsPwConfirm',this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);padding:4px;display:flex">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                    </button>
-                  </div>
-                </div>
-                <button class="btn btn-primary" style="padding:10px 28px" onclick="settingsChangePassword()">Update Password</button>
               </div>
             </div>
+
+            <!-- Hidden inputs (kept for saveGeneralSettings compat) -->
+            <input type="hidden" id="sFullName" />
+            <input type="hidden" id="sPhone" />
+            <input type="hidden" id="sDob" />
+            <input type="hidden" id="sUsername" />
+            <input type="hidden" id="sEmail" />
+            <input type="hidden" id="settingsPwCurrent" />
+            <input type="hidden" id="settingsPwNew" />
+            <input type="hidden" id="settingsPwConfirm" />
+            <div id="sPwNoPasswordNote" style="display:none"></div>
+            <div id="settingsPwAlert" style="display:none"></div>
 
             <!-- SOCIAL panel -->
             <div id="spanel-social" style="display:none">
