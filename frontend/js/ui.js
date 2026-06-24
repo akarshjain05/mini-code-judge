@@ -39,14 +39,28 @@ async function fetchCurrentUser() {
   if (!token) { isAdmin = false; updateAdminUI(); return; }
   try {
     const res = await fetch(`${API}/auth/me`, { headers: { 'Authorization': `Bearer ${token}` } });
+    if (res.status === 401) {
+      // Token expired or invalid — clear it and show login button
+      token = null; username = null; isAdmin = false;
+      localStorage.removeItem('jwt'); localStorage.removeItem('username');
+      updateAuthUI(); updateAdminUI();
+      return;
+    }
     if (!res.ok) { isAdmin = false; updateAdminUI(); return; }
     const data = await res.json();
     isAdmin = !!data.is_admin;
+    username = data.username;
+    localStorage.setItem('username', username);
     // Populate email in dropdown and settings
     if (data.email) {
       document.getElementById('dropdownEmail').textContent = data.email;
       document.getElementById('settingsEmail').textContent = data.email;
     }
+    // Sync display name in dropdown
+    const displayName = data.full_name || data.username;
+    document.getElementById('dropdownName').textContent = displayName;
+    document.getElementById('userAvatar').textContent = displayName[0].toUpperCase();
+    document.getElementById('dropdownAvatar').textContent = displayName[0].toUpperCase();
   } catch(e) { isAdmin = false; }
   updateAdminUI();
 }

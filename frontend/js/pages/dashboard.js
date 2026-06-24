@@ -1,5 +1,4 @@
 // ── Dashboard ───────────────────────────────────────────────────────
-// ── Dashboard ──────────────────────────────────────────────────────
 async function loadDashboard() {
   loadProblems();
   if (token) loadHistory();
@@ -7,6 +6,14 @@ async function loadDashboard() {
   if (!token) { el.innerHTML = '<p style="color:var(--muted);font-size:13px">Login to see your recent submissions.</p>'; return; }
   try {
     const res = await fetch(`${API}/submissions?limit=5`, { headers: { 'Authorization': `Bearer ${token}` } });
+    if (res.status === 401) {
+      // Token expired — clear and show logged-out state
+      token = null; username = null; isAdmin = false;
+      localStorage.removeItem('jwt'); localStorage.removeItem('username');
+      updateAuthUI(); updateAdminUI();
+      el.innerHTML = '<p style="color:var(--muted);font-size:13px">Session expired. Please <a href="#" onclick="openAuthModal()" style="color:var(--accent)">log in again</a>.</p>';
+      return;
+    }
     const subs = await res.json();
     if (!subs.length) { el.innerHTML = '<p style="color:var(--muted);font-size:13px">No submissions yet. <a href="#" onclick="goTo(\'problems\')" style="color:var(--accent)">Try a problem →</a></p>'; return; }
     el.innerHTML = subs.map(s => `
