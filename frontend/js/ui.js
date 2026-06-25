@@ -25,14 +25,14 @@ function updateAuthUI() {
   const loggedIn = !!token;
   document.getElementById('userPillWrap').style.display = loggedIn ? 'block' : 'none';
   document.getElementById('topAuthBtn').style.display = loggedIn ? 'none' : 'inline-flex';
-  if (loggedIn) {
-    const initial = (username || '?')[0].toUpperCase();
+  if (loggedIn && username) {
+    const initial = username[0].toUpperCase();
     document.getElementById('userAvatar').textContent = initial;
     document.getElementById('dropdownAvatar').textContent = initial;
-    document.getElementById('dropdownName').textContent = username || '—';
-    document.getElementById('dropdownUsername').textContent = '@' + (username || '');
+    document.getElementById('dropdownName').textContent = username;
+    document.getElementById('dropdownUsername').textContent = '@' + username;
     document.getElementById('settingsAvatar').textContent = initial;
-    document.getElementById('settingsUsername').textContent = username || '—';
+    document.getElementById('settingsUsername').textContent = username;
   }
 }
 

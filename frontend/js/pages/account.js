@@ -6,22 +6,34 @@ async function loadAccount() {
   if (!token) { openAuthModal(); return; }
   try {
     const res = await fetch(`${API}/auth/me`, { headers: { 'Authorization': `Bearer ${token}` } });
+    if (res.status === 401) {
+      // Token expired — clear and redirect to login
+      token = null; username = null; isAdmin = false;
+      localStorage.removeItem('jwt'); localStorage.removeItem('username');
+      updateAuthUI(); updateAdminUI();
+      goTo('dashboard');
+      openAuthModal();
+      return;
+    }
+    if (!res.ok) { console.error('loadAccount: API error', res.status); return; }
     const data = await res.json();
+    if (!data.username) { console.error('loadAccount: no username in response'); return; }
     _accountData = data;
+
     // Show display name (full_name) as headline, username below it
     const displayName = data.full_name || data.username;
     document.getElementById('accountDisplayName').textContent = displayName;
     document.getElementById('accountUsername').textContent = '@' + data.username;
+
+    // Sync avatar initial using display name
+    _renderAccountAvatar(data.profile_picture, displayName);
+
     // DOB kept in hidden field for compat
-    if (data.date_of_birth) { const el = document.getElementById('accountDob'); if(el) el.value = data.date_of_birth; }
-    _renderAccountAvatar(data.profile_picture, data.username);
+    const dobEl = document.getElementById('accountDob');
+    if (dobEl && data.date_of_birth) dobEl.value = data.date_of_birth;
+
     document.getElementById('profileAlert').className = 'alert';
     document.getElementById('profileAlert').textContent = '';
-    document.getElementById('pwAlert').className = 'alert';
-    document.getElementById('pwAlert').textContent = '';
-    document.getElementById('pwCurrent').value = '';
-    document.getElementById('pwNew').value = '';
-    document.getElementById('pwConfirm').value = '';
   } catch(e) {
     console.error('loadAccount error', e);
   }
