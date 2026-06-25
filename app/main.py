@@ -34,8 +34,19 @@ def on_startup():
         for sql in [
             "ALTER TABLE users ADD COLUMN IF NOT EXISTS full_name VARCHAR(100)",
             "ALTER TABLE users ADD COLUMN IF NOT EXISTS phone_number VARCHAR(30)",
+            "ALTER TABLE users ADD COLUMN IF NOT EXISTS github_id VARCHAR(255)",
         ]:
             conn.execute(text(sql))
+        # Add unique index for github_id if not exists
+        conn.execute(text("""
+            DO $$ BEGIN
+              IF NOT EXISTS (
+                SELECT 1 FROM pg_indexes WHERE tablename='users' AND indexname='ix_users_github_id'
+              ) THEN
+                CREATE UNIQUE INDEX ix_users_github_id ON users(github_id) WHERE github_id IS NOT NULL;
+              END IF;
+            END $$;
+        """))
         conn.commit()
     start_background_worker()
 

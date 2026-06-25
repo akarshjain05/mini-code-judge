@@ -511,3 +511,69 @@
 }
 .sfield-arrow { color: var(--muted); flex-shrink: 0; }
 .sfield-lock { color: var(--muted); flex-shrink: 0; opacity: 0.6; }
+
+/* ── GitHub sign-in button ──────────────────────────────────────── */
+.btn-github-signin {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 16px;
+  background: #24292f;
+  color: #fff;
+  border: 1px solid #444c56;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  margin-bottom: 4px;
+}
+.btn-github-signin:hover { background: #32383f; border-color: #6e7681; }
+
+/* ── Appearance submenu ─────────────────────────────────────────── */
+.appearance-opt { padding-left: 28px; font-size: 12px; }
+.appearance-opt .theme-check { display: none; }
+.appearance-opt.active .theme-check { display: block; }
+
+/* ── Light mode ─────────────────────────────────────────────────── */
+:root.light {
+  --bg:       #f6f8fa;
+  --surface:  #ffffff;
+  --surface2: #f0f2f5;
+  --border:   #d0d7de;
+  --text:     #1f2328;
+  --muted:    #656d76;
+  --accent:   #0969da;
+  --accent2:  #1a7f37;
+  --yellow:   #9a6700;
+  --red:      #cf222e;
+}
+:root.light .topbar  { background: #fff; border-color: #d0d7de; }
+:root.light .card    { background: #fff; border-color: #d0d7de; }
+:root.light .user-dropdown { background: #fff; border-color: #d0d7de; box-shadow: 0 8px 32px rgba(0,0,0,0.12); }
+:root.light .nav-item:hover { background: rgba(0,0,0,0.04); }
+:root.light .nav-item.active { background: rgba(9,105,218,0.08); }
+:root.light .page-header h1 { color: #1f2328; }
+:root.light .sfield-row:not(.locked):hover { background: rgba(0,0,0,0.03); }
+:root.light .settings-tab:hover { background: rgba(0,0,0,0.04); }
+:root.light .settings-tab.active { background: rgba(9,105,218,0.08); }
+:root.light input, :root.light select, :root.light textarea { background: #f6f8fa; border-color: #d0d7de; color: #1f2328; }
+:root.light .btn-ghost { color: #1f2328; border-color: #d0d7de; }
+:root.light .btn-github-signin { background: #24292f; color: #fff; }
+
+/* ── Settings appearance choices ────────────────────────────────── */
+.appearance-choice {
+  display: flex;
+  align-items: center;
+  padding: 14px 16px;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.appearance-choice:hover { border-color: var(--accent); background: rgba(88,166,255,0.04); }
+.appearance-choice.active { border-color: var(--accent); background: rgba(88,166,255,0.07); }
+.appearance-choice .ap-check { display: none; flex-shrink: 0; }
+.appearance-choice.active .ap-check { display: block; }

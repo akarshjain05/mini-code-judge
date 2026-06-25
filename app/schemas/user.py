@@ -64,6 +64,9 @@ class ResetPasswordRequest(BaseModel):
 class DeleteAccountRequest(BaseModel):
     password: Optional[str] = None   # required only if user has a password set
 
+class GitHubConnectRequest(BaseModel):
+    code: str   # OAuth code from GitHub callback
+
 class UserOut(BaseModel):
     id: int
     username: str
@@ -73,8 +76,9 @@ class UserOut(BaseModel):
     is_admin: bool = False
     profile_picture: Optional[str] = None
     date_of_birth: Optional[str] = None
-    has_google: bool = False         # true when google_id is linked
-    has_password: bool = True        # false for pure-Google accounts with no password set
+    has_google: bool = False
+    has_github: bool = False
+    has_password: bool = True
     model_config = {"from_attributes": True}
 
 class Token(BaseModel):

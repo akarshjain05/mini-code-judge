@@ -1,5 +1,8 @@
 // ── main.js — loaded last, wires all modules together ────────────────
 
+// Apply saved theme immediately (before first paint)
+initTheme();
+
 // Populate page loaders now that all page modules are defined
 Object.assign(PAGE_LOADERS, {
   history:     loadHistory,

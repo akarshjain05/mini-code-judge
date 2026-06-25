@@ -1,5 +1,7 @@
 import re
+import httpx
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import RedirectResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from google.oauth2 import id_token as google_id_token
@@ -16,7 +18,7 @@ from app.models.user import User
 from app.schemas.user import (
     UserRegister, UserOut, Token, GoogleLoginRequest, GoogleCompleteSignup,
     UserUpdate, PasswordChange, ForgotPasswordRequest, ResetPasswordRequest,
-    DeleteAccountRequest,
+    DeleteAccountRequest, GitHubConnectRequest,
 )
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -130,8 +132,8 @@ def reset_password(payload: ResetPasswordRequest, db: Session = Depends(get_db))
 
 @router.get("/me", response_model=UserOut)
 def get_me(current_user: User = Depends(get_current_user)):
-    # Attach computed fields not stored as columns
     current_user.has_google = current_user.google_id is not None
+    current_user.has_github = current_user.github_id is not None
     current_user.has_password = current_user.password is not None
     return current_user
 
@@ -159,6 +161,7 @@ def update_me(payload: UserUpdate, current_user: User = Depends(get_current_user
         current_user.profile_picture = pic or None
     db.commit(); db.refresh(current_user)
     current_user.has_google = current_user.google_id is not None
+    current_user.has_github = current_user.github_id is not None
     current_user.has_password = current_user.password is not None
     return current_user
 
@@ -197,3 +200,157 @@ def change_password(payload: PasswordChange, current_user: User = Depends(get_cu
     current_user.password = hash_password(payload.new_password)
     db.commit()
     return {"message": "Password updated successfully"}
+
+
+# ── GitHub OAuth ──────────────────────────────────────────────────────
+
+def _github_exchange_code(code: str) -> dict:
+    """Exchange a GitHub OAuth code for an access token + user info."""
+    token_res = httpx.post(
+        "https://github.com/login/oauth/access_token",
+        json={
+            "client_id": settings.GITHUB_CLIENT_ID,
+            "client_secret": settings.GITHUB_CLIENT_SECRET,
+            "code": code,
+        },
+        headers={"Accept": "application/json"},
+        timeout=10,
+    )
+    token_data = token_res.json()
+    access_token = token_data.get("access_token")
+    if not access_token:
+        raise HTTPException(status_code=400, detail="GitHub OAuth failed: could not get access token")
+
+    user_res = httpx.get(
+        "https://api.github.com/user",
+        headers={"Authorization": f"Bearer {access_token}", "Accept": "application/vnd.github+json"},
+        timeout=10,
+    )
+    gh_user = user_res.json()
+
+    # Get primary verified email
+    email_res = httpx.get(
+        "https://api.github.com/user/emails",
+        headers={"Authorization": f"Bearer {access_token}", "Accept": "application/vnd.github+json"},
+        timeout=10,
+    )
+    emails = email_res.json() if email_res.status_code == 200 else []
+    primary_email = next(
+        (e["email"] for e in emails if e.get("primary") and e.get("verified")),
+        gh_user.get("email"),
+    )
+
+    return {
+        "github_id": str(gh_user["id"]),
+        "email": primary_email,
+        "name": gh_user.get("name") or gh_user.get("login"),
+        "avatar": gh_user.get("avatar_url"),
+        "login": gh_user.get("login"),
+    }
+
+
+@router.get("/github")
+def github_login():
+    """Redirect user to GitHub OAuth authorization page."""
+    if not settings.GITHUB_CLIENT_ID:
+        raise HTTPException(status_code=503, detail="GitHub OAuth not configured")
+    url = (
+        "https://github.com/login/oauth/authorize"
+        f"?client_id={settings.GITHUB_CLIENT_ID}"
+        "&scope=user:email"
+        f"&redirect_uri={settings.FRONTEND_URL}/auth/github/callback"
+    )
+    return RedirectResponse(url)
+
+
+@router.post("/github/callback")
+def github_callback(payload: GitHubConnectRequest, db: Session = Depends(get_db)):
+    """
+    Exchange GitHub OAuth code → JWT.
+    Handles: new user, existing user (same email), account already linked.
+    """
+    if not settings.GITHUB_CLIENT_ID or not settings.GITHUB_CLIENT_SECRET:
+        raise HTTPException(status_code=503, detail="GitHub OAuth not configured")
+
+    gh = _github_exchange_code(payload.code)
+    github_id = gh["github_id"]
+    email = gh["email"]
+
+    # 1. Already linked to a GitHub account
+    existing_by_github = db.query(User).filter(User.github_id == github_id).first()
+    if existing_by_github:
+        token = create_access_token(data={"sub": str(existing_by_github.id)})
+        return {"access_token": token, "token_type": "bearer", "is_new": False}
+
+    # 2. Email matches an existing account → link GitHub to it
+    if email:
+        existing_by_email = db.query(User).filter(User.email == email).first()
+        if existing_by_email:
+            if existing_by_email.github_id and existing_by_email.github_id != github_id:
+                raise HTTPException(
+                    status_code=409,
+                    detail="This email is already linked to a different GitHub account."
+                )
+            existing_by_email.github_id = github_id
+            db.commit()
+            token = create_access_token(data={"sub": str(existing_by_email.id)})
+            return {"access_token": token, "token_type": "bearer", "is_new": False}
+
+    # 3. New user — need to pick a username; return a setup token
+    setup_token = create_setup_token({"github_id": github_id, "email": email, "name": gh["name"]})
+    return {
+        "requires_setup": True,
+        "setup_token": setup_token,
+        "suggested_username": gh["login"],
+        "email": email,
+        "name": gh["name"],
+    }
+
+
+@router.post("/complete-github-signup", response_model=Token)
+def complete_github_signup(payload: GoogleCompleteSignup, db: Session = Depends(get_db)):
+    """Create a new account for a first-time GitHub user after they pick a username."""
+    data = decode_setup_token(payload.setup_token)
+    if not data or "github_id" not in data:
+        raise HTTPException(status_code=400, detail="Invalid or expired setup token")
+
+    github_id = data["github_id"]
+    email = data.get("email")
+    name = data.get("name")
+
+    if db.query(User).filter(User.username == payload.username).first():
+        raise HTTPException(status_code=400, detail="Username already taken")
+    if email and db.query(User).filter(User.email == email).first():
+        raise HTTPException(status_code=400, detail="Email already registered — try logging in instead")
+
+    user = User(
+        username=payload.username,
+        email=email or f"github_{github_id}@placeholder.invalid",
+        github_id=github_id,
+        full_name=name,
+    )
+    db.add(user); db.commit(); db.refresh(user)
+    token = create_access_token(data={"sub": str(user.id)})
+    return {"access_token": token, "token_type": "bearer"}
+
+
+@router.post("/github/connect")
+def github_connect(
+    payload: GitHubConnectRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Connect a GitHub account to an already logged-in user."""
+    gh = _github_exchange_code(payload.code)
+    github_id = gh["github_id"]
+
+    # Check if this GitHub ID is already on another account
+    conflict = db.query(User).filter(User.github_id == github_id).first()
+    if conflict and conflict.id != current_user.id:
+        raise HTTPException(
+            status_code=409,
+            detail="This GitHub account is already connected to a different Code Judge account."
+        )
+    current_user.github_id = github_id
+    db.commit()
+    return {"message": "GitHub connected successfully"}

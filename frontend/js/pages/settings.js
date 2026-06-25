@@ -1,12 +1,18 @@
 // ── Settings Page ────────────────────────────────────────────────────
 
 function switchSettingsTab(tab) {
-  ['general','social','delete'].forEach(t => {
-    document.getElementById('stab-' + t).classList.remove('active');
-    document.getElementById('spanel-' + t).style.display = 'none';
+  ['general','social','appearance','delete'].forEach(t => {
+    const tabEl = document.getElementById('stab-' + t);
+    const panEl = document.getElementById('spanel-' + t);
+    if (tabEl) tabEl.classList.remove('active');
+    if (panEl) panEl.style.display = 'none';
   });
-  document.getElementById('stab-' + tab).classList.add('active');
-  document.getElementById('spanel-' + tab).style.display = '';
+  const activeTab = document.getElementById('stab-' + tab);
+  const activePanel = document.getElementById('spanel-' + tab);
+  if (activeTab) activeTab.classList.add('active');
+  if (activePanel) activePanel.style.display = '';
+  // Sync appearance active state when switching to that tab
+  if (tab === 'appearance') _syncAppearancePanel();
 }
 
 function openSettings() { closeUserMenu(); goTo('settings'); }
@@ -67,6 +73,11 @@ function _syncSettingsRows(d) {
   document.getElementById('sGoogleStatus').textContent = hasGoogle ? `Connected as ${d.email}` : 'Not connected';
   document.getElementById('sGoogleBtn').textContent = hasGoogle ? 'Connected' : 'Connect';
   document.getElementById('sGoogleBtn').disabled = hasGoogle;
+
+  const hasGithub = !!d.has_github;
+  document.getElementById('sGithubStatus').textContent = hasGithub ? 'Connected' : 'Not connected';
+  document.getElementById('sGithubBtn').textContent = hasGithub ? 'Connected' : 'Connect';
+  document.getElementById('sGithubBtn').disabled = hasGithub;
 
   // Delete tab password field
   const delPwGrp = document.getElementById('sDeletePwGroup');
@@ -324,3 +335,20 @@ async function confirmDeleteAccount() {
     al.className = 'alert error'; al.textContent = 'Network error. Please try again.';
   }
 }
+
+// ── Appearance panel sync ─────────────────────────────────────────
+function _syncAppearancePanel() {
+  const saved = localStorage.getItem('theme') || 'system';
+  ['system','dark','light'].forEach(t => {
+    const el = document.getElementById('choice-' + t);
+    if (el) el.classList.toggle('active', t === saved);
+  });
+}
+
+// Override setTheme to also update the settings panel when it's open
+const _origSetTheme = window.setTheme || setTheme;
+window.setTheme = function(theme) {
+  localStorage.setItem('theme', theme);
+  if (typeof _applyTheme === 'function') _applyTheme(theme);
+  _syncAppearancePanel();
+};

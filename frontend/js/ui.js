@@ -30,6 +30,7 @@ function updateAuthUI() {
     document.getElementById('userAvatar').textContent = initial;
     document.getElementById('dropdownAvatar').textContent = initial;
     document.getElementById('dropdownName').textContent = username || '—';
+    document.getElementById('dropdownUsername').textContent = '@' + (username || '');
     document.getElementById('settingsAvatar').textContent = initial;
     document.getElementById('settingsUsername').textContent = username || '—';
   }
@@ -59,6 +60,7 @@ async function fetchCurrentUser() {
     // Sync display name in dropdown
     const displayName = data.full_name || data.username;
     document.getElementById('dropdownName').textContent = displayName;
+    document.getElementById('dropdownUsername').textContent = '@' + data.username;
     document.getElementById('userAvatar').textContent = displayName[0].toUpperCase();
     document.getElementById('dropdownAvatar').textContent = displayName[0].toUpperCase();
   } catch(e) { isAdmin = false; }
@@ -240,4 +242,40 @@ async function pollSampleRun(id, vtitle, vsub, vmeta, verr) {
     vtitle.textContent = '⚠ Cannot reach API';
     vsub.textContent = '';
   }
+}
+
+/* ── Appearance / Theme ─────────────────────────────────────────── */
+function _applyTheme(theme) {
+  const root = document.documentElement;
+  root.classList.remove('light');
+  if (theme === 'light') {
+    root.classList.add('light');
+  } else if (theme === 'system') {
+    if (window.matchMedia('(prefers-color-scheme: light)').matches) root.classList.add('light');
+  }
+  // Update checkmarks
+  ['system','dark','light'].forEach(t => {
+    const el = document.getElementById('theme-' + t);
+    if (el) el.classList.toggle('active', t === theme);
+  });
+}
+
+function setTheme(theme) {
+  localStorage.setItem('theme', theme);
+  _applyTheme(theme);
+}
+
+function initTheme() {
+  const saved = localStorage.getItem('theme') || 'system';
+  _applyTheme(saved);
+  // Listen for OS-level changes when in system mode
+  window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => {
+    if ((localStorage.getItem('theme') || 'system') === 'system') _applyTheme('system');
+  });
+}
+
+function toggleAppearanceSubmenu(e) {
+  e.stopPropagation();
+  const sub = document.getElementById('appearanceSubmenu');
+  sub.style.display = sub.style.display === 'block' ? 'none' : 'block';
 }

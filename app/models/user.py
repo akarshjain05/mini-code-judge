@@ -10,6 +10,7 @@ class User(Base):
     phone_number    = Column(String(30), nullable=True)
     password        = Column(String(255), nullable=True)
     google_id       = Column(String(255), unique=True, nullable=True, index=True)
+    github_id       = Column(String(255), unique=True, nullable=True, index=True)
     is_admin        = Column(Boolean, default=False, nullable=False)
     profile_picture = Column(Text, nullable=True)
     date_of_birth   = Column(String(20), nullable=True)

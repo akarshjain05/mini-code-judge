@@ -19,6 +19,11 @@ class Settings(BaseSettings):
     # Google Sign-In
     GOOGLE_CLIENT_ID: str = ""
 
+    # GitHub OAuth
+    GITHUB_CLIENT_ID: str = ""
+    GITHUB_CLIENT_SECRET: str = ""
+    FRONTEND_URL: str = "https://mini-code-judge-frontend.onrender.com"
+
     # Modern Pydantic V2 Config
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
