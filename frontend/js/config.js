@@ -8,6 +8,6 @@ let isAdmin  = false;
 let _allProblems   = [];
 let _allSubs       = [];
 let _lbData        = [];
-let _lbSortKey     = 'score';
+let _lbSortKey     = 'solved';
 let _settingsData  = null;
 let _contestTimers = {};
