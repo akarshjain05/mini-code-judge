@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     GITHUB_CLIENT_ID: str = ""
     GITHUB_CLIENT_SECRET: str = ""
     FRONTEND_URL: str = "https://mini-code-judge-frontend.onrender.com"
+    API_URL: str = "https://mini-code-judge.onrender.com"
 
     # Modern Pydantic V2 Config
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")

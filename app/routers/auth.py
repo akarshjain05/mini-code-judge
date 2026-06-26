@@ -203,6 +203,9 @@ def change_password(payload: PasswordChange, current_user: User = Depends(get_cu
 
 
 # ── GitHub OAuth ──────────────────────────────────────────────────────
+# Flow: Frontend → GET /auth/github?state=... → GitHub → GET /auth/github/redirect?code=...
+# Backend exchanges code and redirects to frontend with token/setup info in URL hash.
+# No frontend /auth/github/callback route needed.
 
 def _github_exchange_code(code: str) -> dict:
     """Exchange a GitHub OAuth code for an access token + user info."""
@@ -212,6 +215,7 @@ def _github_exchange_code(code: str) -> dict:
             "client_id": settings.GITHUB_CLIENT_ID,
             "client_secret": settings.GITHUB_CLIENT_SECRET,
             "code": code,
+            "redirect_uri": f"{settings.API_URL}/auth/github/redirect",
         },
         headers={"Accept": "application/json"},
         timeout=10,
@@ -219,7 +223,7 @@ def _github_exchange_code(code: str) -> dict:
     token_data = token_res.json()
     access_token = token_data.get("access_token")
     if not access_token:
-        raise HTTPException(status_code=400, detail="GitHub OAuth failed: could not get access token")
+        raise ValueError(f"No access token: {token_data.get('error_description', token_data)}")
 
     user_res = httpx.get(
         "https://api.github.com/user",
@@ -228,7 +232,6 @@ def _github_exchange_code(code: str) -> dict:
     )
     gh_user = user_res.json()
 
-    # Get primary verified email
     email_res = httpx.get(
         "https://api.github.com/user/emails",
         headers={"Authorization": f"Bearer {access_token}", "Accept": "application/vnd.github+json"},
@@ -244,67 +247,96 @@ def _github_exchange_code(code: str) -> dict:
         "github_id": str(gh_user["id"]),
         "email": primary_email,
         "name": gh_user.get("name") or gh_user.get("login"),
-        "avatar": gh_user.get("avatar_url"),
         "login": gh_user.get("login"),
     }
 
 
 @router.get("/github")
-def github_login():
-    """Redirect user to GitHub OAuth authorization page."""
+def github_login(state: str = ""):
+    """Redirect user to GitHub OAuth. state= can carry 'connect:<jwt>' for account linking."""
     if not settings.GITHUB_CLIENT_ID:
-        raise HTTPException(status_code=503, detail="GitHub OAuth not configured")
-    url = (
-        "https://github.com/login/oauth/authorize"
-        f"?client_id={settings.GITHUB_CLIENT_ID}"
-        "&scope=user:email"
-        f"&redirect_uri={settings.FRONTEND_URL}/auth/github/callback"
-    )
+        return RedirectResponse(f"{settings.FRONTEND_URL}/#github-error?msg=GitHub+OAuth+not+configured")
+    import urllib.parse as _up
+    params = {
+        "client_id": settings.GITHUB_CLIENT_ID,
+        "scope": "user:email",
+        "redirect_uri": f"{settings.API_URL}/auth/github/redirect",
+    }
+    if state:
+        params["state"] = state
+    url = "https://github.com/login/oauth/authorize?" + _up.urlencode(params)
     return RedirectResponse(url)
 
 
-@router.post("/github/callback")
-def github_callback(payload: GitHubConnectRequest, db: Session = Depends(get_db)):
+@router.get("/github/redirect")
+def github_redirect(code: str = "", error: str = "", state: str = "", db: Session = Depends(get_db)):
     """
-    Exchange GitHub OAuth code → JWT.
-    Handles: new user, existing user (same email), account already linked.
+    GitHub redirects here after OAuth. Backend exchanges the code and redirects
+    to the frontend with result info in the URL hash (works with any static host).
     """
-    if not settings.GITHUB_CLIENT_ID or not settings.GITHUB_CLIENT_SECRET:
-        raise HTTPException(status_code=503, detail="GitHub OAuth not configured")
+    import urllib.parse as _up
 
-    gh = _github_exchange_code(payload.code)
+    frontend = settings.FRONTEND_URL
+
+    if error or not code:
+        return RedirectResponse(f"{frontend}/#github-error?msg={_up.quote(error or 'No code received')}")
+
+    try:
+        gh = _github_exchange_code(code)
+    except Exception as e:
+        return RedirectResponse(f"{frontend}/#github-error?msg={_up.quote(str(e))}")
+
     github_id = gh["github_id"]
-    email = gh["email"]
+    email     = gh["email"]
 
-    # 1. Already linked to a GitHub account
+    # ── Connect mode: state = "connect:<user_jwt>" ──────────────────
+    if state.startswith("connect:"):
+        connect_jwt = state[len("connect:"):]
+        try:
+            from app.core.security import decode_access_token
+            user_id = decode_access_token(connect_jwt)
+            current_user = db.query(User).filter(User.id == int(user_id)).first()
+            if not current_user:
+                raise ValueError("User not found")
+        except Exception as e:
+            return RedirectResponse(f"{frontend}/#github-error?msg={_up.quote('Session invalid: ' + str(e))}")
+
+        conflict = db.query(User).filter(User.github_id == github_id).first()
+        if conflict and conflict.id != current_user.id:
+            msg = "This GitHub account is already linked to another Code Judge account."
+            return RedirectResponse(f"{frontend}/#github-error?msg={_up.quote(msg)}")
+
+        current_user.github_id = github_id
+        db.commit()
+        return RedirectResponse(f"{frontend}/#github-connected")
+
+    # ── Login / signup mode ──────────────────────────────────────────
+    # 1. Already linked
     existing_by_github = db.query(User).filter(User.github_id == github_id).first()
     if existing_by_github:
-        token = create_access_token(data={"sub": str(existing_by_github.id)})
-        return {"access_token": token, "token_type": "bearer", "is_new": False}
+        jwt = create_access_token(data={"sub": str(existing_by_github.id)})
+        return RedirectResponse(f"{frontend}/#github-login?token={jwt}")
 
-    # 2. Email matches an existing account → link GitHub to it
+    # 2. Email matches existing account → link and log in
     if email:
         existing_by_email = db.query(User).filter(User.email == email).first()
         if existing_by_email:
             if existing_by_email.github_id and existing_by_email.github_id != github_id:
-                raise HTTPException(
-                    status_code=409,
-                    detail="This email is already linked to a different GitHub account."
-                )
+                msg = f"This email is already linked to a different GitHub account."
+                return RedirectResponse(f"{frontend}/#github-error?msg={_up.quote(msg)}")
             existing_by_email.github_id = github_id
             db.commit()
-            token = create_access_token(data={"sub": str(existing_by_email.id)})
-            return {"access_token": token, "token_type": "bearer", "is_new": False}
+            jwt = create_access_token(data={"sub": str(existing_by_email.id)})
+            return RedirectResponse(f"{frontend}/#github-login?token={jwt}")
 
-    # 3. New user — need to pick a username; return a setup token
-    setup_token = create_setup_token({"github_id": github_id, "email": email, "name": gh["name"]})
-    return {
-        "requires_setup": True,
+    # 3. New user → send to frontend for username selection
+    setup_token = create_setup_token({"github_id": github_id, "email": email or "", "name": gh["name"] or ""})
+    params = _up.urlencode({
         "setup_token": setup_token,
-        "suggested_username": gh["login"],
-        "email": email,
-        "name": gh["name"],
-    }
+        "suggested": gh["login"] or "",
+        "name": gh["name"] or "",
+    })
+    return RedirectResponse(f"{frontend}/#github-setup?{params}")
 
 
 @router.post("/complete-github-signup", response_model=Token)
@@ -315,8 +347,8 @@ def complete_github_signup(payload: GoogleCompleteSignup, db: Session = Depends(
         raise HTTPException(status_code=400, detail="Invalid or expired setup token")
 
     github_id = data["github_id"]
-    email = data.get("email")
-    name = data.get("name")
+    email = data.get("email") or ""
+    name  = data.get("name") or ""
 
     if db.query(User).filter(User.username == payload.username).first():
         raise HTTPException(status_code=400, detail="Username already taken")
@@ -325,32 +357,10 @@ def complete_github_signup(payload: GoogleCompleteSignup, db: Session = Depends(
 
     user = User(
         username=payload.username,
-        email=email or f"github_{github_id}@placeholder.invalid",
+        email=email or f"gh_{github_id}@noemail.invalid",
         github_id=github_id,
-        full_name=name,
+        full_name=name or None,
     )
     db.add(user); db.commit(); db.refresh(user)
-    token = create_access_token(data={"sub": str(user.id)})
-    return {"access_token": token, "token_type": "bearer"}
-
-
-@router.post("/github/connect")
-def github_connect(
-    payload: GitHubConnectRequest,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    """Connect a GitHub account to an already logged-in user."""
-    gh = _github_exchange_code(payload.code)
-    github_id = gh["github_id"]
-
-    # Check if this GitHub ID is already on another account
-    conflict = db.query(User).filter(User.github_id == github_id).first()
-    if conflict and conflict.id != current_user.id:
-        raise HTTPException(
-            status_code=409,
-            detail="This GitHub account is already connected to a different Code Judge account."
-        )
-    current_user.github_id = github_id
-    db.commit()
-    return {"message": "GitHub connected successfully"}
+    jwt = create_access_token(data={"sub": str(user.id)})
+    return {"access_token": jwt, "token_type": "bearer"}

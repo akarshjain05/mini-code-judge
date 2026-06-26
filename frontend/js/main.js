@@ -25,16 +25,25 @@ window.onload = async () => {
   fetchCurrentUser();
   initGoogleSignIn();
 
+  // Handle GitHub OAuth redirect result (hash set by backend after OAuth)
+  const hash = window.location.hash;
+  if (hash.startsWith('#github-')) {
+    await handleGitHubHashResult(hash);
+    // After handling, load dashboard normally
+    showPageLoader();
+    try { await Promise.all([loadProblems(), loadDashboard()]); }
+    catch(e) { console.error(e); }
+    finally { hidePageLoader(); }
+    return;
+  }
+
   showPageLoader();
   try {
-    // Always pre-load problems list and dashboard data in the background;
-    // handleHashNav() then activates the correct page for the URL hash.
     await Promise.all([loadProblems(), loadDashboard()]);
   } catch(e) { console.error('Initial load error:', e); }
   finally { hidePageLoader(); }
 
-  // Navigate to the hash AFTER data is loaded
-  if (window.location.hash) {
+  if (window.location.hash && !window.location.hash.startsWith('#github-')) {
     handleHashNav();
   }
 };

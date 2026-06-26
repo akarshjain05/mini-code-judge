@@ -28,6 +28,18 @@ def create_access_token(data: dict) -> str:
     return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 
+def decode_access_token(token: str) -> str:
+    """Decode a JWT and return the user_id (sub). Raises ValueError on failure."""
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        user_id = payload.get("sub")
+        if not user_id:
+            raise ValueError("No sub in token")
+        return user_id
+    except JWTError as e:
+        raise ValueError(f"Invalid token: {e}")
+
+
 def get_current_user(
     token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db),

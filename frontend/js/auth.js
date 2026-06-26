@@ -156,84 +156,57 @@ async function obFinish(skipDob = false) {
 }
 
 // ── GitHub OAuth ──────────────────────────────────────────────────────
+// Flow: open GitHub in same tab → backend /auth/github/redirect → back here
+// with result in URL hash (#github-login, #github-setup, #github-error, #github-connected)
+
 let _githubSetupToken = null;
-let _githubConnectMode = false; // true = connecting to existing account, false = new login
 
 function startGitHubOAuth(connectMode = false) {
-  _githubConnectMode = connectMode;
-  // Pop a small window for GitHub OAuth so we can capture the redirect
-  const w = 600, h = 700;
-  const left = Math.max(0, (screen.width - w) / 2);
-  const top  = Math.max(0, (screen.height - h) / 2);
-  const popup = window.open(
-    `${API}/auth/github`,
-    'github-oauth',
-    `width=${w},height=${h},left=${left},top=${top},scrollbars=yes`
-  );
-  // Listen for the callback message from the popup (we'll post a message from the callback page)
-  const handler = async (e) => {
-    if (!e.data || e.data.type !== 'github-oauth') return;
-    window.removeEventListener('message', handler);
-    if (popup && !popup.closed) popup.close();
-    await handleGitHubOAuthResult(e.data.code);
-  };
-  window.addEventListener('message', handler);
+  // Pass current JWT as state if connecting (so backend can identify the user)
+  const state = connectMode && token ? `connect:${token}` : '';
+  const url = `${API}/auth/github` + (state ? `?state=${encodeURIComponent(state)}` : '');
+  window.location.href = url;
 }
 
-async function handleGitHubOAuthResult(code) {
-  const al = document.getElementById('githubSetupErr');
-  try {
-    if (_githubConnectMode) {
-      // Connect GitHub to existing logged-in account
-      const res = await fetch(`${API}/auth/github/connect`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ code }),
-      });
-      const data = await res.json();
-      const socialAlert = document.getElementById('sSocialAlert');
-      if (!res.ok) {
-        if (socialAlert) { socialAlert.className = 'alert error'; socialAlert.textContent = data.detail || 'GitHub connect failed.'; }
-        return;
-      }
-      if (socialAlert) { socialAlert.className = 'alert success'; socialAlert.textContent = 'GitHub connected successfully!'; }
-      // Refresh settings data
-      if (typeof loadSettings === 'function') loadSettings();
-      _githubConnectMode = false;
-      return;
+// Called from main.js on startup when URL hash contains github result
+async function handleGitHubHashResult(hash) {
+  // Parse the hash: #github-login?token=xxx  |  #github-setup?setup_token=...
+  //                 #github-error?msg=xxx    |  #github-connected
+  const [hashPath, hashQuery] = hash.slice(1).split('?');
+  const params = new URLSearchParams(hashQuery || '');
+
+  // Clear the hash from URL so refreshing doesn't re-trigger
+  history.replaceState(null, '', window.location.pathname);
+
+  if (hashPath === 'github-login') {
+    const jwt = params.get('token');
+    if (jwt) {
+      await finishLogin(jwt);
     }
 
-    // Login / signup flow
-    const res = await fetch(`${API}/auth/github/callback`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code }),
-    });
-    const data = await res.json();
+  } else if (hashPath === 'github-setup') {
+    // New GitHub user needs to pick a username
+    _githubSetupToken = params.get('setup_token');
+    const suggested   = params.get('suggested') || '';
+    openAuthModal();
+    showGitHubSetupForm(suggested);
 
-    if (!res.ok) {
-      // Account conflict or error
-      showGitHubSetupForm(null);
-      if (al) { al.className = 'alert error'; al.textContent = data.detail || 'GitHub sign-in failed.'; }
-      return;
-    }
+  } else if (hashPath === 'github-error') {
+    const msg = params.get('msg') || 'GitHub sign-in failed.';
+    openAuthModal();
+    const al = document.getElementById('githubSetupErr');
+    if (al) { al.className = 'alert error'; al.textContent = decodeURIComponent(msg); }
+    showGitHubSetupForm(null); // show the form area with the error
 
-    if (data.requires_setup) {
-      // New user — show username picker
-      _githubSetupToken = data.setup_token;
-      showGitHubSetupForm(data.suggested_username || '', data.name);
-    } else {
-      // Existing user — log in
-      closeAuthModal();
-      await finishLogin(data.access_token);
-    }
-  } catch(e) {
-    if (al) { al.className = 'alert error'; al.textContent = 'Network error. Please try again.'; }
+  } else if (hashPath === 'github-connected') {
+    // Successfully connected GitHub to existing account
+    const al = document.getElementById('sSocialAlert');
+    if (al) { al.className = 'alert success'; al.textContent = 'GitHub connected successfully!'; }
+    if (typeof loadSettings === 'function') await loadSettings();
   }
 }
 
-function showGitHubSetupForm(suggestedUsername, name) {
-  // Hide all other forms, show GitHub setup
+function showGitHubSetupForm(suggestedUsername) {
   document.getElementById('loginForm').style.display = 'none';
   document.getElementById('registerForm').style.display = 'none';
   document.getElementById('googleSetupForm').style.display = 'none';
@@ -241,19 +214,20 @@ function showGitHubSetupForm(suggestedUsername, name) {
   document.getElementById('googleButtonWrap').style.display = 'none';
   document.getElementById('githubSignInBtn').style.display = 'none';
   document.getElementById('googleDivider').style.display = 'none';
-  if (document.getElementById('authTabs')) document.getElementById('authTabs').style.display = 'none';
-  if (suggestedUsername !== null) {
-    document.getElementById('githubSetupUsername').value = suggestedUsername || '';
-    document.getElementById('githubSetupUsername').focus();
+  const tabs = document.getElementById('authTabs');
+  if (tabs) tabs.style.display = 'none';
+  if (suggestedUsername !== null && suggestedUsername !== undefined) {
+    const inp = document.getElementById('githubSetupUsername');
+    if (inp) { inp.value = suggestedUsername; inp.focus(); }
   }
 }
 
 async function completeGitHubSignup() {
   const uname = document.getElementById('githubSetupUsername').value.trim();
-  const al = document.getElementById('githubSetupErr');
+  const al    = document.getElementById('githubSetupErr');
   al.className = 'alert'; al.textContent = '';
-  if (!uname) { al.className = 'alert error'; al.textContent = 'Please choose a username.'; return; }
-  if (!_githubSetupToken) { al.className = 'alert error'; al.textContent = 'Session expired. Please try again.'; return; }
+  if (!uname)              { al.className = 'alert error'; al.textContent = 'Please choose a username.'; return; }
+  if (!_githubSetupToken)  { al.className = 'alert error'; al.textContent = 'Session expired. Please try again.'; return; }
   try {
     const res = await fetch(`${API}/auth/complete-github-signup`, {
       method: 'POST',
@@ -261,9 +235,7 @@ async function completeGitHubSignup() {
       body: JSON.stringify({ username: uname, setup_token: _githubSetupToken, password: null }),
     });
     const data = await res.json();
-    if (!res.ok) {
-      al.className = 'alert error'; al.textContent = data.detail || 'Sign up failed.'; return;
-    }
+    if (!res.ok) { al.className = 'alert error'; al.textContent = data.detail || 'Sign up failed.'; return; }
     _githubSetupToken = null;
     closeAuthModal();
     await finishLogin(data.access_token);
@@ -273,7 +245,7 @@ async function completeGitHubSignup() {
   }
 }
 
-// Called from settings Social tab
+// Called from Settings → Social tab
 function handleGithubConnect() {
   startGitHubOAuth(true);
 }
