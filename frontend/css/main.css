@@ -580,3 +580,23 @@
 .appearance-choice.active { border-color: var(--accent); background: rgba(88,166,255,0.07); }
 .appearance-choice .ap-check { display: none; flex-shrink: 0; }
 .appearance-choice.active .ap-check { display: block; }
+
+/* ── Google sign-in button (custom, matches GitHub style) ─────── */
+.btn-google-signin {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 16px;
+  background: #24292f;
+  color: #fff;
+  border: 1px solid #444c56;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  margin-bottom: 4px;
+}
+.btn-google-signin:hover { background: #32383f; border-color: #6e7681; }
