@@ -177,7 +177,7 @@ const FIELD_CONFIG = {
       <div class="form-group">
         <label>New Password</label>
         <div style="position:relative">
-          <input type="password" id="sfe-pwnew" placeholder="min 6 characters" style="padding-right:42px;font-size:14px" />
+          <input type="password" id="sfe-pwnew" placeholder="min 8 chars, 1 letter, 1 number" style="padding-right:42px;font-size:14px" />
           <button type="button" onclick="togglePasswordVisibility('sfe-pwnew',this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);padding:4px;display:flex">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
           </button>
@@ -199,7 +199,7 @@ const FIELD_CONFIG = {
       const conf = document.getElementById('sfe-pwconfirm').value;
       const al   = document.getElementById('sFieldAlert');
       if (!nw) { al.className='alert error'; al.textContent='Enter a new password.'; return null; }
-      if (nw.length < 6) { al.className='alert error'; al.textContent='Password must be at least 6 characters.'; return null; }
+      if (nw.length < 8) { al.className='alert error'; al.textContent='Password must be at least 8 characters with 1 letter and 1 number.'; return null; }
       if (nw !== conf) { al.className='alert error'; al.textContent='Passwords do not match.'; return null; }
       const res = await fetch(`${API}/auth/change-password`, {
         method: 'PUT',

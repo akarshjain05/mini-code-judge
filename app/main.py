@@ -1,7 +1,12 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Request
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 
 from app.core.database import Base, engine, get_db
 from app.routers import auth, submissions, problems, admin
@@ -13,19 +18,50 @@ from app.worker.poller import start_background_worker
 
 Base.metadata.create_all(bind=engine)
 
+# ── Rate Limiter ───────────────────────────────────────────────────────
+limiter = Limiter(key_func=get_remote_address, default_limits=["200/minute"])
+
 app = FastAPI(
     title="Mini Code Judge",
     description="Submit code, get verdicts + AI review + Contests.",
-    version="3.1.0",
+    version="3.2.0",
 )
 
+# Attach rate limiter
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
+
+# ── CORS — only allow the real frontend ───────────────────────────────
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=False,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=[
+        "https://mini-code-judge-frontend.onrender.com",
+        "http://localhost:5500",   # local dev with Live Server
+        "http://127.0.0.1:5500",
+        "http://localhost:8011",   # local dev with Python http.server
+        "http://127.0.0.1:8011",
+        "http://localhost:8012",
+        "http://127.0.0.1:8012",
+    ],
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
 )
+
+# ── Security headers middleware ────────────────────────────────────────
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"]    = "nosniff"
+    response.headers["X-Frame-Options"]           = "DENY"
+    response.headers["Referrer-Policy"]           = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"]        = "geolocation=(), camera=(), microphone=()"
+    # Only set HSTS on HTTPS (Render always uses HTTPS in production)
+    if request.url.scheme == "https":
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    return response
+
 
 @app.on_event("startup")
 def on_startup():
@@ -50,6 +86,7 @@ def on_startup():
         conn.commit()
     start_background_worker()
 
+
 app.include_router(auth.router)
 app.include_router(submissions.router)
 app.include_router(problems.router)
@@ -58,9 +95,11 @@ app.include_router(ai_review_router)
 app.include_router(contest_router)
 app.include_router(leaderboard_router)
 
+
 @app.get("/", tags=["health"])
 def root():
     return {"status": "ok", "message": "Code Judge is running"}
+
 
 @app.get("/health")
 def check_health(db: Session = Depends(get_db)):
