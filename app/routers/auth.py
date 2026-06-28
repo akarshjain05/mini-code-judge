@@ -481,14 +481,13 @@ class ResendVerificationRequest(BaseModel):
 @limiter.limit("3/hour")
 def resend_verification_public(request: Request, payload: ResendVerificationRequest, db: Session = Depends(get_db)):
     """Public endpoint — resend verification email to an unverified user by username/email."""
-    from pydantic import BaseModel
+    import secrets as _sec
     ident = payload.identifier.strip()
     user = db.query(User).filter(
         (User.username == ident) | (User.email == ident)
     ).first()
     # Always return 200 to prevent email enumeration
     if user and not user.is_verified:
-        import secrets as _sec
         verify_token = _sec.token_urlsafe(32)
         store_verification_token(verify_token, user.id)
         send_verification_email(user.email, user.username, verify_token)
