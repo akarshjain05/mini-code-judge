@@ -71,6 +71,7 @@ def on_startup():
             "ALTER TABLE users ADD COLUMN IF NOT EXISTS full_name VARCHAR(100)",
             "ALTER TABLE users ADD COLUMN IF NOT EXISTS phone_number VARCHAR(30)",
             "ALTER TABLE users ADD COLUMN IF NOT EXISTS github_id VARCHAR(255)",
+            "ALTER TABLE users ADD COLUMN IF NOT EXISTS is_verified BOOLEAN NOT NULL DEFAULT FALSE",
         ]:
             conn.execute(text(sql))
         # Add unique index for github_id if not exists

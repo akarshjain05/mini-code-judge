@@ -37,8 +37,18 @@ async function doLogin() {
       let msg = 'Login failed';
       if (data.detail && typeof data.detail === 'string') msg = data.detail;
       else if (res.status === 401) msg = '❌ Incorrect username or password';
+      else if (res.status === 429) msg = data.detail || '⚠ Too many attempts. Try again later.';
       else if (res.status === 422) msg = '⚠ Please fill in username and password';
-      showAlert(err, msg, 'error'); return;
+
+      // Unverified email — show resend button
+      if (res.status === 403) {
+        showAlert(err, msg + ' <a href="#" onclick="resendVerificationEmail(event)" style="color:var(--accent);margin-left:6px">Resend email →</a>', 'error');
+        err.innerHTML = err.textContent; // allow the link HTML
+        err.innerHTML = `<span>${msg}</span> <a href="#" onclick="resendVerificationEmail(event)" style="color:var(--accent);margin-left:6px;font-size:12px">Resend email →</a>`;
+      } else {
+        showAlert(err, msg, 'error');
+      }
+      return;
     }
     await finishLogin(data.access_token);
   } catch(e) { showAlert(err, 'Cannot reach API — is the server running?', 'error'); }
@@ -248,4 +258,36 @@ async function completeGitHubSignup() {
 // Called from Settings → Social tab
 function handleGithubConnect() {
   startGitHubOAuth(true);
+}
+
+async function resendVerificationEmail(e) {
+  if (e) e.preventDefault();
+  // User needs to be logged in to resend — try logging in first with stored creds
+  // Since they're not verified, we can't issue a token. Instead call a public endpoint.
+  // For now, show a message directing them to check spam or contact support.
+  const err = document.getElementById('loginErr');
+  err.className = 'alert';
+  err.textContent = 'Sending verification email…';
+  // Attempt re-send using a temporary session (login returns 403 but we need user id)
+  // Best UX: re-send using email from the login field
+  const loginField = document.getElementById('loginUsername');
+  const email = loginField ? loginField.value.trim() : '';
+  if (!email) {
+    err.className = 'alert error';
+    err.textContent = 'Please enter your username or email in the field above first.';
+    return;
+  }
+  try {
+    const res = await fetch(`${API}/auth/resend-verification-public`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ identifier: email }),
+    });
+    const data = await res.json();
+    err.className = res.ok ? 'alert success' : 'alert error';
+    err.textContent = res.ok ? '✓ Verification email sent! Check your inbox.' : (data.detail || 'Could not send email.');
+  } catch(e) {
+    err.className = 'alert error';
+    err.textContent = 'Network error. Please try again.';
+  }
 }

@@ -13,9 +13,14 @@ from app.core.config import settings
 from app.core.database import get_db
 from app.core.security import (
     hash_password, verify_password, create_access_token, get_current_user,
-    create_setup_token, decode_setup_token,
+    create_setup_token, decode_setup_token, decode_token_full,
 )
-from app.core.email import send_password_reset_email
+from app.core.email import send_password_reset_email, send_verification_email
+from app.core.redis_client import (
+    blacklist_token, is_token_blacklisted,
+    record_failed_login, clear_failed_logins, is_account_locked, lockout_ttl,
+    store_verification_token, consume_verification_token,
+)
 from app.models.user import User
 from app.schemas.user import (
     UserRegister, UserOut, Token, GoogleLoginRequest, GoogleCompleteSignup,
@@ -34,8 +39,19 @@ def register(request: Request, payload: UserRegister, db: Session = Depends(get_
         raise HTTPException(status_code=400, detail="Username already taken")
     if db.query(User).filter(User.email == payload.email).first():
         raise HTTPException(status_code=400, detail="Email already registered")
-    user = User(username=payload.username, email=payload.email, password=hash_password(payload.password))
+    user = User(
+        username=payload.username,
+        email=payload.email,
+        password=hash_password(payload.password),
+        is_verified=False,
+    )
     db.add(user); db.commit(); db.refresh(user)
+    # Send verification email (non-blocking — failure doesn't block registration)
+    import secrets as _sec
+    verify_token = _sec.token_urlsafe(32)
+    store_verification_token(verify_token, user.id)
+    send_verification_email(user.email, user.username, verify_token)
+    user.has_google = False; user.has_github = False; user.has_password = True
     return user
 
 
@@ -43,11 +59,93 @@ def register(request: Request, payload: UserRegister, db: Session = Depends(get_
 @limiter.limit("20/minute;100/hour")
 def login(request: Request, form: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     identifier = form.username
+
+    # Check account lockout before hitting the DB (saves a query on brute force)
+    if is_account_locked(identifier):
+        ttl = lockout_ttl(identifier)
+        mins = max(1, ttl // 60)
+        raise HTTPException(
+            status_code=429,
+            detail=f"Too many failed attempts. Account locked for {mins} more minute(s)."
+        )
+
     user = db.query(User).filter((User.username == identifier) | (User.email == identifier)).first()
     if not user or not user.password or not verify_password(form.password, user.password):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect username/email or password")
+        # Record failure (uses username or email as key)
+        count = record_failed_login(identifier)
+        remaining = max(0, 5 - count)
+        msg = "Incorrect username/email or password"
+        if remaining <= 2 and remaining > 0:
+            msg += f" ({remaining} attempt{'s' if remaining != 1 else ''} remaining before lockout)"
+        elif remaining == 0:
+            msg = "Too many failed attempts. Account locked for 15 minutes."
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=msg)
+
+    # Successful login — clear any previous failure counter
+    clear_failed_logins(identifier)
+    clear_failed_logins(user.username)
+    clear_failed_logins(user.email)
+
+    # Require email verification for password-based accounts
+    if not user.is_verified:
+        raise HTTPException(
+            status_code=403,
+            detail="Please verify your email address first. Check your inbox for the verification link.",
+            headers={"X-Unverified": "true"},
+        )
+
     token = create_access_token(data={"sub": str(user.id)})
     return {"access_token": token, "token_type": "bearer"}
+
+
+@router.post("/logout")
+def logout(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+):
+    """Blacklist the current JWT so it can't be reused after logout."""
+    auth_header = request.headers.get("Authorization", "")
+    raw_token = auth_header.removeprefix("Bearer ").strip()
+    try:
+        payload = decode_token_full(raw_token)
+        jti = payload.get("jti")
+        exp = payload.get("exp")
+        if jti and exp:
+            import time as _time
+            ttl = max(1, int(exp - _time.time()))
+            blacklist_token(jti, ttl)
+    except Exception:
+        pass  # if decoding fails, token is already invalid
+    return {"message": "Logged out successfully"}
+
+
+@router.get("/verify-email/{token}")
+def verify_email(token: str, db: Session = Depends(get_db)):
+    """Verify a user's email address via the token sent to their inbox."""
+    user_id = consume_verification_token(token)
+    if user_id is None:
+        raise HTTPException(status_code=400, detail="Verification link is invalid or has expired.")
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if user.is_verified:
+        return {"message": "Email already verified. You can log in."}
+    user.is_verified = True
+    db.commit()
+    return {"message": "Email verified successfully! You can now log in."}
+
+
+@router.post("/resend-verification")
+@limiter.limit("3/hour")
+def resend_verification(request: Request, current_user: User = Depends(get_current_user)):
+    """Re-send the verification email (for logged-in but unverified users)."""
+    if current_user.is_verified:
+        return {"message": "Your email is already verified."}
+    import secrets as _sec
+    verify_token = _sec.token_urlsafe(32)
+    store_verification_token(verify_token, current_user.id)
+    send_verification_email(current_user.email, current_user.username, verify_token)
+    return {"message": "Verification email sent. Please check your inbox."}
 
 
 @router.post("/google")
@@ -66,6 +164,9 @@ def google_login(payload: GoogleLoginRequest, db: Session = Depends(get_db)):
         if user:
             user.google_id = google_user_id; db.commit()
     if user:
+        # Google identity confirms the email — mark as verified
+        if not user.is_verified:
+            user.is_verified = True; db.commit()
         token = create_access_token(data={"sub": str(user.id)})
         return {"needs_setup": False, "access_token": token, "token_type": "bearer"}
     base_username = re.sub(r"[^a-zA-Z0-9_-]", "", email.split("@")[0]) or "user"
@@ -87,7 +188,7 @@ def complete_google_signup(payload: GoogleCompleteSignup, db: Session = Depends(
         raise HTTPException(status_code=400, detail="Email already registered")
     if db.query(User).filter(User.username == payload.username).first():
         raise HTTPException(status_code=400, detail="Username already taken")
-    user = User(username=payload.username, email=email, password=hash_password(payload.password), google_id=google_user_id)
+    user = User(username=payload.username, email=email, password=hash_password(payload.password), google_id=google_user_id, is_verified=True)
     db.add(user); db.commit(); db.refresh(user)
     token = create_access_token(data={"sub": str(user.id)})
     return {"access_token": token, "token_type": "bearer"}
@@ -366,7 +467,29 @@ def complete_github_signup(payload: GoogleCompleteSignup, db: Session = Depends(
         email=email or f"gh_{github_id}@noemail.invalid",
         github_id=github_id,
         full_name=name or None,
+        is_verified=True,
     )
     db.add(user); db.commit(); db.refresh(user)
     jwt = create_access_token(data={"sub": str(user.id)})
     return {"access_token": jwt, "token_type": "bearer"}
+
+
+class ResendVerificationRequest(BaseModel):
+    identifier: str  # username or email
+
+@router.post("/resend-verification-public")
+@limiter.limit("3/hour")
+def resend_verification_public(request: Request, payload: ResendVerificationRequest, db: Session = Depends(get_db)):
+    """Public endpoint — resend verification email to an unverified user by username/email."""
+    from pydantic import BaseModel
+    ident = payload.identifier.strip()
+    user = db.query(User).filter(
+        (User.username == ident) | (User.email == ident)
+    ).first()
+    # Always return 200 to prevent email enumeration
+    if user and not user.is_verified:
+        import secrets as _sec
+        verify_token = _sec.token_urlsafe(32)
+        store_verification_token(verify_token, user.id)
+        send_verification_email(user.email, user.username, verify_token)
+    return {"message": "If that account exists and is unverified, a verification email has been sent."}

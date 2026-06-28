@@ -60,3 +60,51 @@ def send_password_reset_email(to_email: str, username: str, reset_token: str) ->
     except Exception as e:
         print(f"Failed to send reset email: {e}")
         return False
+
+
+def send_verification_email(to_email: str, username: str, verify_token: str) -> bool:
+    """Send an email verification link via Brevo."""
+    if not BREVO_API_KEY or not FROM_EMAIL:
+        print("Email not configured — skipping verification email")
+        return False
+
+    verify_link = f"{FRONTEND_URL}/#verify-email/{verify_token}"
+
+    html = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
+      <h2 style="color: #1f6feb; margin-bottom: 4px;">Verify your Code Judge email</h2>
+      <p>Hi {username},</p>
+      <p>Thanks for signing up! Click the button below to verify your email address. This link expires in <strong>24 hours</strong>.</p>
+      <p style="text-align:center; margin: 28px 0;">
+        <a href="{verify_link}" style="background:#1f6feb;color:#ffffff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:600;display:inline-block;">Verify Email</a>
+      </p>
+      <p style="font-size:12px;color:#888;">If you didn't create a Code Judge account, you can safely ignore this email.</p>
+      <p style="font-size:12px;color:#888;word-break:break-all;">Or copy this link:<br>{verify_link}</p>
+    </div>
+    """
+
+    payload = {
+        "sender": {"name": FROM_NAME, "email": FROM_EMAIL},
+        "to": [{"email": to_email, "name": username}],
+        "subject": "Verify your Code Judge email",
+        "htmlContent": html,
+    }
+
+    try:
+        resp = httpx.post(
+            BREVO_URL,
+            headers={
+                "accept": "application/json",
+                "api-key": BREVO_API_KEY,
+                "content-type": "application/json",
+            },
+            json=payload,
+            timeout=15.0,
+        )
+        if resp.status_code not in (200, 201):
+            print(f"Brevo verification email failed: {resp.status_code} {resp.text}")
+            return False
+        return True
+    except Exception as e:
+        print(f"Failed to send verification email: {e}")
+        return False

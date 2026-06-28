@@ -25,6 +25,31 @@ window.onload = async () => {
   fetchCurrentUser();
   initGoogleSignIn();
 
+  // Handle email verification link (#verify-email/<token>)
+  if (hash.startsWith('#verify-email/')) {
+    const verifyToken = hash.replace('#verify-email/', '').trim();
+    history.replaceState(null, '', window.location.pathname);
+    try {
+      const res = await fetch(`${API}/auth/verify-email/${verifyToken}`);
+      const data = await res.json();
+      openAuthModal();
+      const errEl = document.getElementById('loginErr');
+      if (res.ok) {
+        errEl.className = 'alert success';
+        errEl.textContent = '✓ ' + (data.message || 'Email verified! You can now log in.');
+      } else {
+        errEl.className = 'alert error';
+        errEl.textContent = data.detail || 'Verification link is invalid or expired.';
+      }
+    } catch(e) {
+      openAuthModal();
+    }
+    showPageLoader();
+    try { await Promise.all([loadProblems(), loadDashboard()]); } catch(e) {}
+    finally { hidePageLoader(); }
+    return;
+  }
+
   // Handle GitHub OAuth redirect result (hash set by backend after OAuth)
   const hash = window.location.hash;
   if (hash.startsWith('#github-')) {

@@ -10,11 +10,15 @@ function togglePasswordVisibility(inputId, btn) {
 
 function handleAuthNav() {
   if (token) {
+    // Invalidate token server-side (adds to Redis blacklist)
+    const _t = token;
+    fetch(`${API}/auth/logout`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${_t}` },
+    }).catch(() => {}); // fire-and-forget — clear locally regardless
     token = null; username = null; isAdmin = false;
     localStorage.removeItem('jwt'); localStorage.removeItem('username');
     updateAuthUI(); updateAdminUI();
-    // Leave whatever page was active (it may show another user's data, or
-    // require login) and land on the public Dashboard view.
     goTo('dashboard');
   } else {
     openAuthModal();

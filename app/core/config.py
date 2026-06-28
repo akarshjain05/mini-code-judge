@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     # JWT Authentication Settings
     SECRET_KEY: str = "change-this-in-production"
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440  # 24 hours (60 * 24)
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 180  # 3 hours
 
     # Execution limits (enforced inside Docker for the online judge)
     TIME_LIMIT_SECONDS: int = 2

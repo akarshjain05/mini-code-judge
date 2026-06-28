@@ -141,23 +141,84 @@ def _prepare_run_command(submission: Submission, tmpdir: str, db: Session):
 
 
 def _run_test_case(run_command: list, stdin_data: str) -> dict:
+    import resource, signal
+
+    mem_bytes = settings.MEMORY_LIMIT_MB * 1024 * 1024
+
+    def _preexec():
+        """Called in child process before exec — set resource limits."""
+        # Memory limit
+        resource.setrlimit(resource.RLIMIT_AS, (mem_bytes, mem_bytes))
+        # Max file size written (10 MB) — prevents disk-fill attacks
+        resource.setrlimit(resource.RLIMIT_FSIZE, (10 * 1024 * 1024, 10 * 1024 * 1024))
+        # Max open files
+        resource.setrlimit(resource.RLIMIT_NOFILE, (64, 64))
+        # New process group so we can kill all children
+        os.setsid()
+
+    # Minimal safe environment — no HOME, no network credential env vars leaking in
+    safe_env = {
+        "PATH": "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+        "LANG": "en_US.UTF-8",
+    }
+
     try:
         start = time.perf_counter()
-        proc = subprocess.run(
+        proc = subprocess.Popen(
             run_command,
-            input=stdin_data,
-            capture_output=True,
-            text=True,
-            timeout=settings.TIME_LIMIT_SECONDS,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            env=safe_env,
+            preexec_fn=_preexec,
         )
+        try:
+            stdout, stderr = proc.communicate(
+                input=stdin_data.encode() if stdin_data else b"",
+                timeout=settings.TIME_LIMIT_SECONDS,
+            )
+        except subprocess.TimeoutExpired:
+            # Kill the entire process group (handles forked children too)
+            try:
+                os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+            except ProcessLookupError:
+                proc.kill()
+            proc.wait()
+            return {
+                "verdict": "time_limit_exceeded",
+                "stdout": "", "stderr": "",
+                "runtime_ms": settings.TIME_LIMIT_SECONDS * 1000,
+            }
+
         elapsed_ms = (time.perf_counter() - start) * 1000
+
+        # Check for memory-related signals (SIGKILL from OOM or SIGSEGV)
+        if proc.returncode in (-9, -11):
+            return {
+                "verdict": "memory_limit_exceeded",
+                "stdout": "", "stderr": "Process killed (memory limit or crash)",
+                "runtime_ms": elapsed_ms,
+            }
+
         if proc.returncode != 0:
-            return {"verdict": "runtime_error", "stdout": proc.stdout,
-                    "stderr": proc.stderr[:2000], "runtime_ms": elapsed_ms}
-        return {"verdict": "accepted", "stdout": proc.stdout, "stderr": "", "runtime_ms": elapsed_ms}
-    except subprocess.TimeoutExpired:
-        return {"verdict": "time_limit_exceeded", "stdout": "", "stderr": "",
-                "runtime_ms": settings.TIME_LIMIT_SECONDS * 1000}
+            return {
+                "verdict": "runtime_error",
+                "stdout": stdout.decode(errors="replace"),
+                "stderr": stderr.decode(errors="replace")[:2000],
+                "runtime_ms": elapsed_ms,
+            }
+
+        return {
+            "verdict": "accepted",
+            "stdout": stdout.decode(errors="replace"),
+            "stderr": "",
+            "runtime_ms": elapsed_ms,
+        }
+
+    except MemoryError:
+        return {"verdict": "memory_limit_exceeded", "stdout": "", "stderr": "", "runtime_ms": 0}
+    except Exception as e:
+        return {"verdict": "runtime_error", "stdout": "", "stderr": str(e)[:500], "runtime_ms": 0}
 
 
 def _set_verdict(db: Session, submission: Submission, *, verdict: str, status: str,
