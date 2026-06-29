@@ -25,9 +25,12 @@ window.onload = async () => {
   fetchCurrentUser();
   initGoogleSignIn();
 
+  // Read hash ONCE at the top so it's available for all checks below
+  const urlHash = window.location.hash;
+
   // Handle email verification link (#verify-email/<token>)
-  if (hash.startsWith('#verify-email/')) {
-    const verifyToken = hash.replace('#verify-email/', '').trim();
+  if (urlHash.startsWith('#verify-email/')) {
+    const verifyToken = urlHash.replace('#verify-email/', '').trim();
     history.replaceState(null, '', window.location.pathname);
     try {
       const res = await fetch(`${API}/auth/verify-email/${verifyToken}`);
@@ -41,9 +44,7 @@ window.onload = async () => {
         errEl.className = 'alert error';
         errEl.textContent = data.detail || 'Verification link is invalid or expired.';
       }
-    } catch(e) {
-      openAuthModal();
-    }
+    } catch(e) { openAuthModal(); }
     showPageLoader();
     try { await Promise.all([loadProblems(), loadDashboard()]); } catch(e) {}
     finally { hidePageLoader(); }
@@ -51,10 +52,8 @@ window.onload = async () => {
   }
 
   // Handle GitHub OAuth redirect result (hash set by backend after OAuth)
-  const hash = window.location.hash;
-  if (hash.startsWith('#github-')) {
-    await handleGitHubHashResult(hash);
-    // After handling, load dashboard normally
+  if (urlHash.startsWith('#github-')) {
+    await handleGitHubHashResult(urlHash);
     showPageLoader();
     try { await Promise.all([loadProblems(), loadDashboard()]); }
     catch(e) { console.error(e); }
@@ -62,13 +61,14 @@ window.onload = async () => {
     return;
   }
 
+  // Normal startup
   showPageLoader();
   try {
     await Promise.all([loadProblems(), loadDashboard()]);
   } catch(e) { console.error('Initial load error:', e); }
   finally { hidePageLoader(); }
 
-  if (window.location.hash && !window.location.hash.startsWith('#github-')) {
+  if (urlHash && !urlHash.startsWith('#github-') && !urlHash.startsWith('#verify-')) {
     handleHashNav();
   }
 };
