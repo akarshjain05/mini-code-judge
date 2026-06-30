@@ -19,10 +19,7 @@ from app.schemas.submission import SubmissionCreate, SubmissionOut
 router = APIRouter(prefix="/submissions", tags=["submissions"])
 
 
-class SubmissionCreateExtended(BaseModel):
-    problem_id: int
-    language: str
-    code: str
+class SubmissionCreateExtended(SubmissionCreate):
     sample_only: Optional[bool] = False
 
 

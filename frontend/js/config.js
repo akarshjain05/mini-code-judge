@@ -1,5 +1,7 @@
 // ── Config & State ─────────────────────────────────────────────────
-const API = 'https://mini-code-judge.onrender.com';
+const API = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+  ? 'http://localhost:8000'
+  : 'https://mini-code-judge.onrender.com';
 const GOOGLE_CLIENT_ID = '195071714890-cqr22mhg2cvfc1ttad54j8qgdqc3ee24.apps.googleusercontent.com';
 
 let token    = localStorage.getItem('jwt') || null;

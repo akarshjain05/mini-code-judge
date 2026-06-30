@@ -50,6 +50,15 @@ def register_and_login(username="akarsh", password="testpass123"):
         "email": f"{username}@test.com",
         "password": password,
     })
+    # Manually verify the user in the test database
+    from app.models.user import User
+    db = TestingSession()
+    user = db.query(User).filter(User.username == username).first()
+    if user:
+        user.is_verified = True
+        db.commit()
+    db.close()
+
     resp = client.post("/auth/login", data={
         "username": username,
         "password": password,
@@ -75,14 +84,14 @@ def test_register_success():
 
 
 def test_register_duplicate_username():
-    client.post("/auth/register", json={"username": "akarsh", "email": "a@t.com", "password": "x"})
-    resp = client.post("/auth/register", json={"username": "akarsh", "email": "b@t.com", "password": "x"})
+    client.post("/auth/register", json={"username": "akarsh", "email": "a@t.com", "password": "secret123"})
+    resp = client.post("/auth/register", json={"username": "akarsh", "email": "b@t.com", "password": "secret123"})
     assert resp.status_code == 400
 
 
 def test_login_wrong_password():
-    client.post("/auth/register", json={"username": "akarsh", "email": "a@t.com", "password": "correct"})
-    resp = client.post("/auth/login", data={"username": "akarsh", "password": "wrong"})
+    client.post("/auth/register", json={"username": "akarsh", "email": "a@t.com", "password": "correct123"})
+    resp = client.post("/auth/login", data={"username": "akarsh", "password": "wrong123"})
     assert resp.status_code == 401
 
 

@@ -8,6 +8,7 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
+from app.core.config import settings
 from app.core.database import Base, engine, get_db
 from app.routers import auth, submissions, problems, admin
 from app.routers.ai_review import router as ai_review_router
@@ -33,9 +34,23 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)
 
 # ── CORS — only allow the real frontend ───────────────────────────────
+origins = [
+    settings.FRONTEND_URL,
+    "https://mini-code-judge-frontend.onrender.com",
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+    "http://localhost:5500",
+    "http://127.0.0.1:5500",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "null",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type"],
