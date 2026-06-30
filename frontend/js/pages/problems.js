@@ -2,7 +2,7 @@
 // ── Problems ───────────────────────────────────────────────────────
 let _problemAcceptance = {}; // problem_id -> { total, accepted }
 
-async function loadProblems() {
+async function loadProblems(retriesLeft = 2) {
   const tbody = document.getElementById('problemList');
   try {
     const [probRes, subRes] = await Promise.all([
@@ -34,7 +34,15 @@ async function loadProblems() {
 
     filterProblems();
   } catch(e) {
-    tbody.innerHTML = '<tr><td colspan="5" style="padding:24px;color:var(--warn)">⚠ Cannot reach API.</td></tr>';
+    // Render's free tier spins the backend down after inactivity — the very
+    // first request can fail while it wakes up. Retry quietly before
+    // showing an error, so users don't see a scary message unnecessarily.
+    if (retriesLeft > 0) {
+      tbody.innerHTML = '<tr><td colspan="5" style="padding:24px;color:var(--muted)">⏳ Waking up server… this can take up to a minute on first load.</td></tr>';
+      await new Promise(r => setTimeout(r, 4000));
+      return loadProblems(retriesLeft - 1);
+    }
+    tbody.innerHTML = '<tr><td colspan="5" style="padding:24px;color:var(--warn)">⚠ Cannot reach API. Please refresh the page.</td></tr>';
   }
 }
 

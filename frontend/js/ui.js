@@ -138,7 +138,7 @@ function updateCodePlaceholder() {
   ta.placeholder = ph[lang] || '';
 }
 
-async function loadSampleTestCases(problemId) {
+async function loadSampleTestCases(problemId, retriesLeft = 2) {
   const card = document.getElementById('sampleTestsCard');
   const list = document.getElementById('sampleTestsList');
   try {
@@ -161,7 +161,15 @@ async function loadSampleTestCases(problemId) {
           </div>
         </div>
       </div>`).join('');
-  } catch(e) { card.style.display = 'none'; }
+  } catch(e) {
+    // Render free-tier cold start can make the very first request fail —
+    // retry a couple of times with backoff before giving up silently.
+    if (retriesLeft > 0) {
+      await new Promise(r => setTimeout(r, 2500));
+      return loadSampleTestCases(problemId, retriesLeft - 1);
+    }
+    card.style.display = 'none';
+  }
 }
 
 let runPollInterval = null;
