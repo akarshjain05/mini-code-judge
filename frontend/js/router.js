@@ -203,10 +203,26 @@ function handleHashNav() {
     const id = parseInt(hash.split('/')[1]);
     if (id) {
       goTo('problems', false);
-      fetch(`${API}/problems`).then(r => r.json()).then(problems => {
+      const openById = (problems) => {
         const p = problems.find(p => p.id === id);
-        if (p) { openProblem(p); history.replaceState({ page: 'submit', problem_id: id }, '', '#problem/' + id); }
-      }).catch(() => {});
+        if (p) {
+          openProblem(p);
+          history.replaceState({ page: 'submit', problem_id: id }, '', '#problem/' + id);
+        }
+      };
+      // Use already-loaded problems if available (avoids a duplicate fetch
+      // and avoids silently failing on a cold/slow backend)
+      if (_allProblems && _allProblems.length) {
+        openById(_allProblems);
+      } else {
+        fetch(`${API}/problems`)
+          .then(r => r.json())
+          .then(openById)
+          .catch(() => {
+            const vbox = document.getElementById('verdictBox');
+            if (vbox) vbox.classList.remove('show');
+          });
+      }
     }
     return;
   }
