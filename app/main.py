@@ -35,15 +35,7 @@ app.add_middleware(SlowAPIMiddleware)
 # ── CORS — only allow the real frontend ───────────────────────────────
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://mini-code-judge-frontend.onrender.com",
-        "http://localhost:5500",   # local dev with Live Server
-        "http://127.0.0.1:5500",
-        "http://localhost:8011",   # local dev with Python http.server
-        "http://127.0.0.1:8011",
-        "http://localhost:8012",
-        "http://127.0.0.1:8012",
-    ],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type"],
