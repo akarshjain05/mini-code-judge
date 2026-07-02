@@ -206,7 +206,12 @@ async function runCode() {
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
       body: JSON.stringify({ problem_id: currentProblem.id, language: lang, code, sample_only: true }),
     });
-    const sub = await res.json();
+    let sub;
+    try {
+      sub = await res.json();
+    } catch(err) {
+      sub = { detail: `Status ${res.status}: Invalid JSON response` };
+    }
     if (!res.ok) {
       vtitle.className = 'verdict-title verdict-wrong_answer';
       vtitle.textContent = '✗ Error';

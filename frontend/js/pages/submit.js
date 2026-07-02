@@ -30,8 +30,13 @@ async function submitCode() {
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
       body: JSON.stringify({ problem_id: currentProblem.id, language: lang, code }),
     });
-    const sub = await res.json();
-    if (!res.ok) { vtitle.textContent = '✗ Error'; vsub.textContent = sub.detail; vtitle.className = 'verdict-title verdict-wrong_answer'; return; }
+    let sub;
+    try {
+      sub = await res.json();
+    } catch(err) {
+      sub = { detail: `Status ${res.status}: Invalid JSON response` };
+    }
+    if (!res.ok) { vtitle.textContent = '✗ Error'; vsub.textContent = sub.detail || 'Submit failed'; vtitle.className = 'verdict-title verdict-wrong_answer'; return; }
 
     vtitle.innerHTML = '<span class="spinner"></span> &nbsp;Judging…';
 
