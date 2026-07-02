@@ -21,6 +21,10 @@ window.addEventListener('popstate', () => handleHashNav());
 
 // App startup
 window.onload = async () => {
+  // Always reset verdict box on startup — prevents stale state from previous session
+  const vbox = document.getElementById('verdictBox');
+  if (vbox) vbox.classList.remove('show');
+
   updateAuthUI();
   fetchCurrentUser();
   initGoogleSignIn();
