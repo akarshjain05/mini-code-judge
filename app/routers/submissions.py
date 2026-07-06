@@ -39,7 +39,7 @@ def create_submission(
         language=payload.language,
         code=payload.code,
         status="pending",
-        error_output="SAMPLE_ONLY" if payload.sample_only else None,
+        is_sample_only=bool(payload.sample_only),
     )
     db.add(submission)
     db.commit()
@@ -77,6 +77,7 @@ def list_my_submissions(
     return (
         db.query(Submission)
         .filter(Submission.user_id == current_user.id)
+        .filter(Submission.is_sample_only == False)  # "Run (Samples)" is never a real submission
         .order_by(Submission.created_at.desc())
         .offset(offset)
         .limit(limit)

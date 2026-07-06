@@ -81,6 +81,7 @@ def on_startup():
             "ALTER TABLE users ADD COLUMN IF NOT EXISTS is_verified BOOLEAN NOT NULL DEFAULT FALSE",
             "ALTER TABLE submissions ADD COLUMN IF NOT EXISTS ai_review TEXT",
             "ALTER TABLE submissions ADD COLUMN IF NOT EXISTS judged_at TIMESTAMPTZ",
+            "ALTER TABLE submissions ADD COLUMN IF NOT EXISTS is_sample_only BOOLEAN NOT NULL DEFAULT FALSE",
         ]:
             conn.execute(text(sql))
         # Add unique index for github_id if not exists

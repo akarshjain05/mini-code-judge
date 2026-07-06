@@ -1,0 +1,149 @@
+diff --git a/app/main.py b/app/main.py
+index 0e0ee73..ae26c82 100644
+--- a/app/main.py
++++ b/app/main.py
+@@ -81,6 +81,7 @@ def on_startup():
+             "ALTER TABLE users ADD COLUMN IF NOT EXISTS is_verified BOOLEAN NOT NULL DEFAULT FALSE",
+             "ALTER TABLE submissions ADD COLUMN IF NOT EXISTS ai_review TEXT",
+             "ALTER TABLE submissions ADD COLUMN IF NOT EXISTS judged_at TIMESTAMPTZ",
++            "ALTER TABLE submissions ADD COLUMN IF NOT EXISTS is_sample_only BOOLEAN NOT NULL DEFAULT FALSE",
+         ]:
+             conn.execute(text(sql))
+         # Add unique index for github_id if not exists
+diff --git a/app/models/submission.py b/app/models/submission.py
+index 6dd6a32..2bae327 100644
+--- a/app/models/submission.py
++++ b/app/models/submission.py
+@@ -1,19 +1,24 @@
+-from sqlalchemy import Column, Integer, String, Text, Float, DateTime, func
++from sqlalchemy import Column, Integer, String, Text, Float, DateTime, Boolean, func
+ from app.core.database import Base
+ 
+ class Submission(Base):
+     __tablename__ = "submissions"
+ 
+-    id           = Column(Integer, primary_key=True, index=True)
+-    user_id      = Column(Integer, nullable=False, index=True)
+-    problem_id   = Column(Integer, nullable=False, index=True)
+-    language     = Column(String(20), nullable=False)
+-    code         = Column(Text, nullable=False)
+-    status       = Column(String(20), default="pending")
+-    verdict      = Column(String(30), nullable=True)
+-    runtime_ms   = Column(Float, nullable=True)
+-    memory_kb    = Column(Integer, nullable=True)
+-    error_output = Column(Text, nullable=True)
+-    ai_review    = Column(Text, nullable=True)   # cached AI review
+-    created_at   = Column(DateTime(timezone=True), server_default=func.now())
+-    judged_at    = Column(DateTime(timezone=True), nullable=True)
++    id             = Column(Integer, primary_key=True, index=True)
++    user_id        = Column(Integer, nullable=False, index=True)
++    problem_id     = Column(Integer, nullable=False, index=True)
++    language       = Column(String(20), nullable=False)
++    code           = Column(Text, nullable=False)
++    status         = Column(String(20), default="pending")
++    verdict        = Column(String(30), nullable=True)
++    runtime_ms     = Column(Float, nullable=True)
++    memory_kb      = Column(Integer, nullable=True)
++    error_output   = Column(Text, nullable=True)
++    ai_review      = Column(Text, nullable=True)   # cached AI review
++    # True for "Run (Samples)" clicks — these only test sample cases and must
++    # NEVER be treated as a real submission (not shown in My Submissions,
++    # not counted in accepted/total stats, not used for leaderboard/acceptance
++    # rate calculations, since they only ran a subset of the test cases).
++    is_sample_only = Column(Boolean, nullable=False, default=False, server_default="false")
++    created_at     = Column(DateTime(timezone=True), server_default=func.now())
++    judged_at      = Column(DateTime(timezone=True), nullable=True)
+diff --git a/app/routers/admin.py b/app/routers/admin.py
+index ee194d7..4870710 100644
+--- a/app/routers/admin.py
++++ b/app/routers/admin.py
+@@ -42,7 +42,12 @@ def list_all_submissions(
+     admin=Depends(require_admin),
+     db: Session = Depends(get_db)
+ ):
+-    subs = db.query(Submission).order_by(Submission.id.desc()).all()
++    subs = (
++        db.query(Submission)
++        .filter(Submission.is_sample_only == False)  # "Run (Samples)" is never a real submission
++        .order_by(Submission.id.desc())
++        .all()
++    )
+     result = []
+     for s in subs:
+         user = db.query(User).filter(User.id == s.user_id).first()
+diff --git a/app/routers/contest.py b/app/routers/contest.py
+index c30a3be..045b237 100644
+--- a/app/routers/contest.py
++++ b/app/routers/contest.py
+@@ -285,6 +285,7 @@ def _build_leaderboard(contest, db):
+                 Submission.problem_id == cp.problem_id,
+                 Submission.created_at >= starts,
+                 Submission.created_at <= ends,
++                Submission.is_sample_only == False,  # "Run (Samples)" isn't a real attempt
+             ).order_by(Submission.created_at.asc()).all()
+ 
+             wrong = 0
+diff --git a/app/routers/leaderboard.py b/app/routers/leaderboard.py
+index 3e2b9cd..8c2575c 100644
+--- a/app/routers/leaderboard.py
++++ b/app/routers/leaderboard.py
+@@ -8,7 +8,9 @@ router = APIRouter(prefix="/leaderboard", tags=["leaderboard"])
+ 
+ @router.get("/submissions")
+ def all_submissions_for_leaderboard(db: Session = Depends(get_db)):
+-    """Return all accepted+attempted submissions with username for leaderboard calculation."""
++    """Return all accepted+attempted submissions with username for leaderboard calculation.
++    Excludes 'Run (Samples)' clicks — those only test a subset of cases and
++    are never real submissions/attempts."""
+     rows = db.query(
+         Submission.id,
+         Submission.user_id,
+@@ -17,7 +19,7 @@ def all_submissions_for_leaderboard(db: Session = Depends(get_db)):
+         Submission.language,
+         Submission.created_at,
+         User.username,
+-    ).join(User, User.id == Submission.user_id).all()
++    ).join(User, User.id == Submission.user_id).filter(Submission.is_sample_only == False).all()
+     return [
+         {
+             "id": r.id,
+diff --git a/app/routers/submissions.py b/app/routers/submissions.py
+index 243f82c..f709584 100644
+--- a/app/routers/submissions.py
++++ b/app/routers/submissions.py
+@@ -39,7 +39,7 @@ def create_submission(
+         language=payload.language,
+         code=payload.code,
+         status="pending",
+-        error_output="SAMPLE_ONLY" if payload.sample_only else None,
++        is_sample_only=bool(payload.sample_only),
+     )
+     db.add(submission)
+     db.commit()
+@@ -77,6 +77,7 @@ def list_my_submissions(
+     return (
+         db.query(Submission)
+         .filter(Submission.user_id == current_user.id)
++        .filter(Submission.is_sample_only == False)  # "Run (Samples)" is never a real submission
+         .order_by(Submission.created_at.desc())
+         .offset(offset)
+         .limit(limit)
+diff --git a/app/worker/judge.py b/app/worker/judge.py
+index de490e0..05f56d0 100644
+--- a/app/worker/judge.py
++++ b/app/worker/judge.py
+@@ -42,12 +42,10 @@ def _run_judge(submission_id: int, db: Session):
+     if not submission:
+         return
+ 
+-    # Check if this is a sample-only run
+-    sample_only = submission.error_output == "SAMPLE_ONLY"
++    # Check if this is a sample-only ("Run") request rather than a real submission
++    sample_only = submission.is_sample_only
+ 
+     submission.status = "running"
+-    if sample_only:
+-        submission.error_output = None  # clear the flag
+     db.commit()
+ 
+     # Fetch test cases — sample_only = only is_sample=1, else all

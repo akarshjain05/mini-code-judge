@@ -285,6 +285,7 @@ def _build_leaderboard(contest, db):
                 Submission.problem_id == cp.problem_id,
                 Submission.created_at >= starts,
                 Submission.created_at <= ends,
+                Submission.is_sample_only == False,  # "Run (Samples)" isn't a real attempt
             ).order_by(Submission.created_at.asc()).all()
 
             wrong = 0

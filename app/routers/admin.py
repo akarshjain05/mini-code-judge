@@ -42,7 +42,12 @@ def list_all_submissions(
     admin=Depends(require_admin),
     db: Session = Depends(get_db)
 ):
-    subs = db.query(Submission).order_by(Submission.id.desc()).all()
+    subs = (
+        db.query(Submission)
+        .filter(Submission.is_sample_only == False)  # "Run (Samples)" is never a real submission
+        .order_by(Submission.id.desc())
+        .all()
+    )
     result = []
     for s in subs:
         user = db.query(User).filter(User.id == s.user_id).first()

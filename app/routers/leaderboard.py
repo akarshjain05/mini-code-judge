@@ -8,7 +8,9 @@ router = APIRouter(prefix="/leaderboard", tags=["leaderboard"])
 
 @router.get("/submissions")
 def all_submissions_for_leaderboard(db: Session = Depends(get_db)):
-    """Return all accepted+attempted submissions with username for leaderboard calculation."""
+    """Return all accepted+attempted submissions with username for leaderboard calculation.
+    Excludes 'Run (Samples)' clicks — those only test a subset of cases and
+    are never real submissions/attempts."""
     rows = db.query(
         Submission.id,
         Submission.user_id,
@@ -17,7 +19,7 @@ def all_submissions_for_leaderboard(db: Session = Depends(get_db)):
         Submission.language,
         Submission.created_at,
         User.username,
-    ).join(User, User.id == Submission.user_id).all()
+    ).join(User, User.id == Submission.user_id).filter(Submission.is_sample_only == False).all()
     return [
         {
             "id": r.id,

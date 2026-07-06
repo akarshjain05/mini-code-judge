@@ -42,12 +42,10 @@ def _run_judge(submission_id: int, db: Session):
     if not submission:
         return
 
-    # Check if this is a sample-only run
-    sample_only = submission.error_output == "SAMPLE_ONLY"
+    # Check if this is a sample-only ("Run") request rather than a real submission
+    sample_only = submission.is_sample_only
 
     submission.status = "running"
-    if sample_only:
-        submission.error_output = None  # clear the flag
     db.commit()
 
     # Fetch test cases — sample_only = only is_sample=1, else all
