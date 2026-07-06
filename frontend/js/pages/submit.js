@@ -24,6 +24,19 @@ async function submitCode() {
   log.style.display = 'none';
   logText.textContent = '→ Sending code to judge…\n';
 
+  // Reset any AI review state left over from a previous submission of this
+  // problem — a new submission needs a fresh review, not a stale button.
+  const aiBtnReset = document.getElementById('aiReviewBtn');
+  if (aiBtnReset) {
+    aiBtnReset.style.display = 'none';
+    aiBtnReset.disabled = false;
+    aiBtnReset.textContent = '🤖 Get AI Code Review';
+    delete aiBtnReset.dataset.submissionId;
+    delete aiBtnReset.dataset.verdict;
+  }
+  const aiPanelReset = document.getElementById('aiReviewPanel');
+  if (aiPanelReset) aiPanelReset.style.display = 'none';
+
   try {
     const res = await apiFetch(`${API}/submissions`, {
       method: 'POST',

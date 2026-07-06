@@ -1,0 +1,291 @@
+diff --git a/frontend/js/pages/history.js b/frontend/js/pages/history.js
+index ef8738b..2247fd2 100644
+--- a/frontend/js/pages/history.js
++++ b/frontend/js/pages/history.js
+@@ -7,36 +7,93 @@ async function loadHistory() {
+   try {
+     const res = await fetch(`${API}/submissions`, { headers: { 'Authorization': `Bearer ${token}` } });
+     const subs = await res.json();
+-    if (!subs.length) { tbody.innerHTML = '<tr><td colspan="7" style="color:var(--muted);padding:16px">No submissions yet.</td></tr>'; return; }
+-    tbody.innerHTML = subs.map(s => {
+-      const submittedAt = s.created_at ? timeAgo(s.created_at) : '—';
+-      const hasCode = !!s.code;
+-      return `
+-      <tr onclick="openSubmissionViewer(${s.id})" style="cursor:pointer" title="Click to view submitted code" onmouseenter="this.style.background='rgba(88,166,255,0.05)'" onmouseleave="this.style.background=''">
+-        <td style="font-family:var(--mono);color:var(--muted)">#${s.id}</td>
+-        <td style="font-weight:500">Problem #${s.problem_id}</td>
+-        <td><span style="font-family:var(--mono);font-size:12px;color:var(--muted)">${s.language}</span></td>
+-        <td><span class="badge ${verdictClass(s.verdict || s.status)}">${formatVerdict(s.verdict || s.status)}</span></td>
+-        <td style="font-family:var(--mono);font-size:12px">${s.runtime_ms ? s.runtime_ms.toFixed(1)+' ms' : '—'}</td>
+-        <td style="color:var(--muted);font-size:12px">${submittedAt}</td>
+-        <td style="text-align:center">
+-          ${hasCode
+-            ? `<button onclick="event.stopPropagation();openSubmissionViewer(${s.id})" style="background:var(--surface2);border:1px solid var(--border);color:var(--accent);font-size:10px;padding:3px 10px;border-radius:6px;cursor:pointer">View</button>`
+-            : `<span style="color:var(--muted);font-size:11px">—</span>`}
+-        </td>
+-      </tr>`;
+-    }).join('');
+-
+-    // Cache submissions for viewer
++    _allSubs = subs || [];
++
++    // Cache submissions for the code viewer (always the FULL set, independent of filters)
+     window._submissionsCache = {};
+-    subs.forEach(s => { window._submissionsCache[s.id] = s; });
++    _allSubs.forEach(s => { window._submissionsCache[s.id] = s; });
++
++    // Update dashboard stats from the unfiltered list
++    document.getElementById('dashStatTotal').textContent = _allSubs.length;
++    document.getElementById('dashStatAccepted').textContent = _allSubs.filter(s => s.verdict === 'accepted').length;
++
++    if (!_allSubs.length) { tbody.innerHTML = '<tr><td colspan="7" style="color:var(--muted);padding:16px">No submissions yet.</td></tr>'; return; }
++
++    // Populate language filter (distinct languages actually present)
++    const langs = [...new Set(_allSubs.map(s => s.language).filter(Boolean))].sort();
++    const langSel = document.getElementById('histFilterLang');
++    if (langSel) {
++      const prevLang = langSel.value;
++      langSel.innerHTML = '<option value="">All Languages</option>' +
++        langs.map(l => `<option value="${l}">${l.toUpperCase()}</option>`).join('');
++      if (langs.includes(prevLang)) langSel.value = prevLang;
++    }
+ 
+-    // Update dashboard stats
+-    document.getElementById('dashStatTotal').textContent = subs.length;
+-    document.getElementById('dashStatAccepted').textContent = subs.filter(s => s.verdict === 'accepted').length;
++    // Populate verdict filter (distinct verdicts/statuses actually present)
++    const verdicts = [...new Set(_allSubs.map(s => s.verdict || s.status).filter(Boolean))].sort();
++    const verdictSel = document.getElementById('histFilterVerdict');
++    if (verdictSel) {
++      const prevVerdict = verdictSel.value;
++      verdictSel.innerHTML = '<option value="">All Verdicts</option>' +
++        verdicts.map(v => `<option value="${v}">${formatVerdict(v)}</option>`).join('');
++      if (verdicts.includes(prevVerdict)) verdictSel.value = prevVerdict;
++    }
++
++    filterHistory();
+   } catch(e) { tbody.innerHTML = '<tr><td colspan="7" style="color:var(--warn);padding:16px">⚠ Error loading submissions.</td></tr>'; }
+ }
+ 
++function filterHistory() {
++  const tbody = document.getElementById('historyTable');
++  if (!tbody) return;
++
++  const search  = (document.getElementById('histSearch')?.value || '').trim().toLowerCase();
++  const lang    = document.getElementById('histFilterLang')?.value || '';
++  const verdict = document.getElementById('histFilterVerdict')?.value || '';
++
++  const filtered = _allSubs.filter(s => {
++    if (lang && s.language !== lang) return false;
++    if (verdict && (s.verdict || s.status) !== verdict) return false;
++    if (search) {
++      const probMatch = String(s.problem_id).includes(search) || `problem #${s.problem_id}`.toLowerCase().includes(search);
++      const idMatch = String(s.id).includes(search);
++      if (!probMatch && !idMatch) return false;
++    }
++    return true;
++  });
++
++  if (!filtered.length) {
++    tbody.innerHTML = `<tr><td colspan="7" style="color:var(--muted);padding:16px">${_allSubs.length ? 'No submissions match your filters.' : 'No submissions yet.'}</td></tr>`;
++    return;
++  }
++
++  tbody.innerHTML = filtered.map(s => {
++    const submittedAt = s.created_at ? timeAgo(s.created_at) : '—';
++    const hasCode = !!s.code;
++    return `
++    <tr onclick="openSubmissionViewer(${s.id})" style="cursor:pointer" title="Click to view submitted code" onmouseenter="this.style.background='rgba(88,166,255,0.05)'" onmouseleave="this.style.background=''">
++      <td style="font-family:var(--mono);color:var(--muted)">#${s.id}</td>
++      <td style="font-weight:500">Problem #${s.problem_id}</td>
++      <td><span style="font-family:var(--mono);font-size:12px;color:var(--muted)">${s.language}</span></td>
++      <td><span class="badge ${verdictClass(s.verdict || s.status)}">${formatVerdict(s.verdict || s.status)}</span></td>
++      <td style="font-family:var(--mono);font-size:12px">${s.runtime_ms ? s.runtime_ms.toFixed(1)+' ms' : '—'}</td>
++      <td style="color:var(--muted);font-size:12px">${submittedAt}</td>
++      <td style="text-align:center">
++        ${hasCode
++          ? `<button onclick="event.stopPropagation();openSubmissionViewer(${s.id})" style="background:var(--surface2);border:1px solid var(--border);color:var(--accent);font-size:10px;padding:3px 10px;border-radius:6px;cursor:pointer">View</button>`
++          : `<span style="color:var(--muted);font-size:11px">—</span>`}
++      </td>
++    </tr>`;
++  }).join('');
++}
++
++function clearHistoryFilters() {
++  const s = document.getElementById('histSearch'); if (s) s.value = '';
++  const l = document.getElementById('histFilterLang'); if (l) l.value = '';
++  const v = document.getElementById('histFilterVerdict'); if (v) v.value = '';
++  filterHistory();
++}
++
+ function openSubmissionViewer(id) {
+   const s = window._submissionsCache && window._submissionsCache[id];
+   if (!s) return;
+diff --git a/frontend/js/pages/problems.js b/frontend/js/pages/problems.js
+index ba7bd80..f3cc21f 100644
+--- a/frontend/js/pages/problems.js
++++ b/frontend/js/pages/problems.js
+@@ -99,14 +99,17 @@ function filterProblems() {
+   }).join('');
+ }
+ function openProblem(p) {
++  // Fully reset the code editor, verdict box, and AI review panel first —
++  // otherwise stale state (code, verdict, "Analyzing…") from whatever
++  // problem/submission was last viewed leaks into this fresh screen.
++  resetSubmitScreen();
++
+   currentProblem = p;
+   document.getElementById('submitProblemTitle').textContent = `#${p.id} — ${p.title}`;
+   document.getElementById('submitProblemDesc').textContent = p.description;
+   const diffBadge = document.getElementById('submitDiffBadge');
+   diffBadge.textContent = p.difficulty;
+   diffBadge.className = `badge badge-${p.difficulty}`;
+-  document.getElementById('verdictBox').classList.remove('show');
+-  document.getElementById('submitLog').style.display = 'none';
+   loadSampleTestCases(p.id);
+   goTo('submit', false);
+   history.pushState({ page: 'submit', problem_id: p.id }, '', '#problem/' + p.id);
+diff --git a/frontend/js/pages/submit.js b/frontend/js/pages/submit.js
+index fbf221e..e2f3704 100644
+--- a/frontend/js/pages/submit.js
++++ b/frontend/js/pages/submit.js
+@@ -24,6 +24,19 @@ async function submitCode() {
+   log.style.display = 'none';
+   logText.textContent = '→ Sending code to judge…\n';
+ 
++  // Reset any AI review state left over from a previous submission of this
++  // problem — a new submission needs a fresh review, not a stale button.
++  const aiBtnReset = document.getElementById('aiReviewBtn');
++  if (aiBtnReset) {
++    aiBtnReset.style.display = 'none';
++    aiBtnReset.disabled = false;
++    aiBtnReset.textContent = '🤖 Get AI Code Review';
++    delete aiBtnReset.dataset.submissionId;
++    delete aiBtnReset.dataset.verdict;
++  }
++  const aiPanelReset = document.getElementById('aiReviewPanel');
++  if (aiPanelReset) aiPanelReset.style.display = 'none';
++
+   try {
+     const res = await apiFetch(`${API}/submissions`, {
+       method: 'POST',
+diff --git a/frontend/js/ui.js b/frontend/js/ui.js
+index 2596dda..d855376 100644
+--- a/frontend/js/ui.js
++++ b/frontend/js/ui.js
+@@ -126,6 +126,67 @@ document.getElementById('authModal').addEventListener('click', function(e) {
+   if (e.target === this) closeAuthModal();
+ });
+ 
++/**
++ * Fully resets the problem-solving screen (code editor, verdict box, judge
++ * log, and AI review button/panel) back to its pristine state. Called
++ * whenever a problem is opened, so nothing from a previous problem or
++ * previous submission (including a stuck "Analyzing…" button) can leak
++ * into the freshly opened screen.
++ */
++function resetSubmitScreen() {
++  // Stop any in-flight polling left over from a previous problem/submission.
++  if (typeof pollInterval !== 'undefined' && pollInterval) { clearInterval(pollInterval); pollInterval = null; }
++  if (typeof runPollInterval !== 'undefined' && runPollInterval) { clearInterval(runPollInterval); runPollInterval = null; }
++  window._lastSubId = null;
++  window._pollStartedAt = null;
++  window._pollFailCount = 0;
++
++  // Code editor back to its default (empty, C++ placeholder).
++  const codeInput = document.getElementById('codeInput');
++  if (codeInput) codeInput.value = '';
++  const langSelect = document.getElementById('langSelect');
++  if (langSelect) langSelect.value = 'cpp';
++  updateCodePlaceholder();
++
++  // Verdict box.
++  const vbox = document.getElementById('verdictBox');
++  if (vbox) vbox.classList.remove('show');
++  const vtitle = document.getElementById('verdictTitle');
++  if (vtitle) { vtitle.textContent = '—'; vtitle.className = 'verdict-title'; }
++  const vsub = document.getElementById('verdictSub');
++  if (vsub) vsub.textContent = '';
++  const vmeta = document.getElementById('verdictMeta');
++  if (vmeta) vmeta.textContent = '';
++  const verr = document.getElementById('verdictError');
++  if (verr) { verr.textContent = ''; verr.style.display = 'none'; }
++
++  // Judge log.
++  const log = document.getElementById('submitLog');
++  if (log) log.style.display = 'none';
++  const logText = document.getElementById('submitLogText');
++  if (logText) logText.textContent = '';
++
++  // AI review button + panel — back to their untouched, never-clicked state.
++  const aiBtn = document.getElementById('aiReviewBtn');
++  if (aiBtn) {
++    aiBtn.style.display = 'none';
++    aiBtn.disabled = false;
++    aiBtn.textContent = '🤖 Get AI Code Review';
++    delete aiBtn.dataset.submissionId;
++    delete aiBtn.dataset.verdict;
++  }
++  const aiPanel = document.getElementById('aiReviewPanel');
++  if (aiPanel) aiPanel.style.display = 'none';
++  const aiContent = document.getElementById('aiReviewContent');
++  if (aiContent) {
++    aiContent.innerHTML = '<div id="aiReviewLoading" style="display:flex;align-items:center;gap:10px;color:var(--muted)"><span class="spinner"></span> Analyzing your code…</div>';
++  }
++
++  // Sample tests card (loadSampleTestCases will re-show it if applicable).
++  const sampleCard = document.getElementById('sampleTestsCard');
++  if (sampleCard) sampleCard.style.display = 'none';
++}
++
+ function updateCodePlaceholder() {
+   const lang = document.getElementById('langSelect').value;
+   const ta = document.getElementById('codeInput');
+@@ -196,7 +257,13 @@ async function runCode() {
+   vsub.textContent = '';
+   vmeta.textContent = ''; verr.style.display = 'none';
+   const aiBtn = document.getElementById('aiReviewBtn');
+-  if (aiBtn) aiBtn.style.display = 'none';
++  if (aiBtn) {
++    aiBtn.style.display = 'none';
++    aiBtn.disabled = false;
++    aiBtn.textContent = '🤖 Get AI Code Review';
++    delete aiBtn.dataset.submissionId;
++    delete aiBtn.dataset.verdict;
++  }
+   const aiPanel = document.getElementById('aiReviewPanel');
+   if (aiPanel) aiPanel.style.display = 'none';
+ 
+diff --git a/index.html b/index.html
+index 1c6a14e..7f3021c 100644
+--- a/index.html
++++ b/index.html
+@@ -432,7 +432,6 @@ int main(){
+               <div style="padding:12px 16px;background:linear-gradient(135deg,rgba(124,58,237,0.15),rgba(79,70,229,0.1));border-bottom:1px solid rgba(124,58,237,0.2);display:flex;align-items:center;gap:8px">
+                 <span style="font-size:18px">🤖</span>
+                 <span style="font-weight:700;font-size:14px;color:var(--text)">AI Code Review</span>
+-                <span style="margin-left:auto;font-size:11px;color:rgba(124,58,237,0.8);background:rgba(124,58,237,0.1);padding:2px 8px;border-radius:10px">Powered by Claude</span>
+               </div>
+               <div id="aiReviewContent" style="padding:16px;font-size:13px;line-height:1.7;color:var(--text)">
+                 <div id="aiReviewLoading" style="display:flex;align-items:center;gap:10px;color:var(--muted)">
+@@ -451,6 +450,20 @@ int main(){
+           <h1>My Submissions</h1>
+           <p>Your full judging history — newest first.</p>
+         </div>
++        <!-- Filter bar -->
++        <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
++          <input type="text" id="histSearch" placeholder="🔍 Search by problem #…" oninput="filterHistory()"
++            style="flex:1;min-width:180px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px" />
++          <select id="histFilterLang" onchange="filterHistory()"
++            style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px">
++            <option value="">All Languages</option>
++          </select>
++          <select id="histFilterVerdict" onchange="filterHistory()"
++            style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px">
++            <option value="">All Verdicts</option>
++          </select>
++          <button class="btn btn-ghost btn-sm" onclick="clearHistoryFilters()">✕ Clear</button>
++        </div>
+         <div class="card" style="padding:0;overflow:hidden">
+           <div class="table-wrap">
+             <table>

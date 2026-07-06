@@ -1,0 +1,24 @@
+{"sessionId":"63f610","location":"config.js:apiFetch","message":"fetch response","data":{"url":"https://mini-code-judge.onrender.com/submissions","status":202,"ok":true,"attempt":0},"hypothesisId":"A","timestamp":1783311625035}
+{"sessionId":"63f610","location":"submit.js:submitCode","message":"POST /submissions parsed","data":{"status":202,"ok":true,"subId":85},"hypothesisId":"C","timestamp":1783311625036}
+{"sessionId":"63f610","location":"submit.js:pollVerdict","message":"poll status","data":{"id":85,"status":"wrong_answer","verdict":"wrong_answer"},"hypothesisId":"D","timestamp":1783311627542}
+{"sessionId":"63f610","location":"config.js:apiFetch","message":"fetch response","data":{"url":"https://mini-code-judge.onrender.com/submissions","status":202,"ok":true,"attempt":0},"hypothesisId":"A","timestamp":1783311700586}
+{"sessionId":"63f610","location":"ui.js:runCode","message":"POST sample run parsed","data":{"status":202,"ok":true,"subId":86},"hypothesisId":"C","timestamp":1783311700587}
+{"sessionId":"63f610","location":"ui.js:pollSampleRun","message":"poll status","data":{"id":86,"status":"accepted","verdict":"accepted"},"hypothesisId":"D","timestamp":1783311703141}
+{"sessionId":"63f610","location":"ui.js:pollSampleRun","message":"poll status","data":{"id":86,"status":"accepted","verdict":"accepted"},"hypothesisId":"D","timestamp":1783311703740}
+{"sessionId":"63f610","location":"config.js:apiFetch","message":"fetch response","data":{"url":"https://mini-code-judge.onrender.com/submissions","status":202,"ok":true,"attempt":0},"hypothesisId":"A","timestamp":1783311707140}
+{"sessionId":"63f610","location":"ui.js:runCode","message":"POST sample run parsed","data":{"status":202,"ok":true,"subId":87},"hypothesisId":"C","timestamp":1783311707140}
+{"sessionId":"63f610","location":"ui.js:pollSampleRun","message":"poll status","data":{"id":87,"status":"compile_error","verdict":"compile_error"},"hypothesisId":"D","timestamp":1783311709230}
+{"sessionId":"63f610","location":"config.js:apiFetch","message":"fetch response","data":{"url":"https://mini-code-judge.onrender.com/submissions","status":202,"ok":true,"attempt":0},"hypothesisId":"A","timestamp":1783311714932}
+{"sessionId":"63f610","location":"submit.js:submitCode","message":"POST /submissions parsed","data":{"status":202,"ok":true,"subId":88},"hypothesisId":"C","timestamp":1783311714934}
+{"sessionId":"63f610","location":"submit.js:pollVerdict","message":"poll status","data":{"id":88,"status":"accepted","verdict":"accepted"},"hypothesisId":"D","timestamp":1783311717374}
+{"sessionId":"63f610","location":"config.js:apiFetch","message":"fetch response","data":{"url":"https://mini-code-judge.onrender.com/submissions","status":422,"ok":false,"attempt":0},"hypothesisId":"A","timestamp":1783311731699}
+{"sessionId":"63f610","location":"submit.js:submitCode","message":"POST /submissions parsed","data":{"status":422,"ok":false,"detail":[{"type":"value_error","loc":["body","code"],"msg":"Value error, Code cannot be empty or whitespace only","input":"","ctx":{"error":{}}}]},"hypothesisId":"C","timestamp":1783311731699}
+{"sessionId":"63f610","location":"config.js:apiFetch","message":"fetch response","data":{"url":"https://mini-code-judge.onrender.com/submissions","status":202,"ok":true,"attempt":0},"hypothesisId":"A","timestamp":1783311745578}
+{"sessionId":"63f610","location":"ui.js:runCode","message":"POST sample run parsed","data":{"status":202,"ok":true,"subId":89},"hypothesisId":"C","timestamp":1783311745580}
+{"sessionId":"63f610","location":"ui.js:pollSampleRun","message":"poll status","data":{"id":89,"status":"accepted","verdict":"accepted"},"hypothesisId":"D","timestamp":1783311747701}
+{"sessionId":"63f610","location":"config.js:apiFetch","message":"fetch response","data":{"url":"https://mini-code-judge.onrender.com/submissions","status":202,"ok":true,"attempt":0},"hypothesisId":"A","timestamp":1783311749502}
+{"sessionId":"63f610","location":"submit.js:submitCode","message":"POST /submissions parsed","data":{"status":202,"ok":true,"subId":90},"hypothesisId":"C","timestamp":1783311749503}
+{"sessionId":"63f610","location":"submit.js:pollVerdict","message":"poll status","data":{"id":90,"status":"wrong_answer","verdict":"wrong_answer"},"hypothesisId":"D","timestamp":1783311751935}
+{"sessionId":"63f610","location":"config.js:apiFetch","message":"fetch response","data":{"url":"https://mini-code-judge.onrender.com/submissions","status":202,"ok":true,"attempt":0},"hypothesisId":"A","timestamp":1783325553134}
+{"sessionId":"63f610","location":"submit.js:submitCode","message":"POST /submissions parsed","data":{"status":202,"ok":true,"subId":91},"hypothesisId":"C","timestamp":1783325553135}
+{"sessionId":"63f610","location":"submit.js:pollVerdict","message":"poll status","data":{"id":91,"status":"wrong_answer","verdict":"wrong_answer"},"hypothesisId":"D","timestamp":1783325555638}

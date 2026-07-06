@@ -126,6 +126,67 @@ document.getElementById('authModal').addEventListener('click', function(e) {
   if (e.target === this) closeAuthModal();
 });
 
+/**
+ * Fully resets the problem-solving screen (code editor, verdict box, judge
+ * log, and AI review button/panel) back to its pristine state. Called
+ * whenever a problem is opened, so nothing from a previous problem or
+ * previous submission (including a stuck "Analyzing…" button) can leak
+ * into the freshly opened screen.
+ */
+function resetSubmitScreen() {
+  // Stop any in-flight polling left over from a previous problem/submission.
+  if (typeof pollInterval !== 'undefined' && pollInterval) { clearInterval(pollInterval); pollInterval = null; }
+  if (typeof runPollInterval !== 'undefined' && runPollInterval) { clearInterval(runPollInterval); runPollInterval = null; }
+  window._lastSubId = null;
+  window._pollStartedAt = null;
+  window._pollFailCount = 0;
+
+  // Code editor back to its default (empty, C++ placeholder).
+  const codeInput = document.getElementById('codeInput');
+  if (codeInput) codeInput.value = '';
+  const langSelect = document.getElementById('langSelect');
+  if (langSelect) langSelect.value = 'cpp';
+  updateCodePlaceholder();
+
+  // Verdict box.
+  const vbox = document.getElementById('verdictBox');
+  if (vbox) vbox.classList.remove('show');
+  const vtitle = document.getElementById('verdictTitle');
+  if (vtitle) { vtitle.textContent = '—'; vtitle.className = 'verdict-title'; }
+  const vsub = document.getElementById('verdictSub');
+  if (vsub) vsub.textContent = '';
+  const vmeta = document.getElementById('verdictMeta');
+  if (vmeta) vmeta.textContent = '';
+  const verr = document.getElementById('verdictError');
+  if (verr) { verr.textContent = ''; verr.style.display = 'none'; }
+
+  // Judge log.
+  const log = document.getElementById('submitLog');
+  if (log) log.style.display = 'none';
+  const logText = document.getElementById('submitLogText');
+  if (logText) logText.textContent = '';
+
+  // AI review button + panel — back to their untouched, never-clicked state.
+  const aiBtn = document.getElementById('aiReviewBtn');
+  if (aiBtn) {
+    aiBtn.style.display = 'none';
+    aiBtn.disabled = false;
+    aiBtn.textContent = '🤖 Get AI Code Review';
+    delete aiBtn.dataset.submissionId;
+    delete aiBtn.dataset.verdict;
+  }
+  const aiPanel = document.getElementById('aiReviewPanel');
+  if (aiPanel) aiPanel.style.display = 'none';
+  const aiContent = document.getElementById('aiReviewContent');
+  if (aiContent) {
+    aiContent.innerHTML = '<div id="aiReviewLoading" style="display:flex;align-items:center;gap:10px;color:var(--muted)"><span class="spinner"></span> Analyzing your code…</div>';
+  }
+
+  // Sample tests card (loadSampleTestCases will re-show it if applicable).
+  const sampleCard = document.getElementById('sampleTestsCard');
+  if (sampleCard) sampleCard.style.display = 'none';
+}
+
 function updateCodePlaceholder() {
   const lang = document.getElementById('langSelect').value;
   const ta = document.getElementById('codeInput');
@@ -196,7 +257,13 @@ async function runCode() {
   vsub.textContent = '';
   vmeta.textContent = ''; verr.style.display = 'none';
   const aiBtn = document.getElementById('aiReviewBtn');
-  if (aiBtn) aiBtn.style.display = 'none';
+  if (aiBtn) {
+    aiBtn.style.display = 'none';
+    aiBtn.disabled = false;
+    aiBtn.textContent = '🤖 Get AI Code Review';
+    delete aiBtn.dataset.submissionId;
+    delete aiBtn.dataset.verdict;
+  }
   const aiPanel = document.getElementById('aiReviewPanel');
   if (aiPanel) aiPanel.style.display = 'none';
 

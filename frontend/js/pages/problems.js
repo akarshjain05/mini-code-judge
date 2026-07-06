@@ -99,14 +99,17 @@ function filterProblems() {
   }).join('');
 }
 function openProblem(p) {
+  // Fully reset the code editor, verdict box, and AI review panel first —
+  // otherwise stale state (code, verdict, "Analyzing…") from whatever
+  // problem/submission was last viewed leaks into this fresh screen.
+  resetSubmitScreen();
+
   currentProblem = p;
   document.getElementById('submitProblemTitle').textContent = `#${p.id} — ${p.title}`;
   document.getElementById('submitProblemDesc').textContent = p.description;
   const diffBadge = document.getElementById('submitDiffBadge');
   diffBadge.textContent = p.difficulty;
   diffBadge.className = `badge badge-${p.difficulty}`;
-  document.getElementById('verdictBox').classList.remove('show');
-  document.getElementById('submitLog').style.display = 'none';
   loadSampleTestCases(p.id);
   goTo('submit', false);
   history.pushState({ page: 'submit', problem_id: p.id }, '', '#problem/' + p.id);

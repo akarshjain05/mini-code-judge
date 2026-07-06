@@ -432,7 +432,6 @@ int main(){
               <div style="padding:12px 16px;background:linear-gradient(135deg,rgba(124,58,237,0.15),rgba(79,70,229,0.1));border-bottom:1px solid rgba(124,58,237,0.2);display:flex;align-items:center;gap:8px">
                 <span style="font-size:18px">🤖</span>
                 <span style="font-weight:700;font-size:14px;color:var(--text)">AI Code Review</span>
-                <span style="margin-left:auto;font-size:11px;color:rgba(124,58,237,0.8);background:rgba(124,58,237,0.1);padding:2px 8px;border-radius:10px">Powered by Claude</span>
               </div>
               <div id="aiReviewContent" style="padding:16px;font-size:13px;line-height:1.7;color:var(--text)">
                 <div id="aiReviewLoading" style="display:flex;align-items:center;gap:10px;color:var(--muted)">
@@ -450,6 +449,20 @@ int main(){
         <div class="page-header">
           <h1>My Submissions</h1>
           <p>Your full judging history — newest first.</p>
+        </div>
+        <!-- Filter bar -->
+        <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
+          <input type="text" id="histSearch" placeholder="🔍 Search by problem #…" oninput="filterHistory()"
+            style="flex:1;min-width:180px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px" />
+          <select id="histFilterLang" onchange="filterHistory()"
+            style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px">
+            <option value="">All Languages</option>
+          </select>
+          <select id="histFilterVerdict" onchange="filterHistory()"
+            style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px">
+            <option value="">All Verdicts</option>
+          </select>
+          <button class="btn btn-ghost btn-sm" onclick="clearHistoryFilters()">✕ Clear</button>
         </div>
         <div class="card" style="padding:0;overflow:hidden">
           <div class="table-wrap">
