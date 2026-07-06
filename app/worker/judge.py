@@ -6,6 +6,7 @@ import subprocess
 import tempfile
 import os
 import time
+import traceback
 from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 from app.core.database import SessionLocal
@@ -18,6 +19,20 @@ def judge_submission(submission_id: int):
     db = SessionLocal()
     try:
         _run_judge(submission_id, db)
+    except Exception:
+        db.rollback()
+        err_db = SessionLocal()
+        try:
+            submission = err_db.query(Submission).filter(Submission.id == submission_id).first()
+            if submission and submission.status in ("pending", "running"):
+                submission.status = "error"
+                submission.verdict = "judge_error"
+                submission.error_output = traceback.format_exc()[:5000]
+                err_db.commit()
+        except Exception:
+            traceback.print_exc()
+        finally:
+            err_db.close()
     finally:
         db.close()
 

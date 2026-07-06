@@ -25,7 +25,7 @@ async function submitCode() {
   logText.textContent = '→ Sending code to judge…\n';
 
   try {
-    const res = await fetch(`${API}/submissions`, {
+    const res = await apiFetch(`${API}/submissions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
       body: JSON.stringify({ problem_id: currentProblem.id, language: lang, code }),
@@ -36,19 +36,56 @@ async function submitCode() {
     } catch(err) {
       sub = { detail: `Status ${res.status}: Invalid JSON response` };
     }
+    // #region agent log
+    _dbgLog('submit.js:submitCode', 'POST /submissions parsed', { status: res.status, ok: res.ok, subId: sub?.id, detail: sub?.detail }, 'C');
+    // #endregion
     if (!res.ok) { vtitle.textContent = '✗ Error'; vsub.textContent = sub.detail || 'Submit failed'; vtitle.className = 'verdict-title verdict-wrong_answer'; return; }
+    if (!sub.id) { vtitle.textContent = '✗ Error'; vsub.textContent = 'Invalid server response (missing submission id)'; vtitle.className = 'verdict-title verdict-wrong_answer'; return; }
 
     vtitle.innerHTML = '<span class="spinner"></span> &nbsp;Judging…';
 
     if (pollInterval) clearInterval(pollInterval);
+    window._pollStartedAt = Date.now();
+    window._pollFailCount = 0;
     pollInterval = setInterval(() => pollVerdict(sub.id, logText, vtitle, vsub, vmeta, verr, vbox), 1500);
-  } catch(e) { vtitle.textContent = '⚠ Cannot reach API'; vtitle.className = 'verdict-title verdict-wrong_answer'; }
+  } catch(e) {
+    // #region agent log
+    _dbgLog('submit.js:submitCode', 'POST catch', { err: String(e) }, 'A');
+    // #endregion
+    vtitle.textContent = '⚠ Cannot reach API';
+    vsub.textContent = 'Server may be waking up — try again in a moment.';
+    vtitle.className = 'verdict-title verdict-wrong_answer';
+  }
 }
 
 async function pollVerdict(id, logText, vtitle, vsub, vmeta, verr, vbox) {
+  if (window._pollStartedAt && Date.now() - window._pollStartedAt > 180000) {
+    clearInterval(pollInterval);
+    vtitle.className = 'verdict-title verdict-wrong_answer';
+    vtitle.textContent = '⏱ Judging timed out';
+    vsub.textContent = 'The server took too long — try submitting again.';
+    return;
+  }
   try {
     const res = await fetch(`${API}/submissions/${id}`, { headers: { 'Authorization': `Bearer ${token}` } });
+    if (!res.ok) {
+      window._pollFailCount = (window._pollFailCount || 0) + 1;
+      // #region agent log
+      _dbgLog('submit.js:pollVerdict', 'poll non-ok', { id, status: res.status, failCount: window._pollFailCount }, 'B');
+      // #endregion
+      if (window._pollFailCount >= 5) {
+        clearInterval(pollInterval);
+        vtitle.className = 'verdict-title verdict-wrong_answer';
+        vtitle.textContent = '⚠ Cannot reach API';
+        vsub.textContent = `Poll failed (HTTP ${res.status}) — refresh and try again.`;
+      }
+      return;
+    }
+    window._pollFailCount = 0;
     const sub = await res.json();
+    // #region agent log
+    _dbgLog('submit.js:pollVerdict', 'poll status', { id, status: sub.status, verdict: sub.verdict }, 'D');
+    // #endregion
     if (sub.status === 'pending' || sub.status === 'running') {
       return;
     }
@@ -60,20 +97,30 @@ async function pollVerdict(id, logText, vtitle, vsub, vmeta, verr, vbox) {
     vsub.textContent = sub.verdict === 'accepted' ? 'All test cases passed!' : 'Check your logic and try again.';
     if (sub.runtime_ms) vmeta.innerHTML = `<span>⚡ ${sub.runtime_ms.toFixed(1)} ms</span><span>🧠 ${sub.memory_kb || '—'} KB</span>`;
     if (sub.error_output && sub.error_output !== 'SAMPLE_ONLY') { verr.textContent = sub.error_output; verr.style.display = 'block'; }
-    // Show AI Review button after verdict
     const aiBtn = document.getElementById('aiReviewBtn');
     if (aiBtn) {
       aiBtn.style.display = 'block';
       aiBtn.dataset.submissionId = sub.id;
       aiBtn.dataset.verdict = sub.verdict || sub.status;
-      aiBtn.dataset.code = '';  // will fetch from sub
+      aiBtn.dataset.code = '';
       document.getElementById('aiReviewPanel').style.display = 'none';
     }
     window._lastSubId = sub.id;
-  } catch(e) { clearInterval(pollInterval); }
+  } catch(e) {
+    window._pollFailCount = (window._pollFailCount || 0) + 1;
+    // #region agent log
+    _dbgLog('submit.js:pollVerdict', 'poll catch', { id, err: String(e), failCount: window._pollFailCount }, 'B');
+    // #endregion
+    if (window._pollFailCount >= 5) {
+      clearInterval(pollInterval);
+      vtitle.className = 'verdict-title verdict-wrong_answer';
+      vtitle.textContent = '⚠ Cannot reach API';
+      vsub.textContent = 'Lost connection while waiting for verdict — try again.';
+    }
+  }
 }
 
 function formatVerdict(v) {
-  const map = { accepted:'Accepted', wrong_answer:'Wrong Answer', time_limit_exceeded:'Time Limit Exceeded', compile_error:'Compile Error', runtime_error:'Runtime Error', no_test_cases:'No Test Cases', queue_error:'Queue Error' };
+  const map = { accepted:'Accepted', wrong_answer:'Wrong Answer', time_limit_exceeded:'Time Limit Exceeded', compile_error:'Compile Error', runtime_error:'Runtime Error', no_test_cases:'No Test Cases', queue_error:'Queue Error', judge_error:'Judge Error', error:'Error' };
   return map[v] || v;
 }

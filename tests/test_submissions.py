@@ -106,12 +106,22 @@ def test_submit_requires_login():
     assert resp.status_code == 401
 
 
+def test_submit_supported_languages():
+    token = register_and_login()
+    resp = client.post("/submissions", json={
+        "problem_id": 1,
+        "language": "java",
+        "code": "public class Main { public static void main(String[] a){} }",
+    }, headers=auth_headers(token))
+    assert resp.status_code == 404  # problem missing — but language must not be rejected
+
+
 def test_submit_unsupported_language():
     token = register_and_login()
     resp = client.post("/submissions", json={
         "problem_id": 1,
-        "language": "java",   # Not supported yet
-        "code": "class Main {}",
+        "language": "rust",
+        "code": "fn main(){}",
     }, headers=auth_headers(token))
     assert resp.status_code == 422  # Pydantic validation error
 

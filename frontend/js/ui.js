@@ -201,7 +201,7 @@ async function runCode() {
   if (aiPanel) aiPanel.style.display = 'none';
 
   try {
-    const res = await fetch(`${API}/submissions`, {
+    const res = await apiFetch(`${API}/submissions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
       body: JSON.stringify({ problem_id: currentProblem.id, language: lang, code, sample_only: true }),
@@ -212,26 +212,64 @@ async function runCode() {
     } catch(err) {
       sub = { detail: `Status ${res.status}: Invalid JSON response` };
     }
+    // #region agent log
+    _dbgLog('ui.js:runCode', 'POST sample run parsed', { status: res.status, ok: res.ok, subId: sub?.id }, 'C');
+    // #endregion
     if (!res.ok) {
       vtitle.className = 'verdict-title verdict-wrong_answer';
       vtitle.textContent = '✗ Error';
       vsub.textContent = sub.detail || 'Run failed';
       return;
     }
+    if (!sub.id) {
+      vtitle.className = 'verdict-title verdict-wrong_answer';
+      vtitle.textContent = '✗ Error';
+      vsub.textContent = 'Invalid server response (missing submission id)';
+      return;
+    }
 
     if (runPollInterval) clearInterval(runPollInterval);
+    window._runPollStartedAt = Date.now();
+    window._runPollFailCount = 0;
     runPollInterval = setInterval(() => pollSampleRun(sub.id, vtitle, vsub, vmeta, verr), 1200);
   } catch(e) {
+    // #region agent log
+    _dbgLog('ui.js:runCode', 'POST catch', { err: String(e) }, 'A');
+    // #endregion
     vtitle.className = 'verdict-title verdict-wrong_answer';
     vtitle.textContent = '⚠ Cannot reach API';
-    vsub.textContent = '';
+    vsub.textContent = 'Server may be waking up — try again in a moment.';
   }
 }
 
 async function pollSampleRun(id, vtitle, vsub, vmeta, verr) {
+  if (window._runPollStartedAt && Date.now() - window._runPollStartedAt > 180000) {
+    clearInterval(runPollInterval);
+    vtitle.className = 'verdict-title verdict-wrong_answer';
+    vtitle.textContent = '⏱ Run timed out';
+    vsub.textContent = 'The server took too long — try again.';
+    return;
+  }
   try {
     const res = await fetch(`${API}/submissions/${id}`, { headers: { 'Authorization': `Bearer ${token}` } });
+    if (!res.ok) {
+      window._runPollFailCount = (window._runPollFailCount || 0) + 1;
+      // #region agent log
+      _dbgLog('ui.js:pollSampleRun', 'poll non-ok', { id, status: res.status, failCount: window._runPollFailCount }, 'B');
+      // #endregion
+      if (window._runPollFailCount >= 5) {
+        clearInterval(runPollInterval);
+        vtitle.className = 'verdict-title verdict-wrong_answer';
+        vtitle.textContent = '⚠ Cannot reach API';
+        vsub.textContent = `Poll failed (HTTP ${res.status}) — refresh and try again.`;
+      }
+      return;
+    }
+    window._runPollFailCount = 0;
     const sub = await res.json();
+    // #region agent log
+    _dbgLog('ui.js:pollSampleRun', 'poll status', { id, status: sub.status, verdict: sub.verdict }, 'D');
+    // #endregion
     if (sub.status === 'pending' || sub.status === 'running') return;
     clearInterval(runPollInterval);
 
@@ -254,10 +292,16 @@ async function pollSampleRun(id, vtitle, vsub, vmeta, verr) {
       vmeta.innerHTML = sub.runtime_ms ? `<span>⚡ ${sub.runtime_ms.toFixed(1)} ms</span>` : '';
     }
   } catch(e) {
-    clearInterval(runPollInterval);
-    vtitle.className = 'verdict-title verdict-wrong_answer';
-    vtitle.textContent = '⚠ Cannot reach API';
-    vsub.textContent = '';
+    window._runPollFailCount = (window._runPollFailCount || 0) + 1;
+    // #region agent log
+    _dbgLog('ui.js:pollSampleRun', 'poll catch', { id, err: String(e), failCount: window._runPollFailCount }, 'B');
+    // #endregion
+    if (window._runPollFailCount >= 5) {
+      clearInterval(runPollInterval);
+      vtitle.className = 'verdict-title verdict-wrong_answer';
+      vtitle.textContent = '⚠ Cannot reach API';
+      vsub.textContent = 'Lost connection while waiting for result — try again.';
+    }
   }
 }
 

@@ -2,7 +2,7 @@ from typing import Literal, Optional
 from datetime import datetime
 from pydantic import BaseModel, field_validator
 
-SupportedLanguage = Literal["cpp", "python"]
+SupportedLanguage = Literal["cpp", "c", "java", "python"]
 
 class SubmissionCreate(BaseModel):
     problem_id: int
