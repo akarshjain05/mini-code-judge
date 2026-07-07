@@ -51,12 +51,15 @@ async function requestAIReview() {
   const btn = document.getElementById('aiReviewBtn');
   const panel = document.getElementById('aiReviewPanel');
   const content = document.getElementById('aiReviewContent');
-  const loading = document.getElementById('aiReviewLoading');
 
   btn.disabled = true;
   btn.textContent = '🤖 Analyzing…';
   panel.style.display = 'block';
-  loading.style.display = 'flex';
+  // Set the loading state directly rather than looking up a previous
+  // #aiReviewLoading node — after the first review (success OR failure),
+  // this innerHTML is replaced, so that node no longer exists. Looking it
+  // up and touching .style on it crashed with "Cannot read properties of
+  // null" on every retry/refresh click.
   content.innerHTML = '<div id="aiReviewLoading" style="display:flex;align-items:center;gap:10px;color:var(--muted)"><span class="spinner"></span> Analyzing your code with Claude AI…</div>';
 
   // Scroll to panel

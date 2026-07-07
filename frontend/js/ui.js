@@ -279,9 +279,6 @@ async function runCode() {
     } catch(err) {
       sub = { detail: `Status ${res.status}: Invalid JSON response` };
     }
-    // #region agent log
-    _dbgLog('ui.js:runCode', 'POST sample run parsed', { status: res.status, ok: res.ok, subId: sub?.id }, 'C');
-    // #endregion
     if (!res.ok) {
       vtitle.className = 'verdict-title verdict-wrong_answer';
       vtitle.textContent = '✗ Error';
@@ -300,9 +297,6 @@ async function runCode() {
     window._runPollFailCount = 0;
     runPollInterval = setInterval(() => pollSampleRun(sub.id, vtitle, vsub, vmeta, verr), 1200);
   } catch(e) {
-    // #region agent log
-    _dbgLog('ui.js:runCode', 'POST catch', { err: String(e) }, 'A');
-    // #endregion
     vtitle.className = 'verdict-title verdict-wrong_answer';
     vtitle.textContent = '⚠ Cannot reach API';
     vsub.textContent = 'Server may be waking up — try again in a moment.';
@@ -321,9 +315,6 @@ async function pollSampleRun(id, vtitle, vsub, vmeta, verr) {
     const res = await fetch(`${API}/submissions/${id}`, { headers: { 'Authorization': `Bearer ${token}` } });
     if (!res.ok) {
       window._runPollFailCount = (window._runPollFailCount || 0) + 1;
-      // #region agent log
-      _dbgLog('ui.js:pollSampleRun', 'poll non-ok', { id, status: res.status, failCount: window._runPollFailCount }, 'B');
-      // #endregion
       if (window._runPollFailCount >= 5) {
         clearInterval(runPollInterval);
         vtitle.className = 'verdict-title verdict-wrong_answer';
@@ -334,9 +325,6 @@ async function pollSampleRun(id, vtitle, vsub, vmeta, verr) {
     }
     window._runPollFailCount = 0;
     const sub = await res.json();
-    // #region agent log
-    _dbgLog('ui.js:pollSampleRun', 'poll status', { id, status: sub.status, verdict: sub.verdict }, 'D');
-    // #endregion
     if (sub.status === 'pending' || sub.status === 'running') return;
     clearInterval(runPollInterval);
 
@@ -360,9 +348,6 @@ async function pollSampleRun(id, vtitle, vsub, vmeta, verr) {
     }
   } catch(e) {
     window._runPollFailCount = (window._runPollFailCount || 0) + 1;
-    // #region agent log
-    _dbgLog('ui.js:pollSampleRun', 'poll catch', { id, err: String(e), failCount: window._runPollFailCount }, 'B');
-    // #endregion
     if (window._runPollFailCount >= 5) {
       clearInterval(runPollInterval);
       vtitle.className = 'verdict-title verdict-wrong_answer';

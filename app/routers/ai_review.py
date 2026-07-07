@@ -147,9 +147,11 @@ async def get_ai_review(
         async with httpx.AsyncClient(timeout=30.0) as client:
             response = await _call_gemini(client, prompt)
 
-            # One short retry specifically for 429 — RPM limits are a rolling
-            # window and often clear within a couple seconds.
-            if response.status_code == 429:
+            # One short retry specifically for 429/503 — RPM limits are a
+            # rolling window and often clear within a couple seconds, and
+            # Gemini's free tier frequently returns a transient 503 "model
+            # overloaded" that clears just as quickly on retry.
+            if response.status_code in (429, 503):
                 await asyncio.sleep(3)
                 response = await _call_gemini(client, prompt)
 

@@ -49,9 +49,6 @@ async function submitCode() {
     } catch(err) {
       sub = { detail: `Status ${res.status}: Invalid JSON response` };
     }
-    // #region agent log
-    _dbgLog('submit.js:submitCode', 'POST /submissions parsed', { status: res.status, ok: res.ok, subId: sub?.id, detail: sub?.detail }, 'C');
-    // #endregion
     if (!res.ok) { vtitle.textContent = '✗ Error'; vsub.textContent = sub.detail || 'Submit failed'; vtitle.className = 'verdict-title verdict-wrong_answer'; return; }
     if (!sub.id) { vtitle.textContent = '✗ Error'; vsub.textContent = 'Invalid server response (missing submission id)'; vtitle.className = 'verdict-title verdict-wrong_answer'; return; }
 
@@ -62,9 +59,6 @@ async function submitCode() {
     window._pollFailCount = 0;
     pollInterval = setInterval(() => pollVerdict(sub.id, logText, vtitle, vsub, vmeta, verr, vbox), 1500);
   } catch(e) {
-    // #region agent log
-    _dbgLog('submit.js:submitCode', 'POST catch', { err: String(e) }, 'A');
-    // #endregion
     vtitle.textContent = '⚠ Cannot reach API';
     vsub.textContent = 'Server may be waking up — try again in a moment.';
     vtitle.className = 'verdict-title verdict-wrong_answer';
@@ -83,9 +77,6 @@ async function pollVerdict(id, logText, vtitle, vsub, vmeta, verr, vbox) {
     const res = await fetch(`${API}/submissions/${id}`, { headers: { 'Authorization': `Bearer ${token}` } });
     if (!res.ok) {
       window._pollFailCount = (window._pollFailCount || 0) + 1;
-      // #region agent log
-      _dbgLog('submit.js:pollVerdict', 'poll non-ok', { id, status: res.status, failCount: window._pollFailCount }, 'B');
-      // #endregion
       if (window._pollFailCount >= 5) {
         clearInterval(pollInterval);
         vtitle.className = 'verdict-title verdict-wrong_answer';
@@ -96,9 +87,6 @@ async function pollVerdict(id, logText, vtitle, vsub, vmeta, verr, vbox) {
     }
     window._pollFailCount = 0;
     const sub = await res.json();
-    // #region agent log
-    _dbgLog('submit.js:pollVerdict', 'poll status', { id, status: sub.status, verdict: sub.verdict }, 'D');
-    // #endregion
     if (sub.status === 'pending' || sub.status === 'running') {
       return;
     }
@@ -121,9 +109,6 @@ async function pollVerdict(id, logText, vtitle, vsub, vmeta, verr, vbox) {
     window._lastSubId = sub.id;
   } catch(e) {
     window._pollFailCount = (window._pollFailCount || 0) + 1;
-    // #region agent log
-    _dbgLog('submit.js:pollVerdict', 'poll catch', { id, err: String(e), failCount: window._pollFailCount }, 'B');
-    // #endregion
     if (window._pollFailCount >= 5) {
       clearInterval(pollInterval);
       vtitle.className = 'verdict-title verdict-wrong_answer';
