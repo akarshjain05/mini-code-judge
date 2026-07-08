@@ -26,7 +26,7 @@ from app.models.user import User
 from app.schemas.user import (
     UserRegister, UserOut, Token, GoogleLoginRequest, GoogleCompleteSignup,
     UserUpdate, PasswordChange, ForgotPasswordRequest, ResetPasswordRequest,
-    DeleteAccountRequest, GitHubConnectRequest,N
+    DeleteAccountRequest, GitHubConnectRequest,
 )
 
 router = APIRouter(prefix="/auth", tags=["auth"])
