@@ -137,7 +137,12 @@ def _prepare_run_command(submission: Submission, tmpdir: str, db: Session):
             _set_verdict(db, submission, verdict="compile_error",
                          status="compile_error", error_output=result.stderr[:5000])
             return None
-        return ["java", "-cp", tmpdir, "Main"]
+        # -Xmx caps the JVM's own heap. We deliberately do NOT rely on the
+        # OS-level RLIMIT_AS for Java (see _run_test_case) — the JVM reserves
+        # large virtual address space up front (code cache, metaspace, thread
+        # stacks) regardless of actual heap usage, so RLIMIT_AS kills every
+        # single Java submission at startup before it ever runs user code.
+        return ["java", f"-Xmx{settings.MEMORY_LIMIT_MB}m", "-cp", tmpdir, "Main"]
 
     # default: cpp
     src = os.path.join(tmpdir, "solution.cpp")
@@ -157,15 +162,32 @@ def _run_test_case(run_command: list, stdin_data: str) -> dict:
     import resource, signal
 
     mem_bytes = settings.MEMORY_LIMIT_MB * 1024 * 1024
+    is_java = run_command and run_command[0] == "java"
 
     def _preexec():
         """Called in child process before exec — set resource limits."""
-        # Memory limit
-        resource.setrlimit(resource.RLIMIT_AS, (mem_bytes, mem_bytes))
+        # Memory limit — skipped for Java: the JVM reserves large virtual
+        # address space by design (code cache, metaspace, thread stacks)
+        # independent of actual heap usage, so an RLIMIT_AS cap here kills
+        # the JVM at startup regardless of what the submitted code does.
+        # Java's heap is capped instead via -Xmx on the java command itself.
+        if not is_java:
+            resource.setrlimit(resource.RLIMIT_AS, (mem_bytes, mem_bytes))
         # Max file size written (10 MB) — prevents disk-fill attacks
         resource.setrlimit(resource.RLIMIT_FSIZE, (10 * 1024 * 1024, 10 * 1024 * 1024))
         # Max open files
         resource.setrlimit(resource.RLIMIT_NOFILE, (64, 64))
+        # Max number of processes/threads for this submission — without this,
+        # `while(1) fork();` (or os.fork() in a loop) can exhaust the whole
+        # server's process table before the timeout even fires. NOTE: on
+        # Linux, RLIMIT_NPROC counts ALL processes owned by the real UID
+        # system-wide (Postgres/Redis/Uvicorn/etc. included), not just this
+        # subprocess's children — so this has to sit well above whatever the
+        # ambient process count already is, or even a normal multi-threaded
+        # program (the JVM in particular) fails to start. 512 leaves generous
+        # room for legitimate runtimes while still stopping a fork bomb almost
+        # immediately, long before it can exhaust real system resources.
+        resource.setrlimit(resource.RLIMIT_NPROC, (512, 512))
         # New process group so we can kill all children
         os.setsid()
 

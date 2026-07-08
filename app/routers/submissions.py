@@ -4,11 +4,14 @@ POST /submissions      → create submission, judge via background thread
 GET  /submissions/{id} → poll for verdict
 GET  /submissions      → list current user's submissions
 """
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import Optional
 import threading
+
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
 from app.core.database import get_db
 from app.core.security import get_current_user
@@ -17,6 +20,7 @@ from app.models.problem import Problem
 from app.schemas.submission import SubmissionCreate, SubmissionOut
 
 router = APIRouter(prefix="/submissions", tags=["submissions"])
+limiter = Limiter(key_func=get_remote_address)
 
 
 class SubmissionCreateExtended(SubmissionCreate):
@@ -24,7 +28,9 @@ class SubmissionCreateExtended(SubmissionCreate):
 
 
 @router.post("", response_model=SubmissionOut, status_code=202)
+@limiter.limit("30/minute")
 def create_submission(
+    request: Request,
     payload: SubmissionCreateExtended,
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
