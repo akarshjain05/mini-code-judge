@@ -236,7 +236,7 @@ function handleHashNav() {
     } else if (id) { openAuthModal(); }
     return;
   }
-  const validPages = ['dashboard','problems','submit','history','analytics','account','leaderboard','contests','admin','addproblem','settings','terms','privacy'];
+  const validPages = ['dashboard','problems','submit','history','analytics','account','leaderboard','contests','admin','addproblem','settings','terms','privacy','faq','help'];
   if (validPages.includes(hash)) goTo(hash, false);
   else goTo('dashboard', false);
 }

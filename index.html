@@ -1202,14 +1202,133 @@ int main(){
         </div>
       </div>
 
+      <!-- ── FAQ ───────────────────────────────────────── -->
+      <div class="page" id="page-faq">
+        <div class="legal-page">
+          <div class="page-header">
+            <h1>Frequently Asked Questions</h1>
+            <p>Everything you need to know about Code Judge</p>
+          </div>
+
+          <section class="legal-section">
+            <h2>1. What is Code Judge?</h2>
+            <p>Code Judge is a comprehensive platform for coding, judging, and improving your algorithmic skills. It allows you to solve problems, submit code in various languages, participate in contests, and climb the leaderboard.</p>
+          </section>
+
+          <section class="legal-section">
+            <h2>2. Which programming languages are supported?</h2>
+            <p>Currently, we support C, C++, Java, and Python. We continually evaluate adding more languages based on community demand and judging infrastructure capabilities.</p>
+          </section>
+
+          <section class="legal-section">
+            <h2>3. How is my code evaluated?</h2>
+            <p>Your code is executed in a secure, isolated sandboxed environment. We compile (if applicable) and run your program against multiple hidden test cases. If your output matches the expected output exactly within the time and memory limits, your submission is marked as Accepted.</p>
+          </section>
+
+          <section class="legal-section">
+            <h2>4. What do the different verdicts mean?</h2>
+            <ul>
+              <li><strong>Accepted (AC):</strong> Your code passed all test cases within the limits.</li>
+              <li><strong>Wrong Answer (WA):</strong> Your code ran successfully but produced incorrect output for one or more test cases.</li>
+              <li><strong>Time Limit Exceeded (TLE):</strong> Your code took too long to run. Optimize your algorithm!</li>
+              <li><strong>Memory Limit Exceeded (MLE):</strong> Your code consumed more memory than allowed.</li>
+              <li><strong>Compilation Error (CE):</strong> Your code failed to compile. Check the error log for details.</li>
+              <li><strong>Runtime Error (RE):</strong> Your code crashed during execution (e.g., division by zero, out-of-bounds array access).</li>
+            </ul>
+          </section>
+
+          <section class="legal-section">
+            <h2>5. How does the AI Code Review work?</h2>
+            <p>When you request an AI Code Review on a submission, we securely send your code and verdict to the Google Gemini API. It acts as an expert programming mentor, analyzing your approach, suggesting optimizations, and pointing out logic flaws if you received a Wrong Answer or TLE.</p>
+          </section>
+
+          <section class="legal-section">
+            <h2>6. Can I create my own problems?</h2>
+            <p>Yes! Once logged in, you can access the "Add Problem" section. You can define the problem title, description, constraints, and upload custom test cases. Once created, other users can attempt to solve it.</p>
+          </section>
+
+          <section class="legal-section">
+            <h2>7. What are Contests and how do I join them?</h2>
+            <p>Contests are timed coding competitions. You can create a contest by selecting a set of problems and setting a duration. You'll receive an invite code that you can share with friends. To join, simply enter the invite code in the Contests section.</p>
+          </section>
+
+          <section class="legal-section">
+            <h2>8. How is the Leaderboard ranking calculated?</h2>
+            <p>The leaderboard ranks users based on the total number of unique problems they have solved. Tie-breakers are generally resolved by who achieved the score first or by considering submission accuracy.</p>
+          </section>
+
+          <section class="legal-section">
+            <h2>9. Is my code private?</h2>
+            <p>Your submissions are private by default and are not visible to other users unless you explicitly share them or they are part of a specific public contest format. Code is only sent to external services (like Gemini) when you explicitly click the AI review button.</p>
+          </section>
+
+          <section class="legal-section">
+            <h2>10. Can I participate in contests after they have ended?</h2>
+            <p>Yes, problems from past contests are typically moved to the general problem pool, allowing you to practice them at your own pace. We call this "upsolving."</p>
+          </section>
+
+          <section class="legal-section">
+            <h2>11. How can I improve my analytics and streak?</h2>
+            <p>Your analytics dashboard tracks your daily activity. To maintain your streak, simply submit an Accepted solution to at least one problem every day. Reviewing your accuracy metrics can help identify which topics you need to practice more.</p>
+          </section>
+
+          <section class="legal-section">
+            <h2>12. Why did I get a Time Limit Exceeded (TLE) error?</h2>
+            <p>A TLE verdict means your program did not finish execution within the allotted time limit (usually 1-2 seconds). This often indicates that your algorithm's time complexity is too high for the constraints given (e.g., using an O(N^2) approach when O(N log N) is required).</p>
+          </section>
+
+          <section class="legal-section">
+            <h2>13. How do I report a bug or suggest a feature?</h2>
+            <p>We welcome community contributions! You can report bugs or suggest new features by opening an issue on our official GitHub repository. You can find the link in the footer.</p>
+          </section>
+
+          <section class="legal-section">
+            <h2>14. How can I reset my password?</h2>
+            <p>If you forget your password, click "Forgot password?" on the login screen. We will send a secure password reset link to your registered email address.</p>
+          </section>
+
+          <section class="legal-section">
+            <h2>15. Is Code Judge free to use?</h2>
+            <p>Absolutely. Code Judge is entirely free to use. There are no paywalls for solving problems, participating in contests, or requesting AI reviews.</p>
+          </section>
+        </div>
+      </div>
+
+      <!-- ── Help ───────────────────────────────────────── -->
+      <div class="page" id="page-help">
+        <div class="legal-page">
+          <div class="page-header">
+            <h1>Help & Support</h1>
+            <p>Need assistance? We're here to help.</p>
+          </div>
+
+          <section class="legal-section">
+            <h2>Getting Started</h2>
+            <p>If you're new to Code Judge, we recommend starting with the <strong>Dashboard</strong> to get an overview of your progress. Browse the <strong>Problems</strong> page to find a challenge that suits your skill level. Make sure to check out our <a href="javascript:void(0)" onclick="goTo('faq')">FAQ</a> for detailed information on how the platform operates.</p>
+          </section>
+
+          <section class="legal-section">
+            <h2>Account & Data</h2>
+            <p>We take your data seriously. For information on how your data is stored and handled, please review our comprehensive <a href="javascript:void(0)" onclick="goTo('privacy')">Privacy Policy</a>. For rules of conduct on the platform, refer to our <a href="javascript:void(0)" onclick="goTo('terms')">Terms of Service</a>.</p>
+          </section>
+
+          <section class="legal-section">
+            <h2>Contact Us</h2>
+            <p>If you have encountered an issue that isn't answered in the FAQ, or if you have any administrative queries, please don't hesitate to reach out directly. You can contact the platform administrator via email:</p>
+            <p style="font-size: 16px; font-weight: bold; color: var(--accent); margin-top: 10px;">
+              <a href="mailto:akarshjain2006@gmail.com" style="color: var(--accent); text-decoration: none;">akarshjain2006@gmail.com</a>
+            </p>
+          </section>
+        </div>
+      </div>
+
     </div><!-- /main -->
 
     <footer class="site-footer">
       <div class="footer-inner">
         <div class="footer-brand">
-          <img src="https://api.iconify.design/lucide:code.svg?color=%2358a6ff" alt="" style="width:16px;height:16px;flex-shrink:0" />
           <span>Code Judge</span>
-          <span class="footer-copyright">© 2026</span>
+          <span class="footer-copyright">All Rights Reserved © 2026</span>
         </div>
         <div class="footer-links">
           <a href="https://github.com/akarshjain05/mini-code-judge" target="_blank" rel="noopener">GitHub</a>
@@ -1217,6 +1336,10 @@ int main(){
           <a href="javascript:void(0)" onclick="goTo('terms')">Terms</a>
           <span class="footer-sep">·</span>
           <a href="javascript:void(0)" onclick="goTo('privacy')">Privacy</a>
+          <span class="footer-sep">·</span>
+          <a href="javascript:void(0)" onclick="goTo('faq')">FAQ</a>
+          <span class="footer-sep">·</span>
+          <a href="javascript:void(0)" onclick="goTo('help')">Help</a>
         </div>
       </div>
     </footer>
