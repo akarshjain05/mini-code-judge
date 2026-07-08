@@ -9,7 +9,7 @@
 <title>Mini Code Judge</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj4KPGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnIiB4MT0iMCIgeTE9IjAiIHgyPSIxMDAiIHkyPSIxMDAiPgo8c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiM1OGE2ZmYiLz4KPHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjM2ZiOTUwIi8+CjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPgo8cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjI0IiBmaWxsPSJ1cmwoI2cpIi8+Cjx0ZXh0IHg9IjUwIiB5PSI2OCIgZm9udC1mYW1pbHk9Ik1lbmxvLENvbnNvbGFzLG1vbm9zcGFjZSIgZm9udC1zaXplPSI0NiIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPiZsdDsvJmd0OzwvdGV4dD4KPC9zdmc+Cg==" />
 <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <link rel="stylesheet" href="frontend/css/main.css?v=1782991008">
+  <link rel="stylesheet" href="frontend/css/main.css?v=1783503921">
 </head>
 <body>
 
@@ -1077,27 +1077,169 @@ int main(){
         </div><!-- /flex row -->
       </div><!-- /page-settings -->
 
+      <!-- ── Terms of Service ─────────────────────────────────────── -->
+      <div class="page" id="page-terms">
+        <div class="legal-page">
+          <div class="page-header">
+            <h1>Terms of Service</h1>
+            <p>Last updated: July 8, 2026</p>
+          </div>
+
+          <section class="legal-section">
+            <h2>1. What this is</h2>
+            <p>Code Judge is an independent, self-hosted project built to practice and demonstrate software engineering — it is not a commercial company or a paid product. It's provided as-is, run on free-tier hosting, and maintained by one person in their spare time. There's no guarantee of uptime, and features may change or break without notice. Treat it accordingly: great for practicing problems, not the place to store anything you can't afford to lose.</p>
+          </section>
+
+          <section class="legal-section">
+            <h2>2. Your account</h2>
+            <p>You need an account to submit code, join contests, and appear on the leaderboard. You're responsible for keeping your password (or your linked Google/GitHub account) secure, and for anything that happens under your account. You must be at least 13 years old to sign up. Give us a real email address — it's how account verification and password resets work.</p>
+          </section>
+
+          <section class="legal-section">
+            <h2>3. Acceptable use</h2>
+            <p>This one matters more here than on most sites, because your code actually runs on the server. Don't submit code intended to:</p>
+            <ul>
+              <li>break out of the execution sandbox, exhaust shared server resources on purpose (fork bombs, memory bombs, etc.), or otherwise attack the judging infrastructure;</li>
+              <li>make unauthorized network calls, scan, or attack other systems from our servers;</li>
+              <li>scrape the site, automate account creation, or hammer the API outside normal use (rate limits exist for a reason);</li>
+              <li>impersonate another user, or access another user's account or submissions.</li>
+            </ul>
+            <p>Reasonable, good-faith use for solving problems and testing solutions is exactly what this is for — the restrictions above are aimed at abuse, not normal debugging.</p>
+          </section>
+
+          <section class="legal-section">
+            <h2>4. Your code, your ownership</h2>
+            <p>Code you submit stays yours. We don't claim ownership of it, and we don't use it for anything beyond what you'd expect: running it against test cases to produce a verdict, storing your submission history so you can look back at it, and — only when you explicitly click "Get AI Code Review" — sending that specific submission to a third-party AI service for feedback. We don't sell, publish, or otherwise share your code.</p>
+          </section>
+
+          <section class="legal-section">
+            <h2>5. Third-party services</h2>
+            <p>Signing in with Google or GitHub means you're also subject to their terms for that sign-in flow. Requesting an AI code review sends your submitted code and its verdict to Google's Gemini API to generate that review — see the Privacy Policy for more on this.</p>
+          </section>
+
+          <section class="legal-section">
+            <h2>6. No warranty</h2>
+            <p>The service is provided "as is," with no guarantee that judging will always be available, correct, or fast, and no guarantee against bugs, downtime, or data loss. Don't rely on this for anything time-critical, like judging code minutes before a real deadline.</p>
+          </section>
+
+          <section class="legal-section">
+            <h2>7. Termination</h2>
+            <p>Accounts that violate section 3 (acceptable use) may be suspended or removed without advance notice. You can also delete your own account at any time from Settings.</p>
+          </section>
+
+          <section class="legal-section">
+            <h2>8. Changes</h2>
+            <p>These terms may be updated as the project evolves. Continuing to use Code Judge after a change means you accept the update. Material changes will be reflected in the "Last updated" date above.</p>
+          </section>
+
+          <section class="legal-section">
+            <h2>Questions?</h2>
+            <p>Open an issue on the <a href="https://github.com/akarshjain05/mini-code-judge" target="_blank" rel="noopener">GitHub repo</a>.</p>
+          </section>
+        </div>
+      </div>
+
+      <!-- ── Privacy Policy ───────────────────────────────────────── -->
+      <div class="page" id="page-privacy">
+        <div class="legal-page">
+          <div class="page-header">
+            <h1>Privacy Policy</h1>
+            <p>Last updated: July 8, 2026</p>
+          </div>
+
+          <section class="legal-section">
+            <h2>What we collect</h2>
+            <ul>
+              <li><strong>Account info:</strong> username, email address, and a securely hashed password (we never store or can see your actual password) — or, if you sign in with Google/GitHub, the basic profile info those providers share with us.</li>
+              <li><strong>Your submissions:</strong> the code you write, the language, and the resulting verdict, runtime, and any AI review you request.</li>
+              <li><strong>Basic usage data:</strong> your IP address, used only for rate-limiting and blocking abusive login attempts — not for tracking or advertising.</li>
+            </ul>
+          </section>
+
+          <section class="legal-section">
+            <h2>How we use it</h2>
+            <p>To run your account (login, sessions, password resets), to judge your code and show you the result, to build your submission history and leaderboard standing, and — only when you ask for it — to generate an AI code review. That's the whole list. We don't run ads, and we don't sell or share your data with data brokers or advertisers.</p>
+          </section>
+
+          <section class="legal-section">
+            <h2>Third parties we actually use</h2>
+            <ul>
+              <li><strong>Google / GitHub</strong> — if you choose to sign in with either, for authentication only.</li>
+              <li><strong>Google Gemini API</strong> — only when you click "Get AI Code Review" on a submission, that submission's code and verdict are sent to Gemini to generate feedback. Nothing is sent to it otherwise.</li>
+              <li><strong>Our hosting providers</strong> (currently Render, for the app, database, and job queue) — they host the infrastructure everything runs on.</li>
+            </ul>
+          </section>
+
+          <section class="legal-section">
+            <h2>Cookies & local storage</h2>
+            <p>We use your browser's local storage to keep you signed in (a session token) and to remember your theme preference. There are no third-party tracking or advertising cookies on this site.</p>
+          </section>
+
+          <section class="legal-section">
+            <h2>Security</h2>
+            <p>Passwords are hashed with bcrypt, never stored in plain text. Submitted code runs in a resource-limited, isolated process with strict time/memory/process limits so one submission can't affect another. That said, no system is perfectly secure, and this is a personal project, not an enterprise-audited platform — don't submit code containing secrets, credentials, or anything sensitive.</p>
+          </section>
+
+          <section class="legal-section">
+            <h2>Your data, your control</h2>
+            <p>You can delete your account at any time from Settings. Deleting your account removes your profile and personal information; it does not retroactively un-send anything already sent to a third party (e.g., a past AI review request already processed by Gemini).</p>
+          </section>
+
+          <section class="legal-section">
+            <h2>Children's privacy</h2>
+            <p>Code Judge isn't intended for children under 13, and we don't knowingly collect information from anyone under that age.</p>
+          </section>
+
+          <section class="legal-section">
+            <h2>Changes</h2>
+            <p>If this policy changes in a meaningful way, the "Last updated" date above will change too.</p>
+          </section>
+
+          <section class="legal-section">
+            <h2>Questions?</h2>
+            <p>Open an issue on the <a href="https://github.com/akarshjain05/mini-code-judge" target="_blank" rel="noopener">GitHub repo</a>.</p>
+          </section>
+        </div>
+      </div>
+
     </div><!-- /main -->
+
+    <footer class="site-footer">
+      <div class="footer-inner">
+        <div class="footer-brand">
+          <img src="https://api.iconify.design/lucide:code.svg?color=%2358a6ff" alt="" style="width:16px;height:16px;flex-shrink:0" />
+          <span>Code Judge</span>
+          <span class="footer-copyright">© 2026</span>
+        </div>
+        <div class="footer-links">
+          <a href="https://github.com/akarshjain05/mini-code-judge" target="_blank" rel="noopener">GitHub</a>
+          <span class="footer-sep">·</span>
+          <a href="javascript:void(0)" onclick="goTo('terms')">Terms</a>
+          <span class="footer-sep">·</span>
+          <a href="javascript:void(0)" onclick="goTo('privacy')">Privacy</a>
+        </div>
+      </div>
+    </footer>
 </div>
 
 
 <!-- JS modules -->
-<script src="frontend/js/config.js?v=1782991008"></script>
-<script src="frontend/js/router.js?v=1782991008"></script>
-<script src="frontend/js/auth.js?v=1782991008"></script>
-<script src="frontend/js/ui.js?v=1782991008"></script>
-<script src="frontend/js/pages/dashboard.js?v=1782991008"></script>
-<script src="frontend/js/pages/problems.js?v=1782991008"></script>
-<script src="frontend/js/pages/addproblem.js?v=1782991008"></script>
-<script src="frontend/js/pages/submit.js?v=1782991008"></script>
-<script src="frontend/js/pages/history.js?v=1782991008"></script>
-<script src="frontend/js/pages/analytics.js?v=1782991008"></script>
-<script src="frontend/js/pages/leaderboard.js?v=1782991008"></script>
-<script src="frontend/js/pages/account.js?v=1782991008"></script>
-<script src="frontend/js/pages/admin.js?v=1782991008"></script>
-<script src="frontend/js/pages/settings.js?v=1782991008"></script>
-<script src="frontend/js/pages/contests.js?v=1782991008"></script>
-<script src="frontend/js/main.js?v=1782991008"></script>
+<script src="frontend/js/config.js?v=1783503921"></script>
+<script src="frontend/js/router.js?v=1783503921"></script>
+<script src="frontend/js/auth.js?v=1783503921"></script>
+<script src="frontend/js/ui.js?v=1783503921"></script>
+<script src="frontend/js/pages/dashboard.js?v=1783503921"></script>
+<script src="frontend/js/pages/problems.js?v=1783503921"></script>
+<script src="frontend/js/pages/addproblem.js?v=1783503921"></script>
+<script src="frontend/js/pages/submit.js?v=1783503921"></script>
+<script src="frontend/js/pages/history.js?v=1783503921"></script>
+<script src="frontend/js/pages/analytics.js?v=1783503921"></script>
+<script src="frontend/js/pages/leaderboard.js?v=1783503921"></script>
+<script src="frontend/js/pages/account.js?v=1783503921"></script>
+<script src="frontend/js/pages/admin.js?v=1783503921"></script>
+<script src="frontend/js/pages/settings.js?v=1783503921"></script>
+<script src="frontend/js/pages/contests.js?v=1783503921"></script>
+<script src="frontend/js/main.js?v=1783503921"></script>
 
 <!-- ── Onboarding Modal (shown after register / Google signup) ─────── -->
 <div class="modal-backdrop" id="onboardingModal" style="display:none;align-items:center;justify-content:center">
