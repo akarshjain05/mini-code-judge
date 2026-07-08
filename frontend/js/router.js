@@ -161,9 +161,12 @@ async function goTo(page, pushState = true) {
   const pageEl = document.getElementById('page-' + page);
   if (!pageEl) return;
 
+  const isSamePage = (getCurrentPageId() === page);
+  const skipLoad = (!pushState && isSamePage);
+
   const loaderFn = PAGE_LOADERS[page];
 
-  if (loaderFn) showPageLoader();
+  if (loaderFn && !skipLoad) showPageLoader();
 
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -173,7 +176,7 @@ async function goTo(page, pushState = true) {
   if (map[page] !== undefined) items[map[page]].classList.add('active');
   if (pushState) history.pushState({ page }, '', '#' + page);
 
-  if (loaderFn) {
+  if (loaderFn && !skipLoad) {
     try { await loaderFn(); }
     catch(e) { console.error('Page load error:', e); }
     finally { hidePageLoader(); }
@@ -187,6 +190,12 @@ function goToProblem(problemObj) {
 
 function handleHashNav() {
   const hash = window.location.hash.replace('#', '');
+  
+  if (!hash.startsWith('submission/') && !hash.startsWith('admin')) {
+    const cv = document.getElementById('codeViewerModal');
+    if (cv) cv.style.display = 'none';
+  }
+
   if (!hash || hash === 'dashboard') { goTo('dashboard', false); return; }
   if (hash.startsWith('reset-password/')) {
     const resetToken = hash.split('/').slice(1).join('/');
