@@ -392,3 +392,27 @@ function toggleAppearanceSubmenu(e) {
   const sub = document.getElementById('appearanceSubmenu');
   sub.style.display = sub.style.display === 'block' ? 'none' : 'block';
 }
+
+/* ── Filter Popovers ── */
+function togglePopover(popoverId, btnElement) {
+  event.stopPropagation();
+  const popover = document.getElementById(popoverId);
+  const isOpen = popover.classList.contains('show');
+  
+  // Close all open popovers first
+  document.querySelectorAll('.filter-popover.show').forEach(p => p.classList.remove('show'));
+  document.querySelectorAll('.filter-btn.active').forEach(b => b.classList.remove('active'));
+  
+  if (!isOpen) {
+    popover.classList.add('show');
+    btnElement.classList.add('active');
+  }
+}
+
+// Close popovers when clicking outside
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.filter-popover-wrap')) {
+    document.querySelectorAll('.filter-popover.show').forEach(p => p.classList.remove('show'));
+    document.querySelectorAll('.filter-btn.active').forEach(b => b.classList.remove('active'));
+  }
+});

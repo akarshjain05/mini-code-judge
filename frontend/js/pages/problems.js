@@ -98,6 +98,14 @@ function filterProblems() {
     </tr>` : ''}`;
   }).join('');
 }
+
+function clearProbFilters() {
+  const s = document.getElementById('probSearch'); if (s) s.value = '';
+  const d = document.getElementById('probFilterDiff'); if (d) d.value = '';
+  const c = document.getElementById('probFilterCat'); if (c) c.value = '';
+  filterProblems();
+}
+
 function openProblem(p) {
   // Fully reset the code editor, verdict box, and AI review panel first —
   // otherwise stale state (code, verdict, "Analyzing…") from whatever

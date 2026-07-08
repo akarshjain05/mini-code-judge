@@ -336,20 +336,35 @@
           <p>Choose a problem to solve. Click any row to open it.</p>
         </div>
         <!-- Filter bar -->
-        <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
+        <div style="display:flex;gap:10px;margin-bottom:14px;align-items:center">
+          <div class="filter-popover-wrap">
+            <button class="filter-btn" id="btnProbFilter" onclick="togglePopover('probFilterPopover', this)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+              Filter
+            </button>
+            <div class="filter-popover" id="probFilterPopover">
+              <div>
+                <label>Difficulty</label>
+                <select id="probFilterDiff" onchange="filterProblems()">
+                  <option value="">All Difficulties</option>
+                  <option value="easy">Easy</option>
+                  <option value="medium">Medium</option>
+                  <option value="hard">Hard</option>
+                </select>
+              </div>
+              <div>
+                <label>Category</label>
+                <select id="probFilterCat" onchange="filterProblems()">
+                  <option value="">All Categories</option>
+                </select>
+              </div>
+              <div class="filter-popover-footer">
+                <button class="btn btn-ghost btn-sm" onclick="clearProbFilters()">Reset</button>
+              </div>
+            </div>
+          </div>
           <input type="text" id="probSearch" placeholder="🔍 Search problems…" oninput="filterProblems()"
             style="flex:1;min-width:180px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px" />
-          <select id="probFilterDiff" onchange="filterProblems()"
-            style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px">
-            <option value="">All Difficulties</option>
-            <option value="easy">Easy</option>
-            <option value="medium">Medium</option>
-            <option value="hard">Hard</option>
-          </select>
-          <select id="probFilterCat" onchange="filterProblems()"
-            style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px">
-            <option value="">All Categories</option>
-          </select>
         </div>
         <div class="card" style="padding:0;overflow:hidden">
           <table style="width:100%;border-collapse:collapse">
@@ -451,18 +466,32 @@ int main(){
           <p>Your full judging history — newest first.</p>
         </div>
         <!-- Filter bar -->
-        <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
+        <div style="display:flex;gap:10px;margin-bottom:14px;align-items:center">
+          <div class="filter-popover-wrap">
+            <button class="filter-btn" id="btnHistFilter" onclick="togglePopover('histFilterPopover', this)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+              Filter
+            </button>
+            <div class="filter-popover" id="histFilterPopover">
+              <div>
+                <label>Language</label>
+                <select id="histFilterLang" onchange="filterHistory()">
+                  <option value="">All Languages</option>
+                </select>
+              </div>
+              <div>
+                <label>Verdict</label>
+                <select id="histFilterVerdict" onchange="filterHistory()">
+                  <option value="">All Verdicts</option>
+                </select>
+              </div>
+              <div class="filter-popover-footer">
+                <button class="btn btn-ghost btn-sm" onclick="clearHistoryFilters()">Reset</button>
+              </div>
+            </div>
+          </div>
           <input type="text" id="histSearch" placeholder="🔍 Search by problem #…" oninput="filterHistory()"
             style="flex:1;min-width:180px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px" />
-          <select id="histFilterLang" onchange="filterHistory()"
-            style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px">
-            <option value="">All Languages</option>
-          </select>
-          <select id="histFilterVerdict" onchange="filterHistory()"
-            style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px">
-            <option value="">All Verdicts</option>
-          </select>
-          <button class="btn btn-ghost btn-sm" onclick="clearHistoryFilters()">✕ Clear</button>
         </div>
         <div class="card" style="padding:0;overflow:hidden">
           <div class="table-wrap">

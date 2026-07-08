@@ -664,3 +664,77 @@
 .legal-section strong { color: var(--text); }
 .legal-section a { color: var(--accent); text-decoration: none; }
 .legal-section a:hover { text-decoration: underline; }
+
+/* ── Filter Popovers ── */
+.filter-btn {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.filter-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--muted);
+}
+.filter-btn.active {
+  background: rgba(88, 166, 255, 0.1);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.filter-popover-wrap {
+  position: relative;
+  display: inline-block;
+}
+.filter-popover {
+  display: none;
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 320px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
+  z-index: 100;
+  padding: 16px;
+  flex-direction: column;
+  gap: 12px;
+}
+.filter-popover.show {
+  display: flex;
+  animation: popoverFadeIn 0.15s ease-out;
+}
+@keyframes popoverFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.filter-popover label {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 4px;
+  display: block;
+}
+.filter-popover select {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  color: var(--text);
+  font-size: 13px;
+}
+.filter-popover-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  padding-top: 12px;
+}
