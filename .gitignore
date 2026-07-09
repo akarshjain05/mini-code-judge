@@ -32,3 +32,8 @@ build/
 node_modules/
 package-lock.json
 package.json
+
+# Debug and backups
+*.sql
+.cursor/
+mnt/
