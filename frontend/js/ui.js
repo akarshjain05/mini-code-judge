@@ -394,8 +394,8 @@ function toggleAppearanceSubmenu(e) {
 }
 
 /* ── Filter Popovers ── */
-function togglePopover(popoverId, btnElement) {
-  event.stopPropagation();
+function togglePopover(popoverId, btnElement, e) {
+  if (e) e.stopPropagation();
   const popover = document.getElementById(popoverId);
   const isOpen = popover.classList.contains('show');
   

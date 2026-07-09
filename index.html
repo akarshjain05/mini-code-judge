@@ -338,7 +338,7 @@
         <!-- Filter bar -->
         <div style="display:flex;gap:10px;margin-bottom:14px;align-items:center">
           <div class="filter-popover-wrap">
-            <button class="filter-btn" id="btnProbFilter" onclick="togglePopover('probFilterPopover', this)">
+            <button class="filter-btn" id="btnProbFilter" onclick="togglePopover('probFilterPopover', this, event)">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
               Filter
             </button>
@@ -363,8 +363,36 @@
               </div>
             </div>
           </div>
+          
+          <div class="filter-popover-wrap">
+            <button class="filter-btn" id="btnProbSort" onclick="togglePopover('probSortPopover', this, event)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M6 12h12m-9 6h6"></path></svg>
+              Sort
+            </button>
+            <div class="filter-popover" id="probSortPopover">
+              <div>
+                <label>Sort By</label>
+                <select id="probSortBy" onchange="filterProblems()">
+                  <option value="id">ID</option>
+                  <option value="title">Title</option>
+                  <option value="difficulty">Difficulty</option>
+                </select>
+              </div>
+              <div>
+                <label>Order</label>
+                <select id="probSortOrder" onchange="filterProblems()">
+                  <option value="asc">Ascending (A-Z)</option>
+                  <option value="desc">Descending (Z-A)</option>
+                </select>
+              </div>
+              <div class="filter-popover-footer">
+                <button class="btn btn-ghost btn-sm" onclick="document.getElementById('probSortBy').value='id';document.getElementById('probSortOrder').value='asc';filterProblems()">Reset</button>
+              </div>
+            </div>
+          </div>
+
           <input type="text" id="probSearch" placeholder="🔍 Search problems…" oninput="filterProblems()"
-            style="flex:1;min-width:180px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px" />
+            style="width:240px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px" />
         </div>
         <div class="card" style="padding:0;overflow:hidden">
           <table style="width:100%;border-collapse:collapse">
@@ -468,7 +496,7 @@ int main(){
         <!-- Filter bar -->
         <div style="display:flex;gap:10px;margin-bottom:14px;align-items:center">
           <div class="filter-popover-wrap">
-            <button class="filter-btn" id="btnHistFilter" onclick="togglePopover('histFilterPopover', this)">
+            <button class="filter-btn" id="btnHistFilter" onclick="togglePopover('histFilterPopover', this, event)">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
               Filter
             </button>
@@ -491,7 +519,7 @@ int main(){
             </div>
           </div>
           <input type="text" id="histSearch" placeholder="🔍 Search by problem #…" oninput="filterHistory()"
-            style="flex:1;min-width:180px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px" />
+            style="width:240px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px" />
         </div>
         <div class="card" style="padding:0;overflow:hidden">
           <div class="table-wrap">

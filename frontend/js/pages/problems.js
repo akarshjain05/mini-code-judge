@@ -52,7 +52,7 @@ function filterProblems() {
   const diff   = document.getElementById('probFilterDiff')?.value || '';
   const cat    = document.getElementById('probFilterCat')?.value || '';
 
-  const filtered = _allProblems.filter(p => {
+  let filtered = _allProblems.filter(p => {
     if (diff && p.difficulty !== diff) return false;
     if (cat) {
       const probCats = (p.category || '').split(',').map(c => c.trim());
@@ -60,6 +60,28 @@ function filterProblems() {
     }
     if (search && !p.title.toLowerCase().includes(search) && !(p.category||'').toLowerCase().includes(search)) return false;
     return true;
+  });
+
+  const sortBy = document.getElementById('probSortBy')?.value || 'id';
+  const sortOrder = document.getElementById('probSortOrder')?.value || 'asc';
+  
+  filtered.sort((a, b) => {
+    let valA, valB;
+    if (sortBy === 'title') {
+      valA = a.title.toLowerCase();
+      valB = b.title.toLowerCase();
+    } else if (sortBy === 'difficulty') {
+      const diffRank = { 'easy': 1, 'medium': 2, 'hard': 3 };
+      valA = diffRank[a.difficulty] || 0;
+      valB = diffRank[b.difficulty] || 0;
+    } else {
+      valA = a.id;
+      valB = b.id;
+    }
+    
+    if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
+    if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
+    return 0;
   });
 
   if (!filtered.length) {
