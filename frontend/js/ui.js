@@ -28,8 +28,25 @@ function handleAuthNav() {
 
 function updateAuthUI() {
   const loggedIn = !!token;
-  document.getElementById('userPillWrap').style.display = loggedIn ? 'block' : 'none';
-  document.getElementById('topAuthBtn').style.display = loggedIn ? 'none' : 'inline-flex';
+  
+  const userPillWrap = document.getElementById('userPillWrap');
+  if (userPillWrap) userPillWrap.style.display = loggedIn ? 'block' : 'none';
+  
+  const topAuthBtn = document.getElementById('topAuthBtn');
+  if (topAuthBtn) topAuthBtn.style.display = loggedIn ? 'none' : 'inline-flex';
+  
+  const navAdminBtn = document.getElementById('navAdminBtn');
+  if (navAdminBtn) {
+    navAdminBtn.style.display = isAdmin ? 'flex' : 'none';
+  }
+  
+  const welcomeMsg = document.getElementById('welcomeMsg');
+  if (welcomeMsg) {
+    welcomeMsg.innerHTML = loggedIn 
+      ? `Welcome back, <strong style="color:var(--text)">${username}</strong>! Pick a problem and start solving.` 
+      : `Welcome to your coding arena. Pick a problem and start solving.`;
+  }
+
   if (loggedIn && username) {
     const initial = username[0].toUpperCase();
     document.getElementById('userAvatar').textContent = initial;
