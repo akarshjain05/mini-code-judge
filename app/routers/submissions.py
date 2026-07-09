@@ -8,7 +8,6 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import Optional
-import threading
 
 from slowapi import Limiter
 from slowapi.util import get_remote_address
@@ -51,10 +50,16 @@ def create_submission(
     db.commit()
     db.refresh(submission)
 
-    # Always judge in a background thread — no Redis needed
-    from app.worker.judge import judge_submission
-    t = threading.Thread(target=judge_submission, args=(submission.id,), daemon=True)
-    t.start()
+    # Enqueue the job durably in Redis using RQ
+    from rq import Queue
+    from app.core.redis_client import get_redis
+    
+    q = Queue("judge", connection=get_redis())
+    q.enqueue(
+        "app.worker.judge.judge_submission",
+        submission.id,
+        job_timeout=120  # Give it a max of 2 minutes to completely finish everything
+    )
 
     return submission
 

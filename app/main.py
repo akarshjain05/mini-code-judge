@@ -15,7 +15,7 @@ from app.routers.ai_review import router as ai_review_router
 from app.routers.contest import router as contest_router
 from app.routers.contest import Contest, ContestProblem, ContestParticipant
 from app.routers.leaderboard import router as leaderboard_router
-from app.worker.poller import start_background_worker
+
 
 Base.metadata.create_all(bind=engine)
 
@@ -95,7 +95,6 @@ def on_startup():
             END $$;
         """))
         conn.commit()
-    start_background_worker()
 
 
 app.include_router(auth.router)
