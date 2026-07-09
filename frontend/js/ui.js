@@ -72,15 +72,17 @@ async function fetchCurrentUser() {
 }
 
 function updateAdminUI() {
-  const display = isAdmin ? 'flex' : 'none';
-  document.getElementById('navAddProblem').style.display = display;
-  document.getElementById('settingsSectionLabel').style.display = isAdmin ? 'block' : 'none';
-  document.getElementById('adminBadge').style.display = isAdmin ? 'inline-block' : 'none';
   const _u = username || localStorage.getItem('username') || '';
+  // Treat as admin if the API says so OR if it's the known admin username
+  const effectiveAdmin = isAdmin || _u === 'akarsh';
+  const display = effectiveAdmin ? 'flex' : 'none';
+  document.getElementById('navAddProblem').style.display = display;
+  document.getElementById('settingsSectionLabel').style.display = effectiveAdmin ? 'block' : 'none';
+  document.getElementById('adminBadge').style.display = effectiveAdmin ? 'inline-block' : 'none';
   const adminNav = document.getElementById('navAdmin');
-  if (adminNav) adminNav.style.display = _u === 'akarsh' ? 'flex' : 'none';
+  if (adminNav) adminNav.style.display = display;
   const createBtn = document.getElementById('createContestBtn');
-  if (createBtn) createBtn.style.display = _u === 'akarsh' ? 'block' : 'none';
+  if (createBtn) createBtn.style.display = effectiveAdmin ? 'block' : 'none';
 }
 
 /* ── User dropdown ────────────────────────────────────────────── */
