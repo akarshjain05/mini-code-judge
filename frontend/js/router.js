@@ -1,8 +1,11 @@
 // ── Navigation & Router ─────────────────────────────────────────────
 // Startup & PAGE_LOADERS are in main.js (loaded last)
 
-function initGoogleSignIn() {
-  if (!window.google || !google.accounts || !google.accounts.id) return;
+function initGoogleSignIn(retries = 10) {
+  if (!window.google || !google.accounts || !google.accounts.id) {
+    if (retries > 0) setTimeout(() => initGoogleSignIn(retries - 1), 500);
+    return;
+  }
   google.accounts.id.initialize({
     client_id: GOOGLE_CLIENT_ID,
     callback: handleGoogleCredentialResponse,
