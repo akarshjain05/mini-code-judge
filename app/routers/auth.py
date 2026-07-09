@@ -450,7 +450,9 @@ def github_redirect(code: str = "", error: str = "", state: str = "", db: Sessio
     existing_by_github = db.query(User).filter(User.github_id == github_id).first()
     if existing_by_github:
         jwt = create_access_token(data={"sub": str(existing_by_github.id)})
-        return RedirectResponse(f"{frontend}/#github-login?token={jwt}")
+        resp = RedirectResponse(f"{frontend}/#github-login?token={jwt}")
+        resp.set_cookie(key="access_token", value=jwt, httponly=True, secure=True, samesite="none", max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60)
+        return resp
 
     # 2. Email matches existing account → link and log in
     if email:
@@ -462,7 +464,9 @@ def github_redirect(code: str = "", error: str = "", state: str = "", db: Sessio
             existing_by_email.github_id = github_id
             db.commit()
             jwt = create_access_token(data={"sub": str(existing_by_email.id)})
-            return RedirectResponse(f"{frontend}/#github-login?token={jwt}")
+            resp = RedirectResponse(f"{frontend}/#github-login?token={jwt}")
+            resp.set_cookie(key="access_token", value=jwt, httponly=True, secure=True, samesite="none", max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60)
+            return resp
 
     # 3. New user → send to frontend for username selection
     setup_token = create_setup_token({"github_id": github_id, "email": email or "", "name": gh["name"] or ""})

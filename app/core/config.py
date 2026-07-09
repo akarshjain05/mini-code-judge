@@ -1,4 +1,7 @@
+import os
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+_is_render = os.environ.get("RENDER") == "true"
 
 class Settings(BaseSettings):
     # Database (explicitly using psycopg2 driver)
@@ -22,8 +25,9 @@ class Settings(BaseSettings):
     # GitHub OAuth
     GITHUB_CLIENT_ID: str = ""
     GITHUB_CLIENT_SECRET: str = ""
-    FRONTEND_URL: str = "https://mini-code-judge-frontend.onrender.com"
-    API_URL: str = "https://mini-code-judge.onrender.com"
+
+    FRONTEND_URL: str = "https://mini-code-judge-frontend.onrender.com" if _is_render else "http://localhost:5500"
+    API_URL: str = "https://mini-code-judge.onrender.com" if _is_render else "http://localhost:8000"
 
     # Modern Pydantic V2 Config
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
