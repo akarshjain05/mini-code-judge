@@ -16,9 +16,6 @@ from app.routers.contest import router as contest_router
 from app.routers.contest import Contest, ContestProblem, ContestParticipant
 from app.routers.leaderboard import router as leaderboard_router
 
-
-Base.metadata.create_all(bind=engine)
-
 # ── Rate Limiter ───────────────────────────────────────────────────────
 limiter = Limiter(key_func=get_remote_address, default_limits=["200/minute"])
 
@@ -72,6 +69,9 @@ async def add_security_headers(request: Request, call_next):
 
 @app.on_event("startup")
 def on_startup():
+    # Create tables if they don't exist
+    Base.metadata.create_all(bind=engine)
+
     # Safe column migrations using PostgreSQL's native ADD COLUMN IF NOT EXISTS
     with engine.connect() as conn:
         for sql in [
