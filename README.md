@@ -21,30 +21,40 @@ Live: [mini-code-judge-frontend.onrender.com](https://mini-code-judge-frontend.o
                                           |  judge trigger, contests,
                                           |  leaderboard, admin
                                           |
-                                          v  spawns
-                              Background thread: compiles + runs
-                              submitted code against test cases
-                              with OS resource limits (rlimit)
+                                          | enqueue (Redis)
+                                          v 
+                              RQ Worker (AWS EC2 / Ubuntu)
+                                          |
+                                          v  docker run
+                              Isolated Docker Sandbox (per test case)
+                              (No Network, Memory Capped, Read-Only FS)
 ```
 
-The backend is a single FastAPI service. Submitted code is compiled/interpreted (`gcc`/`g++`/`javac`/`python3`) and run as a subprocess with OS-level resource limits (CPU time via a hard timeout, memory via `RLIMIT_AS`/`-Xmx`, output size, open files, and process count), each run in its own process group so a timeout or runaway process can be killed cleanly without leaking children.
+The backend is a FastAPI service that enqueues judging jobs onto a Redis queue using `RQ`. A dedicated background worker process (ideally hosted on an external Docker-capable server like AWS EC2) pulls these jobs and judges them. 
+
+Submitted code is compiled (`gcc`/`g++`/`javac`/`python3`) and run inside highly secure, ephemeral **Docker containers**.
 
 ## Engineering decisions worth knowing
 
-**Judging happens in a background thread inside the web process, not a separate queue worker.** `render.yaml` still provisions a second RQ (Redis Queue) worker service — that was the original design, and the code to support it (`run_worker.py`) is still in the repo. In practice, submissions are judged with a plain background `threading.Thread` spawned directly from the request handler (see `app/routers/submissions.py`); nothing actually enqueues jobs onto the Redis queue the worker service listens on, so that worker service currently runs idle. This was a deliberate simplification to get judging working reliably within Render's free tier, but it's a known inconsistency that hasn't been cleaned up yet — the honest fix is either wiring submissions back through RQ properly, or removing the now-unused worker service from `render.yaml`. Noting it here rather than letting the architecture diagram imply more than it does.
+**Enterprise-Grade Docker Sandboxing.** Code execution security is taken very seriously. Untrusted code is completely isolated using Docker. Every compilation step and test-case execution runs inside a fresh container with strict boundaries:
+- `--net none`: Prevents all outbound internet access so malicious code cannot ping external servers or exfiltrate data.
+- `--memory` and `--memory-swap`: Hard caps RAM usage (e.g. 256MB/512MB) to prevent OOM attacks.
+- `--cpus 1.0`: Limits processing power.
+- `--pids-limit 64`: Strictly limits the number of processes to defend against fork bombs (`while(1) fork();`).
+- `--read-only` & `--tmpfs`: The filesystem is locked down. The code cannot modify the container, with only a small temporary RAM disk available for runtimes (like Java) that require temp files.
 
-**Why this matters in practice:** background threads inside a single web process work fine at low concurrency, but they don't survive a process restart/redeploy (an in-flight submission would just be lost, stuck at "pending"), and they don't scale across multiple web processes if `WEB_CONCURRENCY` is ever raised. A real queue (RQ, properly wired this time, or Celery) is the correct fix if this needed to handle real concurrent load.
+**Auto-Fallback Judging Engine.** If you decide to run the worker process on a server that does *not* have Docker installed (like Render's free Python environment), the judging engine automatically detects this and gracefully falls back to a local OS-level sandbox. This local sandbox uses Python's Unix `resource` library (`RLIMIT_AS`, `RLIMIT_NPROC`, `RLIMIT_FSIZE`) to provide best-effort local security.
 
-**Code execution security is intentionally scoped down, not solved.** Untrusted code runs directly on the host inside the FastAPI worker process's environment — there's no container, gVisor, or firejail sandbox per submission. What *is* in place: per-run CPU timeout, memory cap, output-size cap, open-file cap, and a process-count cap (specifically to stop fork bombs — `while(1) fork();` is contained rather than taking the whole judge down). What's *not* in place: network isolation (submitted code can still make outbound network calls) and filesystem isolation beyond a temp directory. For a production judge handling untrusted code at scale, the right fix is running each submission in a locked-down container (gVisor or Firecracker, the way Judge0 and most real online judges do it) with no network namespace. Skipped here because it's expensive/awkward to run reliably on Render's free tier, not because it wasn't considered.
-
-**Java needs a different memory-limiting strategy than the other languages.** The JVM reserves large virtual address space up front (code cache, metaspace, thread stacks) regardless of actual heap usage, so capping it with the OS-level `RLIMIT_AS` (which the other three languages use directly) kills the JVM before it runs any user code at all. Java's memory is capped with `-Xmx` on the `java` command instead, while `RLIMIT_AS` is skipped specifically for that language.
+**Distributed Queue System.** Submissions are processed durably via `RQ` (Redis Queue). The web process immediately accepts the submission and places it on the queue. If the web server crashes or restarts, the submission is not lost. The worker process scales horizontally; you can spin up as many AWS EC2 workers as you want, and they will all pull from the same Redis queue to process submissions in parallel.
 
 ## Tech stack
 
-**Backend:** FastAPI, SQLAlchemy, PostgreSQL, Pydantic, JWT auth (`python-jose`), `slowapi` for rate limiting, Gemini API for AI review.
+**Backend:** FastAPI, SQLAlchemy, PostgreSQL, Pydantic, JWT auth (`python-jose`), `slowapi` for rate limiting, Gemini API for AI review, `rq` (Redis Queue) for asynchronous worker tasks.
+**Worker Sandbox:** Docker, Alpine/Debian base images, Bash.
 **Frontend:** Vanilla HTML/CSS/JS (no framework/build step) — deliberately simple, hash-based routing, `fetch`-based API calls.
-**Judge:** subprocess-based compilation/execution with OS resource limits (see above).
-**Deployment:** Render (web service + Postgres + Redis), frontend on Render/Netlify.
+**Deployment:** 
+- Web Server + DB + Redis: Render
+- Worker Server: AWS EC2 / DigitalOcean (Recommended for Docker Support)
 
 ## Running locally
 
@@ -55,26 +65,26 @@ python3 -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
 
 cp .env.example .env
-# edit .env — at minimum set DATABASE_URL to a local Postgres instance
-# and generate a real SECRET_KEY:
+# edit .env — at minimum set DATABASE_URL to a local Postgres instance,
+# provide REDIS_URL, and generate a real SECRET_KEY:
 #   python3 -c "import secrets; print(secrets.token_hex(32))"
 
+# Start the web server
 uvicorn app.main:app --reload
+
+# In a separate terminal window, start the worker
+python3 run_worker.py
 ```
 
 The frontend is static — open `index.html` directly, or serve it with any static file server, pointing `API_URL` in your `.env`/config at your local backend.
 
-You'll need `gcc`, `g++`, and a JDK (`javac`/`java`) on your machine (or in whatever environment you run the backend in) for C/C++/Java submissions to compile and run. You'll also need Redis running locally for login/logout and email verification to work (JWT blacklist and login-attempt tracking live there) — the rest of the app runs fine without it.
+You'll need `docker` running on your local machine for the primary sandbox to work. If Docker is not found, the app requires `gcc`, `g++`, and a JDK (`javac`/`java`) natively installed to use the local OS-level fallback sandbox. 
 
 ## Known limitations
 
-Being upfront about what's out of scope right now, rather than leaving it to be discovered:
-
-- **No real sandboxing for untrusted code** (see above) — resource limits only, no container/network isolation.
-- **Judging isn't durable** — an in-flight submission is lost if the web process restarts mid-judge (background thread, not a persisted queue job).
+Being upfront about what's out of scope right now:
 - **Test coverage is thin** relative to the project's surface area — solid coverage on the submission flow, little to none on auth, contests, leaderboard, or the AI review path.
 - **No CI pipeline** — tests exist but aren't run automatically on push yet.
-- **RQ worker service in `render.yaml` is currently dead weight** (see above) — either wire it up properly or remove it.
 
 ## License
 
