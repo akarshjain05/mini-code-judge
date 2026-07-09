@@ -1,5 +1,5 @@
 """
-Admin-only endpoints — restricted to user 'akarsh'.
+Admin-only endpoints — restricted to users with is_admin=True.
 """
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -12,11 +12,10 @@ from app.models.user import User
 from app.models.submission import Submission
 
 router = APIRouter(prefix="/admin", tags=["admin"])
-ADMIN_USERNAME = "akarsh"
 
 
 def require_admin(current_user=Depends(get_current_user)):
-    if current_user.username != ADMIN_USERNAME:
+    if not current_user.is_admin:
         raise HTTPException(status_code=403, detail="Admin access only")
     return current_user
 
