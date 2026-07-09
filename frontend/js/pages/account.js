@@ -5,11 +5,11 @@ let _accountData = null;
 async function loadAccount() {
   if (!token) { openAuthModal(); return; }
   try {
-    const res = await fetch(`${API}/auth/me`, { headers: { 'Authorization': `Bearer ${token}` } });
+    const res = await fetch(`${API}/auth/me`, { headers: {} });
     if (res.status === 401) {
       // Token expired — clear and redirect to login
       token = null; username = null; isAdmin = false;
-      localStorage.removeItem('jwt'); localStorage.removeItem('username');
+       localStorage.removeItem('username');
       updateAuthUI(); updateAdminUI();
       goTo('dashboard');
       openAuthModal();
@@ -85,7 +85,7 @@ async function saveProfile() {
   try {
     const res = await fetch(`${API}/auth/me`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ date_of_birth: dob, profile_picture }),
     });
     const data = await res.json();
@@ -127,7 +127,7 @@ async function changePassword() {
   try {
     const res = await fetch(`${API}/auth/change-password`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ current_password: current || null, new_password: newPw }),
     });
     const data = await res.json();

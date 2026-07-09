@@ -2,7 +2,7 @@
 async function loadAdminDashboard() {
   if ((username || localStorage.getItem('username')) !== 'akarsh') return;
   try {
-    const usersRes = await fetch(`${API}/admin/users`, { headers: { 'Authorization': `Bearer ${token}` } });
+    const usersRes = await fetch(`${API}/admin/users`, { headers: {} });
     if (usersRes.ok) {
       const users = await usersRes.json();
       document.getElementById('adminUsersList').innerHTML = `<table style="width:100%;font-size:12px">
@@ -10,7 +10,7 @@ async function loadAdminDashboard() {
         <tbody>${users.map(u => `<tr><td style="padding:4px 6px;color:var(--muted)">${u.id}</td><td style="padding:4px 6px;font-weight:600">${u.username}</td><td style="padding:4px 6px;color:var(--muted)">${u.email}</td><td style="padding:4px 6px;color:var(--muted);font-size:11px">${timeAgo(u.created_at)}</td></tr>`).join('')}</tbody>
       </table>`;
     }
-    const subsRes = await fetch(`${API}/admin/submissions`, { headers: { 'Authorization': `Bearer ${token}` } });
+    const subsRes = await fetch(`${API}/admin/submissions`, { headers: {} });
     if (subsRes.ok) {
       const subs = await subsRes.json();
       const accepted = subs.filter(s => s.verdict === 'accepted').length;
@@ -69,7 +69,7 @@ async function requestAIReview() {
     const subId = window._lastSubId;
     const res = await fetch(`${API}/submissions/${subId}/ai-review`, {
       method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' }
     });
 
     if (!res.ok) {

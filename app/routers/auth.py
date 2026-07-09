@@ -1,6 +1,6 @@
 import re
 import httpx
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.responses import RedirectResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel
@@ -56,9 +56,9 @@ def register(request: Request, payload: UserRegister, db: Session = Depends(get_
     return user
 
 
-@router.post("/login", response_model=Token)
+@router.post("/login")
 @limiter.limit("20/minute;100/hour")
-def login(request: Request, form: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+def login(request: Request, response: Response, form: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     identifier = form.username
 
     # Check account lockout before hitting the DB (saves a query on brute force)
@@ -96,12 +96,21 @@ def login(request: Request, form: OAuth2PasswordRequestForm = Depends(), db: Ses
         )
 
     token = create_access_token(data={"sub": str(user.id)})
-    return {"access_token": token, "token_type": "bearer"}
+    response.set_cookie(
+        key="access_token",
+        value=token,
+        httponly=True,
+        secure=True,
+        samesite="lax",
+        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+    )
+    return {"message": "Logged in successfully"}
 
 
 @router.post("/logout")
 def logout(
     request: Request,
+    response: Response,
     current_user: User = Depends(get_current_user),
 ):
     """Blacklist the current JWT so it can't be reused after logout."""
@@ -117,6 +126,8 @@ def logout(
             blacklist_token(jti, ttl)
     except Exception:
         pass  # if decoding fails, token is already invalid
+    
+    response.delete_cookie("access_token", samesite="lax", secure=True)
     return {"message": "Logged out successfully"}
 
 
@@ -150,7 +161,7 @@ def resend_verification(request: Request, current_user: User = Depends(get_curre
 
 
 @router.post("/google")
-def google_login(payload: GoogleLoginRequest, db: Session = Depends(get_db)):
+def google_login(payload: GoogleLoginRequest, response: Response, db: Session = Depends(get_db)):
     try:
         idinfo = google_id_token.verify_oauth2_token(payload.credential, google_requests.Request(), settings.GOOGLE_CLIENT_ID)
     except ValueError:
@@ -169,7 +180,15 @@ def google_login(payload: GoogleLoginRequest, db: Session = Depends(get_db)):
         if not user.is_verified:
             user.is_verified = True; db.commit()
         token = create_access_token(data={"sub": str(user.id)})
-        return {"needs_setup": False, "access_token": token, "token_type": "bearer"}
+        response.set_cookie(
+            key="access_token",
+            value=token,
+            httponly=True,
+            secure=True,
+            samesite="lax",
+            max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        )
+        return {"needs_setup": False, "message": "Logged in successfully"}
     base_username = re.sub(r"[^a-zA-Z0-9_-]", "", email.split("@")[0]) or "user"
     if len(base_username) < 3: base_username = (base_username + "user")[:50]
     suggested = base_username[:50]; suffix = 1
@@ -179,8 +198,8 @@ def google_login(payload: GoogleLoginRequest, db: Session = Depends(get_db)):
     return {"needs_setup": True, "setup_token": setup_token, "email": email, "suggested_username": suggested}
 
 
-@router.post("/complete-google-signup", response_model=Token)
-def complete_google_signup(payload: GoogleCompleteSignup, db: Session = Depends(get_db)):
+@router.post("/complete-google-signup")
+def complete_google_signup(payload: GoogleCompleteSignup, response: Response, db: Session = Depends(get_db)):
     claims = decode_setup_token(payload.setup_token)
     email = claims["email"]; google_user_id = claims["google_id"]
     if db.query(User).filter(User.google_id == google_user_id).first():
@@ -192,7 +211,15 @@ def complete_google_signup(payload: GoogleCompleteSignup, db: Session = Depends(
     user = User(username=payload.username, email=email, password=hash_password(payload.password), google_id=google_user_id, is_verified=True)
     db.add(user); db.commit(); db.refresh(user)
     token = create_access_token(data={"sub": str(user.id)})
-    return {"access_token": token, "token_type": "bearer"}
+    response.set_cookie(
+        key="access_token",
+        value=token,
+        httponly=True,
+        secure=True,
+        samesite="lax",
+        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+    )
+    return {"message": "Logged in successfully"}
 
 
 @router.post("/forgot-password")
@@ -447,8 +474,8 @@ def github_redirect(code: str = "", error: str = "", state: str = "", db: Sessio
     return RedirectResponse(f"{frontend}/#github-setup?{params}")
 
 
-@router.post("/complete-github-signup", response_model=Token)
-def complete_github_signup(payload: GoogleCompleteSignup, db: Session = Depends(get_db)):
+@router.post("/complete-github-signup")
+def complete_github_signup(payload: GoogleCompleteSignup, response: Response, db: Session = Depends(get_db)):
     """Create a new account for a first-time GitHub user after they pick a username."""
     data = decode_setup_token(payload.setup_token)
     if not data or "github_id" not in data:
@@ -472,7 +499,15 @@ def complete_github_signup(payload: GoogleCompleteSignup, db: Session = Depends(
     )
     db.add(user); db.commit(); db.refresh(user)
     jwt = create_access_token(data={"sub": str(user.id)})
-    return {"access_token": jwt, "token_type": "bearer"}
+    response.set_cookie(
+        key="access_token",
+        value=jwt,
+        httponly=True,
+        secure=True,
+        samesite="lax",
+        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+    )
+    return {"message": "Account created and logged in successfully"}
 
 
 class ResendVerificationRequest(BaseModel):

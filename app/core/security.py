@@ -2,15 +2,14 @@ import uuid
 from datetime import datetime, timedelta
 from jose import jwt, JWTError
 from passlib.context import CryptContext
-from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi import Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.core.database import get_db
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+
 
 
 def hash_password(password: str) -> str:
@@ -49,7 +48,7 @@ def decode_token_full(token: str) -> dict:
 
 
 def get_current_user(
-    token: str = Depends(oauth2_scheme),
+    request: Request,
     db: Session = Depends(get_db),
 ):
     from app.models.user import User
@@ -57,9 +56,23 @@ def get_current_user(
 
     credentials_error = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Invalid or expired token",
-        headers={"WWW-Authenticate": "Bearer"},
+        detail="Invalid or expired session",
     )
+
+    token = request.cookies.get("access_token")
+    if not token:
+        auth_header = request.headers.get("Authorization")
+        if auth_header and auth_header.startswith("Bearer "):
+            token = auth_header.split(" ")[1]
+
+    if not token:
+        raise credentials_error
+
+    # CSRF Protection: Require custom header for state-changing requests
+    if request.method in ["POST", "PUT", "DELETE", "PATCH"]:
+        if request.headers.get("X-Requested-With") != "XMLHttpRequest":
+            raise HTTPException(status_code=403, detail="CSRF check failed: Missing X-Requested-With header")
+
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         user_id: str = payload.get("sub")

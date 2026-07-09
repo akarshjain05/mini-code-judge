@@ -4,7 +4,24 @@ const API = (window.location.hostname === 'localhost' || window.location.hostnam
   : 'https://mini-code-judge.onrender.com';
 const GOOGLE_CLIENT_ID = '195071714890-cqr22mhg2cvfc1ttad54j8qgdqc3ee24.apps.googleusercontent.com';
 
-let token    = localStorage.getItem('jwt') || null;
+let token    = localStorage.getItem('username') ? 'cookie_auth' : null;
+
+window.globalAbortController = new AbortController();
+
+const originalFetch = window.fetch;
+window.fetch = async function(url, options = {}) {
+  options.credentials = 'include';
+  if (options.method && ['POST', 'PUT', 'DELETE', 'PATCH'].includes(options.method.toUpperCase())) {
+    options.headers = options.headers || {};
+    options.headers['X-Requested-With'] = 'XMLHttpRequest';
+  }
+  // Attach the global abort signal if no signal is provided, but ignore for POST/PUT which shouldn't be aborted
+  if (!options.signal && (!options.method || options.method.toUpperCase() === 'GET')) {
+    options.signal = window.globalAbortController.signal;
+  }
+  return originalFetch(url, options);
+};
+
 let username = localStorage.getItem('username') || null;
 let isAdmin  = false;
 let _allProblems   = [];
@@ -23,6 +40,7 @@ async function apiFetch(url, options = {}, retriesLeft = 3) {
       const res = await fetch(url, options);
       return res;
     } catch (e) {
+      if (e.name === 'AbortError') throw e;
       lastErr = e;
       if (attempt < retriesLeft) await new Promise(r => setTimeout(r, 2000 * (attempt + 1)));
     }

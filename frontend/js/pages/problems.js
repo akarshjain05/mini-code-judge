@@ -4,6 +4,19 @@ let _problemAcceptance = {}; // problem_id -> { total, accepted }
 
 async function loadProblems(retriesLeft = 2) {
   const tbody = document.getElementById('problemList');
+  tbody.innerHTML = Array(6).fill(0).map(() => `
+    <tr>
+      <td style="padding:12px 16px;"><div class="skeleton" style="height:14px;width:30px"></div></td>
+      <td style="padding:12px 16px;">
+        <div class="skeleton" style="height:14px;width:200px;margin-bottom:6px"></div>
+        <div class="skeleton" style="height:10px;width:150px"></div>
+      </td>
+      <td style="padding:12px 16px;"><div class="skeleton" style="height:20px;border-radius:10px;width:60px;margin:0 auto"></div></td>
+      <td style="padding:12px 16px;"><div class="skeleton" style="height:20px;width:50px;margin:0 auto"></div></td>
+      <td style="padding:12px 16px;"><div class="skeleton" style="height:14px;width:40px;margin:0 auto"></div></td>
+    </tr>
+  `).join('');
+  
   try {
     const [probRes, subRes] = await Promise.all([
       fetch(`${API}/problems`),

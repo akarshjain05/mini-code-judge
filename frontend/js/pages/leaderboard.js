@@ -3,7 +3,28 @@
 
 async function loadLeaderboard() {
   const tbody = document.getElementById('lbTableBody');
-  tbody.innerHTML = '<tr><td colspan="10" style="padding:28px;color:var(--muted);text-align:center">Loading…</td></tr>';
+  tbody.innerHTML = Array(6).fill(0).map(() => `
+    <tr>
+      <td style="padding:12px 16px;"><div class="skeleton" style="height:20px;width:20px;margin:0 auto"></div></td>
+      <td style="padding:12px 16px;">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="skeleton" style="width:30px;height:30px;border-radius:50%;flex-shrink:0"></div>
+          <div>
+            <div class="skeleton" style="height:14px;width:100px;margin-bottom:6px"></div>
+            <div class="skeleton" style="height:10px;width:80px"></div>
+          </div>
+        </div>
+      </td>
+      <td style="padding:12px 16px;"><div class="skeleton" style="height:20px;width:30px;margin:0 auto"></div></td>
+      <td style="padding:12px 16px;"><div class="skeleton" style="height:14px;width:30px;margin:0 auto"></div></td>
+      <td style="padding:12px 16px;"><div class="skeleton" style="height:14px;width:40px;margin:0 auto"></div></td>
+      <td style="padding:12px 16px;"><div class="skeleton" style="height:14px;width:20px;margin:0 auto"></div></td>
+      <td style="padding:12px 16px;"><div class="skeleton" style="height:14px;width:20px;margin:0 auto"></div></td>
+      <td style="padding:12px 16px;"><div class="skeleton" style="height:14px;width:20px;margin:0 auto"></div></td>
+      <td style="padding:12px 16px;"><div class="skeleton" style="height:14px;width:30px;margin:0 auto"></div></td>
+      <td style="padding:12px 16px;"><div class="skeleton" style="height:14px;width:60px;margin:0 auto"></div></td>
+    </tr>
+  `).join('');
 
   try {
     // Fetch all we need in parallel

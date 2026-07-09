@@ -5,6 +5,9 @@ so we send over HTTPS via Brevo's REST API instead of an SMTP socket.
 """
 import os
 import httpx
+import structlog
+
+log = structlog.get_logger()
 
 BREVO_API_KEY = os.environ.get("BREVO_API_KEY", "")
 FROM_EMAIL = os.environ.get("FROM_EMAIL", "")
@@ -17,7 +20,7 @@ BREVO_URL = "https://api.brevo.com/v3/smtp/email"
 def send_password_reset_email(to_email: str, username: str, reset_token: str) -> bool:
     """Send a password reset link via Brevo. Returns True on success."""
     if not BREVO_API_KEY or not FROM_EMAIL:
-        print("Email not configured — BREVO_API_KEY/FROM_EMAIL missing")
+        log.warning("Email not configured — BREVO_API_KEY/FROM_EMAIL missing")
         return False
 
     reset_link = f"{FRONTEND_URL}/#reset-password/{reset_token}"
@@ -53,19 +56,19 @@ def send_password_reset_email(to_email: str, username: str, reset_token: str) ->
             json=payload,
             timeout=15.0,
         )
-        if resp.status_code not in (200, 201):
-            print(f"Brevo send failed: {resp.status_code} {resp.text}")
+        if resp.status_code >= 300:
+            log.error("Brevo send failed", status_code=resp.status_code, text=resp.text)
             return False
         return True
     except Exception as e:
-        print(f"Failed to send reset email: {e}")
+        log.exception("Failed to send reset email")
         return False
 
 
 def send_verification_email(to_email: str, username: str, verify_token: str) -> bool:
     """Send an email verification link via Brevo."""
     if not BREVO_API_KEY or not FROM_EMAIL:
-        print("Email not configured — skipping verification email")
+        log.warning("Email not configured — skipping verification email")
         return False
 
     verify_link = f"{FRONTEND_URL}/#verify-email/{verify_token}"
@@ -101,10 +104,10 @@ def send_verification_email(to_email: str, username: str, verify_token: str) -> 
             json=payload,
             timeout=15.0,
         )
-        if resp.status_code not in (200, 201):
-            print(f"Brevo verification email failed: {resp.status_code} {resp.text}")
+        if resp.status_code >= 300:
+            log.error("Brevo verification email failed", status_code=resp.status_code, text=resp.text)
             return False
         return True
     except Exception as e:
-        print(f"Failed to send verification email: {e}")
+        log.exception("Failed to send verification email")
         return False

@@ -50,7 +50,7 @@ async function doLogin() {
       }
       return;
     }
-    await finishLogin(data.access_token);
+    await finishLogin();
   } catch(e) { showAlert(err, 'Cannot reach API — is the server running?', 'error'); }
 }
 
@@ -89,7 +89,7 @@ async function doRegister() {
       });
       const loginData = await loginRes.json().catch(() => ({}));
       if (loginRes.ok) {
-        await finishLogin(loginData.access_token);
+        await finishLogin();
         closeAuthModal();
         openOnboarding(); // show name + DOB setup
       } else {
@@ -153,7 +153,7 @@ async function obFinish(skipDob = false) {
     try {
       await fetch(`${API}/auth/me`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
     } catch(e) { /* non-fatal, user can set later in settings */ }
@@ -248,7 +248,7 @@ async function completeGitHubSignup() {
     if (!res.ok) { al.className = 'alert error'; al.textContent = data.detail || 'Sign up failed.'; return; }
     _githubSetupToken = null;
     closeAuthModal();
-    await finishLogin(data.access_token);
+    await finishLogin();
     openOnboarding();
   } catch(e) {
     al.className = 'alert error'; al.textContent = 'Network error. Please try again.';

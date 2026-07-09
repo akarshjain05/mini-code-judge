@@ -33,7 +33,7 @@ async function loadSettings() {
   document.getElementById('sRowUsername').textContent = username || '—';
 
   try {
-    const res = await fetch(`${API}/auth/me`, { headers: { 'Authorization': `Bearer ${token}` } });
+    const res = await fetch(`${API}/auth/me`, { headers: {} });
     if (!res.ok) return;
     const d = await res.json();
     _settingsData = d;
@@ -203,7 +203,7 @@ const FIELD_CONFIG = {
       if (nw !== conf) { al.className='alert error'; al.textContent='Passwords do not match.'; return null; }
       const res = await fetch(`${API}/auth/change-password`, {
         method: 'PUT',
-        headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${token}` },
+        headers: { 'Content-Type':'application/json' },
         body: JSON.stringify({ current_password: cur || null, new_password: nw }),
       });
       const data = await res.json();
@@ -266,7 +266,7 @@ async function saveFieldEdit() {
 async function _patchMe(payload) {
   const res = await fetch(`${API}/auth/me`, {
     method: 'PUT',
-    headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${token}` },
+    headers: { 'Content-Type':'application/json' },
     body: JSON.stringify(payload),
   });
   const data = await res.json();
@@ -319,7 +319,7 @@ async function confirmDeleteAccount() {
   try {
     const res = await fetch(`${API}/auth/me`, {
       method: 'DELETE',
-      headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${token}` },
+      headers: { 'Content-Type':'application/json' },
       body: JSON.stringify({ password: pw || null }),
     });
     const data = await res.json();
@@ -327,7 +327,7 @@ async function confirmDeleteAccount() {
       al.className = 'alert error'; al.textContent = data.detail || 'Error deleting account.';
     } else {
       token = null; username = null; isAdmin = false;
-      localStorage.removeItem('jwt'); localStorage.removeItem('username');
+       localStorage.removeItem('username');
       updateAuthUI(); updateAdminUI();
       goTo('dashboard');
     }

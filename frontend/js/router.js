@@ -60,18 +60,18 @@ async function handleGoogleCredentialResponse(response) {
       return;
     }
 
-    await finishLogin(data.access_token);
+    await finishLogin();
   } catch (e) {
     showAlert(err, 'Cannot reach API — is the server running? (or CORS blocked)', 'error');
   }
 }
 
-async function finishLogin(accessToken) {
-  token = accessToken;
-  const meRes = await fetch(`${API}/auth/me`, { headers: { 'Authorization': `Bearer ${token}` } });
+async function finishLogin() {
+  token = 'cookie_auth';
+  const meRes = await fetch(`${API}/auth/me`, { headers: {} });
   const me = await meRes.json();
   username = me.username;
-  localStorage.setItem('jwt', token);
+  
   localStorage.setItem('username', username);
   closeAuthModal(); updateAuthUI(); fetchCurrentUser();
   // Dashboard has no nav item anymore (only reachable via the logo, first
@@ -126,7 +126,7 @@ async function completeGoogleSignup() {
       return;
     }
     pendingGoogleSetupToken = null;
-    await finishLogin(data.access_token);
+    await finishLogin();
     closeAuthModal();
     openOnboarding(); // new Google user: collect display name + DOB
   } catch (e) {
@@ -157,6 +157,10 @@ async function refreshCurrentPage() {
 }
 
 async function goTo(page, pushState = true) {
+  if (window.globalAbortController) {
+    window.globalAbortController.abort();
+    window.globalAbortController = new AbortController();
+  }
   if (!token && ['history','analytics','contests','account','leaderboard'].includes(page)) { openAuthModal(); return; }
   const pageEl = document.getElementById('page-' + page);
   if (!pageEl) return;

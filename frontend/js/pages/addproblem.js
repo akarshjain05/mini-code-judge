@@ -107,7 +107,7 @@ async function saveProblem() {
   try {
     const res = await fetch(url, {
       method,
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ title, description: desc, difficulty: diff, category }),
     });
     const data = await res.json();
@@ -132,7 +132,7 @@ async function addTestCase() {
   try {
     const res = await fetch(`${API}/problems/${pid}/test-cases`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ stdin: sin, expected: exp, is_sample: samp }),
     });
     const data = await res.json();

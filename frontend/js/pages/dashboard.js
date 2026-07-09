@@ -5,11 +5,11 @@ async function loadDashboard() {
   const el = document.getElementById('dashRecentList');
   if (!token) { el.innerHTML = '<p style="color:var(--muted);font-size:13px">Login to see your recent submissions.</p>'; return; }
   try {
-    const res = await fetch(`${API}/submissions?limit=5`, { headers: { 'Authorization': `Bearer ${token}` } });
+    const res = await fetch(`${API}/submissions?limit=5`, { headers: {} });
     if (res.status === 401) {
       // Token expired — clear and show logged-out state
       token = null; username = null; isAdmin = false;
-      localStorage.removeItem('jwt'); localStorage.removeItem('username');
+       localStorage.removeItem('username');
       updateAuthUI(); updateAdminUI();
       el.innerHTML = '<p style="color:var(--muted);font-size:13px">Session expired. Please <a href="#" onclick="openAuthModal()" style="color:var(--accent)">log in again</a>.</p>';
       return;

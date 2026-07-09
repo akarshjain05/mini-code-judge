@@ -1,0 +1,266 @@
+"""
+The judge — compiles/runs submitted code and returns a verdict.
+Supports: cpp, c, java, python
+"""
+import subprocess
+import tempfile
+import os
+import time
+import traceback
+from datetime import datetime, timezone
+from sqlalchemy.orm import Session
+from app.core.database import SessionLocal
+from app.core.config import settings
+from app.models.submission import Submission
+from app.models.problem import TestCase
+
+
+def judge_submission(submission_id: int):
+    db = SessionLocal()
+    try:
+        _run_judge(submission_id, db)
+    except Exception:
+        db.rollback()
+        err_db = SessionLocal()
+        try:
+            submission = err_db.query(Submission).filter(Submission.id == submission_id).first()
+            if submission and submission.status in ("pending", "running"):
+                submission.status = "error"
+                submission.verdict = "judge_error"
+                submission.error_output = traceback.format_exc()[:5000]
+                err_db.commit()
+        except Exception:
+            traceback.print_exc()
+        finally:
+            err_db.close()
+    finally:
+        db.close()
+
+
+def _run_judge(submission_id: int, db: Session):
+    submission = db.query(Submission).filter(Submission.id == submission_id).first()
+    if not submission:
+        return
+
+    # Check if this is a sample-only ("Run") request rather than a real submission
+    sample_only = submission.is_sample_only
+
+    submission.status = "running"
+    db.commit()
+
+    # Fetch test cases — sample_only = only is_sample=1, else all
+    query = db.query(TestCase).filter(TestCase.problem_id == submission.problem_id)
+    if sample_only:
+        query = query.filter(TestCase.is_sample == 1)
+    test_cases = query.all()
+
+    if not test_cases:
+        msg = "No sample test cases found" if sample_only else "No test cases found"
+        _set_verdict(db, submission, verdict="no_test_cases", status="error", error_output=msg)
+        return
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        run_command = _prepare_run_command(submission, tmpdir, db)
+        if run_command is None:
+            return  # compile error already recorded
+
+        total_runtime_ms = 0.0
+
+        for tc in test_cases:
+            result = _run_test_case(run_command, tc.stdin)
+
+            if result["verdict"] != "accepted":
+                _set_verdict(
+                    db, submission,
+                    verdict=result["verdict"],
+                    status=result["verdict"],
+                    runtime_ms=result["runtime_ms"],
+                    error_output=result.get("stderr", ""),
+                )
+                return
+
+            total_runtime_ms = max(total_runtime_ms, result["runtime_ms"])
+            actual = result["stdout"].strip()
+            expected = tc.expected.strip()
+
+            if actual != expected:
+                _set_verdict(
+                    db, submission,
+                    verdict="wrong_answer",
+                    status="wrong_answer",
+                    runtime_ms=total_runtime_ms,
+                )
+                return
+
+        _set_verdict(
+            db, submission,
+            verdict="accepted",
+            status="accepted",
+            runtime_ms=total_runtime_ms,
+        )
+
+
+def _prepare_run_command(submission: Submission, tmpdir: str, db: Session):
+    lang = submission.language
+
+    if lang == "python":
+        src = os.path.join(tmpdir, "solution.py")
+        with open(src, "w") as f:
+            f.write(submission.code)
+        check = subprocess.run(["python3", "-m", "py_compile", src],
+                               capture_output=True, text=True, timeout=30)
+        if check.returncode != 0:
+            _set_verdict(db, submission, verdict="compile_error",
+                         status="compile_error", error_output=check.stderr[:5000])
+            return None
+        return ["python3", src]
+
+    if lang == "c":
+        src = os.path.join(tmpdir, "solution.c")
+        exe = os.path.join(tmpdir, "solution")
+        with open(src, "w") as f:
+            f.write(submission.code)
+        result = subprocess.run(["gcc", "-O2", "-o", exe, src, "-lm"],
+                                capture_output=True, text=True, timeout=30)
+        if result.returncode != 0:
+            _set_verdict(db, submission, verdict="compile_error",
+                         status="compile_error", error_output=result.stderr[:5000])
+            return None
+        return [exe]
+
+    if lang == "java":
+        src = os.path.join(tmpdir, "Main.java")
+        with open(src, "w") as f:
+            f.write(submission.code)
+        result = subprocess.run(["javac", src], capture_output=True, text=True, timeout=30)
+        if result.returncode != 0:
+            _set_verdict(db, submission, verdict="compile_error",
+                         status="compile_error", error_output=result.stderr[:5000])
+            return None
+        # -Xmx caps the JVM's own heap. We deliberately do NOT rely on the
+        # OS-level RLIMIT_AS for Java (see _run_test_case) — the JVM reserves
+        # large virtual address space up front (code cache, metaspace, thread
+        # stacks) regardless of actual heap usage, so RLIMIT_AS kills every
+        # single Java submission at startup before it ever runs user code.
+        return ["java", f"-Xmx{settings.MEMORY_LIMIT_MB}m", "-cp", tmpdir, "Main"]
+
+    # default: cpp
+    src = os.path.join(tmpdir, "solution.cpp")
+    exe = os.path.join(tmpdir, "solution")
+    with open(src, "w") as f:
+        f.write(submission.code)
+    result = subprocess.run(["g++", "-O2", "-o", exe, src],
+                            capture_output=True, text=True, timeout=30)
+    if result.returncode != 0:
+        _set_verdict(db, submission, verdict="compile_error",
+                     status="compile_error", error_output=result.stderr[:5000])
+        return None
+    return [exe]
+
+
+def _run_test_case(run_command: list, stdin_data: str) -> dict:
+    import resource, signal
+
+    mem_bytes = settings.MEMORY_LIMIT_MB * 1024 * 1024
+    is_java = run_command and run_command[0] == "java"
+
+    def _preexec():
+        """Called in child process before exec — set resource limits."""
+        # Memory limit — skipped for Java: the JVM reserves large virtual
+        # address space by design (code cache, metaspace, thread stacks)
+        # independent of actual heap usage, so an RLIMIT_AS cap here kills
+        # the JVM at startup regardless of what the submitted code does.
+        # Java's heap is capped instead via -Xmx on the java command itself.
+        if not is_java:
+            resource.setrlimit(resource.RLIMIT_AS, (mem_bytes, mem_bytes))
+        # Max file size written (10 MB) — prevents disk-fill attacks
+        resource.setrlimit(resource.RLIMIT_FSIZE, (10 * 1024 * 1024, 10 * 1024 * 1024))
+        # Max open files
+        resource.setrlimit(resource.RLIMIT_NOFILE, (64, 64))
+        # Max number of processes/threads for this submission — without this,
+        # `while(1) fork();` (or os.fork() in a loop) can exhaust the whole
+        # server's process table before the timeout even fires. NOTE: on
+        # Linux, RLIMIT_NPROC counts ALL processes owned by the real UID
+        # system-wide (Postgres/Redis/Uvicorn/etc. included), not just this
+        # subprocess's children — so this has to sit well above whatever the
+        # ambient process count already is, or even a normal multi-threaded
+        # program (the JVM in particular) fails to start. 512 leaves generous
+        # room for legitimate runtimes while still stopping a fork bomb almost
+        # immediately, long before it can exhaust real system resources.
+        resource.setrlimit(resource.RLIMIT_NPROC, (512, 512))
+        # New process group so we can kill all children
+        os.setsid()
+
+    # Minimal safe environment — no HOME, no network credential env vars leaking in
+    safe_env = {
+        "PATH": "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+        "LANG": "en_US.UTF-8",
+    }
+
+    try:
+        start = time.perf_counter()
+        proc = subprocess.Popen(
+            run_command,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            env=safe_env,
+            preexec_fn=_preexec,
+        )
+        try:
+            stdout, stderr = proc.communicate(
+                input=stdin_data.encode() if stdin_data else b"",
+                timeout=settings.TIME_LIMIT_SECONDS,
+            )
+        except subprocess.TimeoutExpired:
+            # Kill the entire process group (handles forked children too)
+            try:
+                os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+            except ProcessLookupError:
+                proc.kill()
+            proc.wait()
+            return {
+                "verdict": "time_limit_exceeded",
+                "stdout": "", "stderr": "",
+                "runtime_ms": settings.TIME_LIMIT_SECONDS * 1000,
+            }
+
+        elapsed_ms = (time.perf_counter() - start) * 1000
+
+        # Check for memory-related signals (SIGKILL from OOM or SIGSEGV)
+        if proc.returncode in (-9, -11):
+            return {
+                "verdict": "memory_limit_exceeded",
+                "stdout": "", "stderr": "Process killed (memory limit or crash)",
+                "runtime_ms": elapsed_ms,
+            }
+
+        if proc.returncode != 0:
+            return {
+                "verdict": "runtime_error",
+                "stdout": stdout.decode(errors="replace"),
+                "stderr": stderr.decode(errors="replace")[:2000],
+                "runtime_ms": elapsed_ms,
+            }
+
+        return {
+            "verdict": "accepted",
+            "stdout": stdout.decode(errors="replace"),
+            "stderr": "",
+            "runtime_ms": elapsed_ms,
+        }
+
+    except MemoryError:
+        return {"verdict": "memory_limit_exceeded", "stdout": "", "stderr": "", "runtime_ms": 0}
+    except Exception as e:
+        return {"verdict": "runtime_error", "stdout": "", "stderr": str(e)[:500], "runtime_ms": 0}
+
+
+def _set_verdict(db: Session, submission: Submission, *, verdict: str, status: str,
+                 runtime_ms: float = None, error_output: str = None):
+    submission.verdict = verdict
+    submission.status = status
+    submission.runtime_ms = runtime_ms
+    submission.error_output = error_output
+    submission.judged_at = datetime.now(timezone.utc)
+    db.commit()

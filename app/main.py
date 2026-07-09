@@ -2,14 +2,17 @@ from fastapi import FastAPI, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import text
+import uuid
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
+from prometheus_fastapi_instrumentator import Instrumentator
 
 from app.core.config import settings
 from app.core.database import Base, engine, get_db
+from app.core.logger import request_id_var, get_logger
 from app.routers import auth, submissions, problems, admin
 from app.routers.ai_review import router as ai_review_router
 from app.routers.contest import router as contest_router
@@ -18,6 +21,7 @@ from app.routers.leaderboard import router as leaderboard_router
 
 # ── Rate Limiter ───────────────────────────────────────────────────────
 limiter = Limiter(key_func=get_remote_address, default_limits=["200/minute"])
+log = get_logger(__name__)
 
 app = FastAPI(
     title="Mini Code Judge",
@@ -30,19 +34,15 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)
 
+# --- Metrics ---
+Instrumentator().instrument(app).expose(app)
+
 # ── CORS — only allow the real frontend ───────────────────────────────
 origins = [
     settings.FRONTEND_URL,
     "https://mini-code-judge-frontend.onrender.com",
-    "http://localhost:8000",
-    "http://127.0.0.1:8000",
     "http://localhost:5500",
     "http://127.0.0.1:5500",
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "null",
 ]
 
 app.add_middleware(
@@ -54,6 +54,19 @@ app.add_middleware(
 )
 
 # ── Security headers middleware ────────────────────────────────────────
+@app.middleware("http")
+async def request_id_and_logging_middleware(request: Request, call_next):
+    req_id = request.headers.get("X-Request-ID", str(uuid.uuid4()))
+    request_id_var.set(req_id)
+    
+    log.info("request_started", method=request.method, url=str(request.url))
+    
+    response = await call_next(request)
+    response.headers["X-Request-ID"] = req_id
+    
+    log.info("request_finished", status_code=response.status_code)
+    return response
+
 @app.middleware("http")
 async def add_security_headers(request: Request, call_next):
     response = await call_next(request)
@@ -69,32 +82,8 @@ async def add_security_headers(request: Request, call_next):
 
 @app.on_event("startup")
 def on_startup():
-    # Create tables if they don't exist
-    Base.metadata.create_all(bind=engine)
-
-    # Safe column migrations using PostgreSQL's native ADD COLUMN IF NOT EXISTS
-    with engine.connect() as conn:
-        for sql in [
-            "ALTER TABLE users ADD COLUMN IF NOT EXISTS full_name VARCHAR(100)",
-            "ALTER TABLE users ADD COLUMN IF NOT EXISTS phone_number VARCHAR(30)",
-            "ALTER TABLE users ADD COLUMN IF NOT EXISTS github_id VARCHAR(255)",
-            "ALTER TABLE users ADD COLUMN IF NOT EXISTS is_verified BOOLEAN NOT NULL DEFAULT FALSE",
-            "ALTER TABLE submissions ADD COLUMN IF NOT EXISTS ai_review TEXT",
-            "ALTER TABLE submissions ADD COLUMN IF NOT EXISTS judged_at TIMESTAMPTZ",
-            "ALTER TABLE submissions ADD COLUMN IF NOT EXISTS is_sample_only BOOLEAN NOT NULL DEFAULT FALSE",
-        ]:
-            conn.execute(text(sql))
-        # Add unique index for github_id if not exists
-        conn.execute(text("""
-            DO $$ BEGIN
-              IF NOT EXISTS (
-                SELECT 1 FROM pg_indexes WHERE tablename='users' AND indexname='ix_users_github_id'
-              ) THEN
-                CREATE UNIQUE INDEX ix_users_github_id ON users(github_id) WHERE github_id IS NOT NULL;
-              END IF;
-            END $$;
-        """))
-        conn.commit()
+    # Database schema is now managed by Alembic migrations
+    pass
 
 
 app.include_router(auth.router)

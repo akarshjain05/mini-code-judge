@@ -4,7 +4,7 @@ async function loadAnalytics() {
   if (!token) { openAuthModal(); return; }
   try {
     const [subsRes, probsRes] = await Promise.all([
-      fetch(`${API}/submissions?limit=200`, { headers: { 'Authorization': `Bearer ${token}` } }),
+      fetch(`${API}/submissions?limit=200`, { headers: {} }),
       fetch(`${API}/problems`)
     ]);
     if (!subsRes.ok) throw new Error('Failed to load submissions');

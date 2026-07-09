@@ -12,9 +12,12 @@ from rq import Worker, Queue
 
 from app.core.config import settings
 
+import structlog
+log = structlog.get_logger()
+
 if __name__ == "__main__":
-    conn = redis.from_url(settings.REDIS_URL)
-    q = Queue("judge", connection=conn)
-    worker = Worker([q], connection=conn)
-    print("Worker started. Waiting for jobs...")
+    r = redis.from_url(settings.REDIS_URL)
+    q = Queue("judge", connection=r)
+    worker = Worker([q], connection=r)
+    log.info("Worker started. Waiting for jobs...")
     worker.work()

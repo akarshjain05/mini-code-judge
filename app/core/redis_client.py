@@ -8,11 +8,21 @@ import redis
 from app.core.config import settings
 
 _client: redis.Redis | None = None
+_pool: redis.ConnectionPool | None = None
 
 def get_redis() -> redis.Redis:
-    global _client
+    global _client, _pool
     if _client is None:
-        _client = redis.from_url(settings.REDIS_URL, decode_responses=True)
+        _pool = redis.ConnectionPool.from_url(
+            settings.REDIS_URL,
+            decode_responses=True,
+            max_connections=20,
+            health_check_interval=30
+        )
+        _client = redis.Redis(
+            connection_pool=_pool,
+            retry_on_timeout=True
+        )
     return _client
 
 

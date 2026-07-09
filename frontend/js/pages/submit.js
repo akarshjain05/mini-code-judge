@@ -40,7 +40,7 @@ async function submitCode() {
   try {
     const res = await apiFetch(`${API}/submissions`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ problem_id: currentProblem.id, language: lang, code }),
     });
     let sub;
@@ -74,7 +74,7 @@ async function pollVerdict(id, logText, vtitle, vsub, vmeta, verr, vbox) {
     return;
   }
   try {
-    const res = await fetch(`${API}/submissions/${id}`, { headers: { 'Authorization': `Bearer ${token}` } });
+    const res = await fetch(`${API}/submissions/${id}`, { headers: {} });
     if (!res.ok) {
       window._pollFailCount = (window._pollFailCount || 0) + 1;
       if (window._pollFailCount >= 5) {

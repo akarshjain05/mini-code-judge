@@ -5,7 +5,7 @@ async function loadHistory() {
   if (!token) { tbody.innerHTML = '<tr><td colspan="7" style="color:var(--muted);padding:20px">Login to see your submissions.</td></tr>'; return; }
   tbody.innerHTML = '<tr><td colspan="7" style="color:var(--muted);padding:16px">Loading…</td></tr>';
   try {
-    const res = await fetch(`${API}/submissions`, { headers: { 'Authorization': `Bearer ${token}` } });
+    const res = await fetch(`${API}/submissions`, { headers: {} });
     const subs = await res.json();
     _allSubs = subs || [];
 

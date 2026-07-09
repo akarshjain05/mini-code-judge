@@ -20,5 +20,5 @@ class Submission(Base):
     # not counted in accepted/total stats, not used for leaderboard/acceptance
     # rate calculations, since they only ran a subset of the test cases).
     is_sample_only = Column(Boolean, nullable=False, default=False, server_default="false")
-    created_at     = Column(DateTime(timezone=True), server_default=func.now())
+    created_at     = Column(DateTime(timezone=True), server_default=func.now(), index=True)
     judged_at      = Column(DateTime(timezone=True), nullable=True)

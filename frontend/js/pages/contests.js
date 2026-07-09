@@ -25,7 +25,7 @@ async function loadContests() {
 
 async function _fetchContests() {
   try {
-    const res = await fetch(`${API}/contests`, { headers: { 'Authorization': `Bearer ${token}` } });
+    const res = await fetch(`${API}/contests`, { headers: {} });
     if (!res.ok) throw new Error();
     const contests = await res.json();
     renderContestsList(contests);
@@ -88,13 +88,13 @@ async function openContest(id) {
   history.pushState({ page: 'contest', id }, '', '#contest/' + id);
 
   try {
-    const res = await fetch(`${API}/contests/${id}`, { headers: { 'Authorization': `Bearer ${token}` } });
+    const res = await fetch(`${API}/contests/${id}`, { headers: {} });
     const c = await res.json();
     renderContestDetail(c);
     if (c.status === 'live') {
       if (contestRefreshInterval) clearInterval(contestRefreshInterval);
       contestRefreshInterval = setInterval(async () => {
-        const r = await fetch(`${API}/contests/${id}/leaderboard`, { headers: { 'Authorization': `Bearer ${token}` } });
+        const r = await fetch(`${API}/contests/${id}/leaderboard`, { headers: {} });
         if (r.ok) { const lb = await r.json(); renderLeaderboard(lb, c.problems, document.getElementById('liveLeaderboard')); }
       }, 30000);
     }
@@ -237,7 +237,7 @@ async function joinContest(inviteCode, contestId) {
   try {
     const res = await fetch(`${API}/contests/join/${inviteCode}`, {
       method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' }
     });
     const d = await res.json();
     if (!res.ok) { alert(d.detail || 'Failed to join'); return; }
@@ -252,7 +252,7 @@ async function joinByCode() {
   try {
     const res = await fetch(`${API}/contests/join/${code}`, {
       method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' }
     });
     const d = await res.json();
     if (!res.ok) { alert(d.detail || 'Invalid invite code'); return; }
@@ -274,7 +274,7 @@ async function createContest() {
   try {
     const res = await fetch(`${API}/contests`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         title, duration_minutes: duration,
         starts_at: new Date(start).toISOString(),

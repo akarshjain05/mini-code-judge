@@ -17,7 +17,7 @@ function handleAuthNav() {
       headers: { 'Authorization': `Bearer ${_t}` },
     }).catch(() => {}); // fire-and-forget — clear locally regardless
     token = null; username = null; isAdmin = false;
-    localStorage.removeItem('jwt'); localStorage.removeItem('username');
+     localStorage.removeItem('username');
     updateAuthUI(); updateAdminUI();
     goTo('dashboard');
   } else {
@@ -43,11 +43,11 @@ function updateAuthUI() {
 async function fetchCurrentUser() {
   if (!token) { isAdmin = false; updateAdminUI(); return; }
   try {
-    const res = await fetch(`${API}/auth/me`, { headers: { 'Authorization': `Bearer ${token}` } });
+    const res = await fetch(`${API}/auth/me`, { headers: {} });
     if (res.status === 401) {
       // Token expired or invalid — clear it and show login button
       token = null; username = null; isAdmin = false;
-      localStorage.removeItem('jwt'); localStorage.removeItem('username');
+       localStorage.removeItem('username');
       updateAuthUI(); updateAdminUI();
       return;
     }
@@ -108,6 +108,27 @@ function closeUserMenu() {
 function showAlert(el, msg, type) {
   el.className = `alert alert-${type} show`;
   el.textContent = msg;
+}
+
+function showToast(msg, type = 'info') {
+  let container = document.getElementById('toast-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'toast-container';
+    document.body.appendChild(container);
+  }
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  
+  const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️';
+  toast.innerHTML = `<div>${icon}</div><div>${msg}</div>`;
+  
+  container.appendChild(toast);
+  
+  setTimeout(() => {
+    toast.classList.add('hide');
+    setTimeout(() => toast.remove(), 250);
+  }, 3000);
 }
 
 function timeAgo(iso) {
@@ -270,7 +291,7 @@ async function runCode() {
   try {
     const res = await apiFetch(`${API}/submissions`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ problem_id: currentProblem.id, language: lang, code, sample_only: true }),
     });
     let sub;
@@ -312,7 +333,7 @@ async function pollSampleRun(id, vtitle, vsub, vmeta, verr) {
     return;
   }
   try {
-    const res = await fetch(`${API}/submissions/${id}`, { headers: { 'Authorization': `Bearer ${token}` } });
+    const res = await fetch(`${API}/submissions/${id}`, { headers: {} });
     if (!res.ok) {
       window._runPollFailCount = (window._runPollFailCount || 0) + 1;
       if (window._runPollFailCount >= 5) {
