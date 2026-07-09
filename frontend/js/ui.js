@@ -220,7 +220,7 @@ function updateCodePlaceholder() {
     python: '# Python solution\nimport sys\ninput = sys.stdin.readline\n\n'
   };
   ta.placeholder = ph[lang] || '';
-}
+  ta.value = ph[lang] || '';
 
 async function loadSampleTestCases(problemId, retriesLeft = 2) {
   const card = document.getElementById('sampleTestsCard');
