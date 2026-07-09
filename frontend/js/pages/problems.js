@@ -58,7 +58,7 @@ function filterProblems() {
       const probCats = (p.category || '').split(',').map(c => c.trim());
       if (!probCats.includes(cat)) return false;
     }
-    if (search && !p.title.toLowerCase().includes(search) && !(p.category||'').toLowerCase().includes(search)) return false;
+    if (search && !p.title.toLowerCase().includes(search) && String(p.id) !== search) return false;
     return true;
   });
 
