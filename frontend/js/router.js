@@ -2,17 +2,9 @@
 // Startup & PAGE_LOADERS are in main.js (loaded last)
 
 function initGoogleSignIn(retries = 10) {
-  if (!window.google || !google.accounts || !google.accounts.id) {
-    if (retries > 0) setTimeout(() => initGoogleSignIn(retries - 1), 500);
-    return;
-  }
-  google.accounts.id.initialize({
-    client_id: GOOGLE_CLIENT_ID,
-    callback: handleGoogleCredentialResponse,
-  });
-  // Replace the default Google button with a custom dark one matching GitHub style
+  // Always render the visual button immediately so the UI doesn't look broken
   const wrap = document.getElementById('googleButtonWrap');
-  if (wrap) {
+  if (wrap && !wrap.innerHTML.includes('btn-google-signin')) {
     wrap.innerHTML = `
       <button class="btn-google-signin" onclick="triggerGoogleSignIn()">
         <svg width="18" height="18" viewBox="0 0 24 24">
@@ -24,17 +16,32 @@ function initGoogleSignIn(retries = 10) {
         Continue with Google
       </button>
       <div id="googleSignInDiv" style="display:none"></div>`;
-    // Render tiny hidden button so Google's credential callback still works
-    setTimeout(() => {
-      const hidden = document.getElementById('googleSignInDiv');
-      if (hidden && window.google) google.accounts.id.renderButton(hidden, { size: 'small', width: 1 });
-    }, 300);
   }
+
+  // If the Google library isn't loaded yet, keep trying in the background
+  if (!window.google || !google.accounts || !google.accounts.id) {
+    if (retries > 0) setTimeout(() => initGoogleSignIn(retries - 1), 500);
+    return;
+  }
+
+  // Once loaded, initialize the actual API
+  google.accounts.id.initialize({
+    client_id: GOOGLE_CLIENT_ID,
+    callback: handleGoogleCredentialResponse,
+  });
+
+  // Render tiny hidden button so Google's credential callback still works
+  setTimeout(() => {
+    const hidden = document.getElementById('googleSignInDiv');
+    if (hidden && window.google) google.accounts.id.renderButton(hidden, { size: 'small', width: 1 });
+  }, 100);
 }
 
 function triggerGoogleSignIn() {
   if (window.google && google.accounts && google.accounts.id) {
     google.accounts.id.prompt();
+  } else {
+    showAlert(document.getElementById('loginErr'), 'Google Sign-In is blocked by your browser or adblocker.', 'error');
   }
 }
 
