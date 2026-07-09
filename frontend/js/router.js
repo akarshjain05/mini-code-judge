@@ -60,14 +60,17 @@ async function handleGoogleCredentialResponse(response) {
       return;
     }
 
-    await finishLogin();
+    await finishLogin(data.access_token);
   } catch (e) {
     showAlert(err, 'Cannot reach API — is the server running? (or CORS blocked)', 'error');
   }
 }
 
-async function finishLogin() {
-  token = 'cookie_auth';
+async function finishLogin(jwt) {
+  if (jwt) {
+    token = jwt;
+    localStorage.setItem('token', jwt);
+  }
   const meRes = await fetch(`${API}/auth/me`, { headers: {} });
   const me = await meRes.json();
   username = me.username;
@@ -126,7 +129,7 @@ async function completeGoogleSignup() {
       return;
     }
     pendingGoogleSetupToken = null;
-    await finishLogin();
+    await finishLogin(data.access_token);
     closeAuthModal();
     openOnboarding(); // new Google user: collect display name + DOB
   } catch (e) {

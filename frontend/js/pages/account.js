@@ -8,8 +8,9 @@ async function loadAccount() {
     const res = await fetch(`${API}/auth/me`, { headers: {} });
     if (res.status === 401) {
       // Token expired — clear and redirect to login
-      token = null; username = null; isAdmin = false;
+       token = null; username = null; isAdmin = false;
        localStorage.removeItem('username');
+       localStorage.removeItem('token');
       updateAuthUI(); updateAdminUI();
       goTo('dashboard');
       openAuthModal();

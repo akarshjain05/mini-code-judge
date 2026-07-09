@@ -9,7 +9,8 @@ async function loadDashboard() {
     if (res.status === 401) {
       // Token expired — clear and show logged-out state
       token = null; username = null; isAdmin = false;
-       localStorage.removeItem('username');
+      localStorage.removeItem('username');
+      localStorage.removeItem('token');
       updateAuthUI(); updateAdminUI();
       el.innerHTML = '<p style="color:var(--muted);font-size:13px">Session expired. Please <a href="#" onclick="openAuthModal()" style="color:var(--accent)">log in again</a>.</p>';
       return;

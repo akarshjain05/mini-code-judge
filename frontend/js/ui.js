@@ -17,7 +17,8 @@ function handleAuthNav() {
       headers: { 'Authorization': `Bearer ${_t}` },
     }).catch(() => {}); // fire-and-forget — clear locally regardless
     token = null; username = null; isAdmin = false;
-     localStorage.removeItem('username');
+    localStorage.removeItem('username');
+    localStorage.removeItem('token');
     updateAuthUI(); updateAdminUI();
     goTo('dashboard');
   } else {
@@ -47,7 +48,8 @@ async function fetchCurrentUser() {
     if (res.status === 401) {
       // Token expired or invalid — clear it and show login button
       token = null; username = null; isAdmin = false;
-       localStorage.removeItem('username');
+      localStorage.removeItem('username');
+      localStorage.removeItem('token');
       updateAuthUI(); updateAdminUI();
       return;
     }

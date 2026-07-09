@@ -104,7 +104,7 @@ def login(request: Request, response: Response, form: OAuth2PasswordRequestForm 
         samesite="none",
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
     )
-    return {"message": "Logged in successfully"}
+    return {"message": "Logged in successfully", "access_token": token}
 
 
 @router.post("/logout")
@@ -188,7 +188,7 @@ def google_login(payload: GoogleLoginRequest, response: Response, db: Session = 
             samesite="none",
             max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         )
-        return {"needs_setup": False, "message": "Logged in successfully"}
+        return {"needs_setup": False, "message": "Logged in successfully", "access_token": token}
     base_username = re.sub(r"[^a-zA-Z0-9_-]", "", email.split("@")[0]) or "user"
     if len(base_username) < 3: base_username = (base_username + "user")[:50]
     suggested = base_username[:50]; suffix = 1
@@ -219,7 +219,7 @@ def complete_google_signup(payload: GoogleCompleteSignup, response: Response, db
         samesite="none",
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
     )
-    return {"message": "Logged in successfully"}
+    return {"message": "Logged in successfully", "access_token": token}
 
 
 @router.post("/forgot-password")
@@ -511,7 +511,7 @@ def complete_github_signup(payload: GoogleCompleteSignup, response: Response, db
         samesite="none",
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
     )
-    return {"message": "Account created and logged in successfully"}
+    return {"message": "Account created and logged in successfully", "access_token": jwt}
 
 
 class ResendVerificationRequest(BaseModel):

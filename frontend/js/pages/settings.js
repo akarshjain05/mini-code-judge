@@ -327,7 +327,8 @@ async function confirmDeleteAccount() {
       al.className = 'alert error'; al.textContent = data.detail || 'Error deleting account.';
     } else {
       token = null; username = null; isAdmin = false;
-       localStorage.removeItem('username');
+      localStorage.removeItem('username');
+      localStorage.removeItem('token');
       updateAuthUI(); updateAdminUI();
       goTo('dashboard');
     }

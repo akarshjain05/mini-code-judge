@@ -50,7 +50,7 @@ async function doLogin() {
       }
       return;
     }
-    await finishLogin();
+    await finishLogin(data.access_token);
   } catch(e) { showAlert(err, 'Cannot reach API — is the server running?', 'error'); }
 }
 
@@ -89,7 +89,7 @@ async function doRegister() {
       });
       const loginData = await loginRes.json().catch(() => ({}));
       if (loginRes.ok) {
-        await finishLogin();
+        await finishLogin(loginData.access_token);
         closeAuthModal();
         openOnboarding(); // show name + DOB setup
       } else {
@@ -248,7 +248,7 @@ async function completeGitHubSignup() {
     if (!res.ok) { al.className = 'alert error'; al.textContent = data.detail || 'Sign up failed.'; return; }
     _githubSetupToken = null;
     closeAuthModal();
-    await finishLogin();
+    await finishLogin(data.access_token);
     openOnboarding();
   } catch(e) {
     al.className = 'alert error'; al.textContent = 'Network error. Please try again.';
