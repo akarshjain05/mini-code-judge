@@ -240,6 +240,7 @@ function updateCodePlaceholder() {
   };
   ta.placeholder = ph[lang] || '';
   ta.value = ph[lang] || '';
+}
 
 async function loadSampleTestCases(problemId, retriesLeft = 2) {
   const card = document.getElementById('sampleTestsCard');
