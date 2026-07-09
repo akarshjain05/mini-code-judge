@@ -32,6 +32,16 @@ app = FastAPI(
 # Attach rate limiter
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    import traceback
+    log.error("unhandled_exception", error=str(exc), traceback=traceback.format_exc())
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal Server Error"}
+    )
+
 app.add_middleware(SlowAPIMiddleware)
 
 # --- Metrics ---
