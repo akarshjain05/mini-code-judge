@@ -100,7 +100,134 @@ def _run_judge(submission_id: int, db: Session):
         )
 
 
-def _prepare_run_command(submission: Submission, tmpdir: str, db: Session):
+def _prepare_run_command_local(submission: Submission, tmpdir: str, db: Session):
+    lang = submission.language
+
+    if lang == "python":
+        src = os.path.join(tmpdir, "solution.py")
+        with open(src, "w") as f:
+            f.write(submission.code)
+        check = subprocess.run(["python3", "-m", "py_compile", src],
+                               capture_output=True, text=True, timeout=30)
+        if check.returncode != 0:
+            _set_verdict(db, submission, verdict="compile_error",
+                         status="compile_error", error_output=check.stderr[:5000])
+            return None
+        return ["python3", src]
+
+    if lang == "c":
+        src = os.path.join(tmpdir, "solution.c")
+        exe = os.path.join(tmpdir, "solution")
+        with open(src, "w") as f:
+            f.write(submission.code)
+        result = subprocess.run(["gcc", "-O2", "-o", exe, src, "-lm"],
+                                capture_output=True, text=True, timeout=30)
+        if result.returncode != 0:
+            _set_verdict(db, submission, verdict="compile_error",
+                         status="compile_error", error_output=result.stderr[:5000])
+            return None
+        return [exe]
+
+
+def _run_test_case_local(run_command: list, stdin_data: str) -> dict:
+    import resource, signal
+
+    mem_bytes = settings.MEMORY_LIMIT_MB * 1024 * 1024
+    is_java = run_command and run_command[0] == "java"
+
+    def _preexec():
+        """Called in child process before exec — set resource limits."""
+        # Memory limit — skipped for Java: the JVM reserves large virtual
+        # address space by design (code cache, metaspace, thread stacks)
+        # independent of actual heap usage, so an RLIMIT_AS cap here kills
+        # the JVM at startup regardless of what the submitted code does.
+        # Java's heap is capped instead via -Xmx on the java command itself.
+        if not is_java:
+            resource.setrlimit(resource.RLIMIT_AS, (mem_bytes, mem_bytes))
+        # Max file size written (10 MB) — prevents disk-fill attacks
+        resource.setrlimit(resource.RLIMIT_FSIZE, (10 * 1024 * 1024, 10 * 1024 * 1024))
+        # Max open files
+        resource.setrlimit(resource.RLIMIT_NOFILE, (64, 64))
+        # Max number of processes/threads for this submission — without this,
+        # `while(1) fork();` (or os.fork() in a loop) can exhaust the whole
+        # server's process table before the timeout even fires. NOTE: on
+        # Linux, RLIMIT_NPROC counts ALL processes owned by the real UID
+        # system-wide (Postgres/Redis/Uvicorn/etc. included), not just this
+        # subprocess's children — so this has to sit well above whatever the
+        # ambient process count already is, or even a normal multi-threaded
+        # program (the JVM in particular) fails to start. 512 leaves generous
+        # room for legitimate runtimes while still stopping a fork bomb almost
+        # immediately, long before it can exhaust real system resources.
+        resource.setrlimit(resource.RLIMIT_NPROC, (512, 512))
+        # New process group so we can kill all children
+        os.setsid()
+
+    # Minimal safe environment — no HOME, no network credential env vars leaking in
+    safe_env = {
+        "PATH": "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+        "LANG": "en_US.UTF-8",
+    }
+
+    try:
+        start = time.perf_counter()
+        proc = subprocess.Popen(
+            run_command,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            env=safe_env,
+            preexec_fn=_preexec,
+        )
+        try:
+            stdout, stderr = proc.communicate(
+                input=stdin_data.encode() if stdin_data else b"",
+                timeout=settings.TIME_LIMIT_SECONDS,
+            )
+        except subprocess.TimeoutExpired:
+            # Kill the entire process group (handles forked children too)
+            try:
+                os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+            except ProcessLookupError:
+                proc.kill()
+            proc.wait()
+            return {
+                "verdict": "time_limit_exceeded",
+                "stdout": "", "stderr": "",
+                "runtime_ms": settings.TIME_LIMIT_SECONDS * 1000,
+            }
+
+        elapsed_ms = (time.perf_counter() - start) * 1000
+
+        # Check for memory-related signals (SIGKILL from OOM or SIGSEGV)
+        if proc.returncode in (-9, -11):
+            return {
+                "verdict": "memory_limit_exceeded",
+                "stdout": "", "stderr": "Process killed (memory limit or crash)",
+                "runtime_ms": elapsed_ms,
+            }
+
+        if proc.returncode != 0:
+            return {
+                "verdict": "runtime_error",
+                "stdout": stdout.decode(errors="replace"),
+                "stderr": stderr.decode(errors="replace")[:2000],
+                "runtime_ms": elapsed_ms,
+            }
+
+        return {
+            "verdict": "accepted",
+            "stdout": stdout.decode(errors="replace"),
+            "stderr": "",
+            "runtime_ms": elapsed_ms,
+        }
+
+    except MemoryError:
+        return {"verdict": "memory_limit_exceeded", "stdout": "", "stderr": "", "runtime_ms": 0}
+    except Exception as e:
+        return {"verdict": "runtime_error", "stdout": "", "stderr": str(e)[:500], "runtime_ms": 0}
+
+
+def _prepare_run_command_docker(submission: Submission, tmpdir: str, db: Session):
     lang = submission.language
 
     if lang == "python":
@@ -136,42 +263,8 @@ def _prepare_run_command(submission: Submission, tmpdir: str, db: Session):
             return None
         return ["./solution"]
 
-    if lang == "java":
-        src = os.path.join(tmpdir, "Main.java")
-        with open(src, "w") as f:
-            f.write(submission.code)
-        result = subprocess.run([
-            "docker", "run", "--rm", "--net", "none",
-            "--memory", "512m",
-            "-v", f"{tmpdir}:/workspace", "-w", "/workspace",
-            "mini-code-judge-sandbox:latest",
-            "javac", "Main.java"
-        ], capture_output=True, text=True, timeout=30)
-        if result.returncode != 0:
-            _set_verdict(db, submission, verdict="compile_error",
-                         status="compile_error", error_output=result.stderr[:5000])
-            return None
-        return ["java", f"-Xmx{settings.MEMORY_LIMIT_MB}m", "-cp", ".", "Main"]
 
-    # default: cpp
-    src = os.path.join(tmpdir, "solution.cpp")
-    with open(src, "w") as f:
-        f.write(submission.code)
-    result = subprocess.run([
-        "docker", "run", "--rm", "--net", "none",
-        "--memory", "512m",
-        "-v", f"{tmpdir}:/workspace", "-w", "/workspace",
-        "mini-code-judge-sandbox:latest",
-        "g++", "-O2", "-o", "solution", "solution.cpp"
-    ], capture_output=True, text=True, timeout=30)
-    if result.returncode != 0:
-        _set_verdict(db, submission, verdict="compile_error",
-                     status="compile_error", error_output=result.stderr[:5000])
-        return None
-    return ["./solution"]
-
-
-def _run_test_case(run_command: list, stdin_data: str, tmpdir: str, submission_id: int) -> dict:
+def _run_test_case_docker(run_command: list, stdin_data: str, tmpdir: str, submission_id: int) -> dict:
     mem_mb = settings.MEMORY_LIMIT_MB
 
     # Unique name for the container so we can kill it forcefully on timeout
@@ -246,6 +339,22 @@ def _run_test_case(run_command: list, stdin_data: str, tmpdir: str, submission_i
         return {"verdict": "memory_limit_exceeded", "stdout": "", "stderr": "", "runtime_ms": 0}
     except Exception as e:
         return {"verdict": "runtime_error", "stdout": "", "stderr": str(e)[:500], "runtime_ms": 0}
+
+
+
+import shutil
+
+def _prepare_run_command(submission, tmpdir, db):
+    if shutil.which("docker"):
+        return _prepare_run_command_docker(submission, tmpdir, db)
+    return _prepare_run_command_local(submission, tmpdir, db)
+
+def _run_test_case(run_command, stdin_data, tmpdir, submission_id):
+    if shutil.which("docker"):
+        return _run_test_case_docker(run_command, stdin_data, tmpdir, submission_id)
+    # The local version doesn't take tmpdir or submission_id
+    return _run_test_case_local(run_command, stdin_data)
+
 
 
 
