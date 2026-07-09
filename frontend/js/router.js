@@ -106,8 +106,8 @@ async function completeGoogleSignup() {
     showAlert(err, 'Setup session expired. Please click "Sign in with Google" again.', 'error');
     return;
   }
-  if (!u || !p) {
-    showAlert(err, 'Please choose a username and password.', 'error');
+  if (!u) {
+    showAlert(err, 'Please choose a username.', 'error');
     return;
   }
 
