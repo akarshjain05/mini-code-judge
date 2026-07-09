@@ -1,0 +1,21 @@
+FROM debian:bullseye-slim
+
+# Prevent interactive prompts during apt install
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install required languages and compilers
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    g++ \
+    python3 \
+    openjdk-17-jdk-headless \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create a non-root user for executing code
+RUN useradd -m -s /bin/bash sandbox
+
+# Default working directory
+WORKDIR /workspace
+
+# Run as sandbox user by default (we can override or enforce this at runtime)
+USER sandbox
