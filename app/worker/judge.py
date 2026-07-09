@@ -128,6 +128,35 @@ def _prepare_run_command_local(submission: Submission, tmpdir: str, db: Session)
             return None
         return [exe]
 
+    if lang == "java":
+        src = os.path.join(tmpdir, "Main.java")
+        with open(src, "w") as f:
+            f.write(submission.code)
+        result = subprocess.run(["javac", src], capture_output=True, text=True, timeout=30)
+        if result.returncode != 0:
+            _set_verdict(db, submission, verdict="compile_error",
+                         status="compile_error", error_output=result.stderr[:5000])
+            return None
+        # -Xmx caps the JVM's own heap. We deliberately do NOT rely on the
+        # OS-level RLIMIT_AS for Java (see _run_test_case) — the JVM reserves
+        # large virtual address space up front (code cache, metaspace, thread
+        # stacks) regardless of actual heap usage, so RLIMIT_AS kills every
+        # single Java submission at startup before it ever runs user code.
+        return ["java", f"-Xmx{settings.MEMORY_LIMIT_MB}m", "-cp", tmpdir, "Main"]
+
+    # default: cpp
+    src = os.path.join(tmpdir, "solution.cpp")
+    exe = os.path.join(tmpdir, "solution")
+    with open(src, "w") as f:
+        f.write(submission.code)
+    result = subprocess.run(["g++", "-O2", "-o", exe, src],
+                            capture_output=True, text=True, timeout=30)
+    if result.returncode != 0:
+        _set_verdict(db, submission, verdict="compile_error",
+                     status="compile_error", error_output=result.stderr[:5000])
+        return None
+    return [exe]
+
 
 def _run_test_case_local(run_command: list, stdin_data: str) -> dict:
     import resource, signal
@@ -262,6 +291,40 @@ def _prepare_run_command_docker(submission: Submission, tmpdir: str, db: Session
                          status="compile_error", error_output=result.stderr[:5000])
             return None
         return ["./solution"]
+
+    if lang == "java":
+        src = os.path.join(tmpdir, "Main.java")
+        with open(src, "w") as f:
+            f.write(submission.code)
+        result = subprocess.run([
+            "docker", "run", "--rm", "--net", "none",
+            "--memory", "512m",
+            "-v", f"{tmpdir}:/workspace", "-w", "/workspace",
+            "mini-code-judge-sandbox:latest",
+            "javac", "Main.java"
+        ], capture_output=True, text=True, timeout=30)
+        if result.returncode != 0:
+            _set_verdict(db, submission, verdict="compile_error",
+                         status="compile_error", error_output=result.stderr[:5000])
+            return None
+        return ["java", f"-Xmx{settings.MEMORY_LIMIT_MB}m", "-cp", ".", "Main"]
+
+    # default: cpp
+    src = os.path.join(tmpdir, "solution.cpp")
+    with open(src, "w") as f:
+        f.write(submission.code)
+    result = subprocess.run([
+        "docker", "run", "--rm", "--net", "none",
+        "--memory", "512m",
+        "-v", f"{tmpdir}:/workspace", "-w", "/workspace",
+        "mini-code-judge-sandbox:latest",
+        "g++", "-O2", "-o", "solution", "solution.cpp"
+    ], capture_output=True, text=True, timeout=30)
+    if result.returncode != 0:
+        _set_verdict(db, submission, verdict="compile_error",
+                     status="compile_error", error_output=result.stderr[:5000])
+        return None
+    return ["./solution"]
 
 
 def _run_test_case_docker(run_command: list, stdin_data: str, tmpdir: str, submission_id: int) -> dict:
