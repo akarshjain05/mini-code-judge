@@ -194,7 +194,7 @@ def google_login(payload: GoogleLoginRequest, response: Response, db: Session = 
     suggested = base_username[:50]; suffix = 1
     while db.query(User).filter(User.username == suggested).first():
         suffix += 1; suggested = f"{base_username}{suffix}"[:50]
-    setup_token = create_setup_token(email=email, google_id=google_user_id)
+    setup_token = create_setup_token({"email": email, "google_id": google_user_id})
     return {"needs_setup": True, "setup_token": setup_token, "email": email, "suggested_username": suggested}
 
 
