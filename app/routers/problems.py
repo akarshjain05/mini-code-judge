@@ -64,6 +64,8 @@ def create_problem(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
+    if not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Admin only")
     p = Problem(**payload.model_dump())
     db.add(p); db.commit(); db.refresh(p)
     return p
@@ -96,6 +98,8 @@ def add_test_case(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
+    if not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Admin only")
     if not db.query(Problem).filter(Problem.id == problem_id).first():
         raise HTTPException(status_code=404, detail="Problem not found")
     tc = TestCase(
