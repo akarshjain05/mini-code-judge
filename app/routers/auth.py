@@ -101,7 +101,7 @@ def login(request: Request, response: Response, form: OAuth2PasswordRequestForm 
         value=token,
         httponly=True,
         secure=True,
-        samesite="lax",
+        samesite="none",
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
     )
     return {"message": "Logged in successfully"}
@@ -127,7 +127,7 @@ def logout(
     except Exception:
         pass  # if decoding fails, token is already invalid
     
-    response.delete_cookie("access_token", samesite="lax", secure=True)
+    response.delete_cookie("access_token", samesite="none", secure=True)
     return {"message": "Logged out successfully"}
 
 
@@ -185,7 +185,7 @@ def google_login(payload: GoogleLoginRequest, response: Response, db: Session = 
             value=token,
             httponly=True,
             secure=True,
-            samesite="lax",
+            samesite="none",
             max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         )
         return {"needs_setup": False, "message": "Logged in successfully"}
@@ -216,7 +216,7 @@ def complete_google_signup(payload: GoogleCompleteSignup, response: Response, db
         value=token,
         httponly=True,
         secure=True,
-        samesite="lax",
+        samesite="none",
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
     )
     return {"message": "Logged in successfully"}
@@ -504,7 +504,7 @@ def complete_github_signup(payload: GoogleCompleteSignup, response: Response, db
         value=jwt,
         httponly=True,
         secure=True,
-        samesite="lax",
+        samesite="none",
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
     )
     return {"message": "Account created and logged in successfully"}
