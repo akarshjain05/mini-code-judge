@@ -116,6 +116,10 @@
   .nav-item .icon { font-size: 16px; width: 20px; text-align: center; flex-shrink: 0; }
   .nav-item .nav-text { transition: opacity 0.2s; }
   .sidebar.collapsed .nav-item .nav-text { opacity: 0; width: 0; overflow: hidden; }
+  .sidebar.collapsed .user-pill-info,
+  .sidebar.collapsed .user-pill-chevron { display: none; }
+  .sidebar.collapsed .user-pill { justify-content: center; padding-left: 0; padding-right: 0; }
+  
   
   .nav-section-label {
     height: 1px;
@@ -308,21 +312,29 @@
   .user-pill {
     display: flex;
     align-items: center;
-    justify-content: center;
-    width: fit-content;
-    margin: 0 auto;
-    gap: 6px;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 4px 8px 4px 4px;
+    width: 100%;
+    margin: 0;
+    gap: 10px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    padding: 6px;
     cursor: pointer;
-    transition: border-color 0.15s, background 0.15s;
+    transition: background 0.15s;
   }
   .user-pill:hover {
-    border-color: var(--accent);
-    background: rgba(88,166,255,0.07);
+    background: rgba(255,255,255,0.05);
   }
+  .user-pill-info {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  .user-pill-name { font-size: 14px; font-weight: 600; color: var(--text); overflow: hidden; text-overflow: ellipsis; line-height: 1.2; margin-bottom: 2px; }
+  .user-pill-plan { font-size: 12px; color: var(--muted); }
+  
   .avatar {
     width: 26px; height: 26px;
     border-radius: 50%;
@@ -334,8 +346,8 @@
   /* Dropdown */
   .user-dropdown {
     position: absolute;
-    left: calc(100% + 8px);
-    bottom: 0;
+    left: 0;
+    bottom: calc(100% + 8px);
     width: 230px;
     background: var(--surface);
     border: 1px solid var(--border);
@@ -343,10 +355,10 @@
     box-shadow: 0 8px 32px rgba(0,0,0,0.35);
     z-index: 2000;
     overflow: hidden;
-    animation: dropIn 0.12s ease;
+    animation: dropUp 0.15s ease;
   }
-  @keyframes dropIn {
-    from { opacity: 0; transform: translateY(-6px); }
+  @keyframes dropUp {
+    from { opacity: 0; transform: translateY(6px); }
     to   { opacity: 1; transform: translateY(0); }
   }
   .user-dropdown-header {

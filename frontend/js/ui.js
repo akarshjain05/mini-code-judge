@@ -64,6 +64,8 @@ function updateAuthUI() {
     document.getElementById('dropdownUsername').textContent = '@' + username;
     document.getElementById('settingsAvatar').textContent = initial;
     document.getElementById('settingsUsername').textContent = username;
+    const pillName = document.getElementById('pillName');
+    if (pillName) pillName.textContent = username;
   }
 }
 
@@ -95,6 +97,8 @@ async function fetchCurrentUser() {
     document.getElementById('dropdownUsername').textContent = '@' + data.username;
     document.getElementById('userAvatar').textContent = displayName[0].toUpperCase();
     document.getElementById('dropdownAvatar').textContent = displayName[0].toUpperCase();
+    const pillName = document.getElementById('pillName');
+    if (pillName) pillName.textContent = displayName;
   } catch(e) { isAdmin = false; }
   updateAdminUI();
 }

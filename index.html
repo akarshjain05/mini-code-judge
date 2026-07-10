@@ -9,7 +9,7 @@
 <title>Mini Code Judge</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj4KPGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnIiB4MT0iMCIgeTE9IjAiIHgyPSIxMDAiIHkyPSIxMDAiPgo8c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiM1OGE2ZmYiLz4KPHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjM2ZiOTUwIi8+CjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPgo8cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjI0IiBmaWxsPSJ1cmwoI2cpIi8+Cjx0ZXh0IHg9IjUwIiB5PSI2OCIgZm9udC1mYW1pbHk9Ik1lbmxvLENvbnNvbGFzLG1vbm9zcGFjZSIgZm9udC1zaXplPSI0NiIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPiZsdDsvJmd0OzwvdGV4dD4KPC9zdmc+Cg==" />
 <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <link rel="stylesheet" href="frontend/css/main.css?v=8192837165">
+  <link rel="stylesheet" href="frontend/css/main.css?v=8192837166">
 </head>
 <body>
 
@@ -247,7 +247,14 @@
       <div id="userPillWrap" style="display:none;position:relative;width:100%">
         <div class="user-pill" id="avatarBtn" onclick="toggleUserMenu(event)" title="My Account">
           <div class="avatar" id="userAvatar">A</div>
-          <span id="adminBadge" style="display:none;font-size:10px;background:rgba(227,179,65,0.15);color:var(--yellow);border:1px solid rgba(227,179,65,0.3);padding:1px 6px;border-radius:10px">ADMIN</span>
+          <div class="user-pill-info">
+            <div class="user-pill-name" id="pillName">—</div>
+            <div class="user-pill-plan" style="display:flex;align-items:center;gap:4px">
+              Free plan
+              <span id="adminBadge" style="display:none;font-size:9px;background:rgba(227,179,65,0.15);color:var(--yellow);border:1px solid rgba(227,179,65,0.3);padding:0px 4px;border-radius:10px">ADMIN</span>
+            </div>
+          </div>
+          <svg class="user-pill-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-left:auto;color:var(--muted)"><polyline points="8 15 12 11 16 15"/><polyline points="8 9 12 5 16 9"/></svg>
         </div>
         <!-- Dropdown menu -->
         <div id="userDropdown" class="user-dropdown" style="display:none">
@@ -1408,19 +1415,19 @@ int main(){
   </div><!-- /content-wrapper -->
 </div>
 <!-- JS modules -->
-<script src="frontend/js/config.js?v=8192837165"></script>
-<script src="frontend/js/router.js?v=8192837165"></script>
-<script src="frontend/js/auth.js?v=8192837165"></script>
-<script src="frontend/js/ui.js?v=8192837165"></script>
-<script src="frontend/js/pages/dashboard.js?v=8192837165"></script>
-<script src="frontend/js/pages/problems.js?v=8192837165"></script>
-<script src="frontend/js/pages/addproblem.js?v=8192837165"></script>
-<script src="frontend/js/pages/submit.js?v=8192837165"></script>
-<script src="frontend/js/pages/history.js?v=8192837165"></script>
-<script src="frontend/js/pages/analytics.js?v=8192837165"></script>
-<script src="frontend/js/pages/leaderboard.js?v=8192837165"></script>
-<script src="frontend/js/pages/account.js?v=8192837165"></script>
-<script src="frontend/js/pages/admin.js?v=8192837165"></script>
+<script src="frontend/js/config.js?v=8192837166"></script>
+<script src="frontend/js/router.js?v=8192837166"></script>
+<script src="frontend/js/auth.js?v=8192837166"></script>
+<script src="frontend/js/ui.js?v=8192837166"></script>
+<script src="frontend/js/pages/dashboard.js?v=8192837166"></script>
+<script src="frontend/js/pages/problems.js?v=8192837166"></script>
+<script src="frontend/js/pages/addproblem.js?v=8192837166"></script>
+<script src="frontend/js/pages/submit.js?v=8192837166"></script>
+<script src="frontend/js/pages/history.js?v=8192837166"></script>
+<script src="frontend/js/pages/analytics.js?v=8192837166"></script>
+<script src="frontend/js/pages/leaderboard.js?v=8192837166"></script>
+<script src="frontend/js/pages/account.js?v=8192837166"></script>
+<script src="frontend/js/pages/admin.js?v=8192837166"></script>
 <script src="frontend/js/pages/settings.js?v=8192837165"></script>
 <script src="frontend/js/pages/contests.js?v=8192837165"></script>
 <script src="frontend/js/main.js?v=8192837165"></script>
