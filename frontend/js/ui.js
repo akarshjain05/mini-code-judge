@@ -443,10 +443,17 @@ function initTheme() {
   });
 }
 
-function toggleAppearanceSubmenu(e) {
-  e.stopPropagation();
-  const sub = document.getElementById('appearanceSubmenu');
-  sub.style.display = sub.style.display === 'block' ? 'none' : 'block';
+function toggleTheme() {
+  const current = localStorage.getItem('theme') || 'system';
+  let next = 'dark';
+  if (current === 'dark') next = 'light';
+  else if (current === 'light') next = 'dark';
+  else {
+    // If system, switch to the opposite of current system preference
+    if (window.matchMedia('(prefers-color-scheme: light)').matches) next = 'dark';
+    else next = 'light';
+  }
+  setTheme(next);
 }
 
 /* ── Filter Popovers ── */
