@@ -9,7 +9,7 @@
 <title>Mini Code Judge</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj4KPGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnIiB4MT0iMCIgeTE9IjAiIHgyPSIxMDAiIHkyPSIxMDAiPgo8c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiM1OGE2ZmYiLz4KPHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjM2ZiOTUwIi8+CjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPgo8cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjI0IiBmaWxsPSJ1cmwoI2cpIi8+Cjx0ZXh0IHg9IjUwIiB5PSI2OCIgZm9udC1mYW1pbHk9Ik1lbmxvLENvbnNvbGFzLG1vbm9zcGFjZSIgZm9udC1zaXplPSI0NiIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPiZsdDsvJmd0OzwvdGV4dD4KPC9zdmc+Cg==" />
 <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <link rel="stylesheet" href="frontend/css/main.css?v=1783503924">
+  <link rel="stylesheet" href="frontend/css/main.css?v=4819203847">
 </head>
 <body>
 
@@ -206,40 +206,45 @@
 <!-- App Shell -->
 <div class="app">
 
-  <!-- Top navbar -->
-  <header class="topbar">
-    <div class="topbar-logo" onclick="goTo('dashboard')" title="Go to Dashboard">
-      <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj4KPGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnIiB4MT0iMCIgeTE9IjAiIHgyPSIxMDAiIHkyPSIxMDAiPgo8c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiM1OGE2ZmYiLz4KPHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjM2ZiOTUwIi8+CjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPgo8cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjI0IiBmaWxsPSJ1cmwoI2cpIi8+Cjx0ZXh0IHg9IjUwIiB5PSI2OCIgZm9udC1mYW1pbHk9Ik1lbmxvLENvbnNvbGFzLG1vbm9zcGFjZSIgZm9udC1zaXplPSI0NiIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPiZsdDsvJmd0OzwvdGV4dD4KPC9zdmc+Cg=="
-        alt="Code Judge" style="width:28px;height:28px;border-radius:7px;flex-shrink:0" />
-      <div class="logo-text">Code Judge</div>
+  <!-- Sidebar -->
+  <aside class="sidebar" id="appSidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo" onclick="goTo('dashboard')" title="Go to Dashboard">
+        <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj4KPGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnIiB4MT0iMCIgeTE9IjAiIHgyPSIxMDAiIHkyPSIxMDAiPgo8c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiM1OGE2ZmYiLz4KPHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjM2ZiOTUwIi8+CjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPgo8cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjI0IiBmaWxsPSJ1cmwoI2cpIi8+Cjx0ZXh0IHg9IjUwIiB5PSI2OCIgZm9udC1mYW1pbHk9Ik1lbmxvLENvbnNvbGFzLG1vbm9zcGFjZSIgZm9udC1zaXplPSI0NiIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPiZsdDsvJmd0OzwvdGV4dD4KPC9zdmc+Cg=="
+          alt="Code Judge" style="width:28px;height:28px;border-radius:7px;flex-shrink:0" />
+        <div class="logo-text">Code Judge</div>
+      </div>
+      <button class="sidebar-toggle" onclick="toggleSidebar()" aria-label="Toggle Sidebar" style="margin-left:auto">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+      </button>
     </div>
 
-    <nav class="topbar-nav">
+    <nav class="sidebar-nav">
       <div class="nav-item" onclick="goTo('problems')">
-        <span class="icon">≡</span> Problems
+        <span class="icon">≡</span> <span class="nav-text">Problems</span>
       </div>
       <div class="nav-item" id="navSubmitCode" onclick="goTo('problems')" style="display:none">
-        <span class="icon">▷</span> Submit Code
+        <span class="icon">▷</span> <span class="nav-text">Submit Code</span>
       </div>
       <div class="nav-item" onclick="goTo('history')">
-        <span class="icon">◷</span> My Submissions
+        <span class="icon">◷</span> <span class="nav-text">My Submissions</span>
       </div>
       <div class="nav-item" onclick="goTo('leaderboard')">
-        <span>🥇</span> Leaderboard
+        <span class="icon">🥇</span> <span class="nav-text">Leaderboard</span>
       </div>
       <div class="nav-item" onclick="goTo('contests')">
-        <span>🏆</span> Contests
+        <span class="icon">🏆</span> <span class="nav-text">Contests</span>
       </div>
-      <div class="nav-item" id="navAdmin" onclick="goTo('admin')" style="display:none"><span>🛡</span> Admin Dashboard</div>
+      <div class="nav-item" id="navAdmin" onclick="goTo('admin')" style="display:none"><span class="icon">🛡</span> <span class="nav-text">Admin Dashboard</span></div>
       <div class="nav-section-label" id="settingsSectionLabel" style="display:none"></div>
       <div class="nav-item" id="navAddProblem" onclick="goTo('addproblem')" style="display:none">
-        <span class="icon">＋</span> Add Problem
+        <span class="icon">＋</span> <span class="nav-text">Add Problem</span>
       </div>
     </nav>
 
-    <div class="topbar-right">
+    <div class="sidebar-footer">
       <!-- Avatar button + dropdown -->
-      <div id="userPillWrap" style="display:none;position:relative">
+      <div id="userPillWrap" style="display:none;position:relative;width:100%">
         <div class="user-pill" id="avatarBtn" onclick="toggleUserMenu(event)" title="My Account">
           <div class="avatar" id="userAvatar">A</div>
           <span id="adminBadge" style="display:none;font-size:10px;background:rgba(227,179,65,0.15);color:var(--yellow);border:1px solid rgba(227,179,65,0.3);padding:1px 6px;border-radius:10px">ADMIN</span>
@@ -295,9 +300,9 @@
           </div>
         </div>
       </div>
-      <button class="btn btn-ghost btn-sm" id="topAuthBtn" onclick="openAuthModal()">Login / Register</button>
+      <button class="btn btn-ghost btn-sm" id="topAuthBtn" onclick="openAuthModal()" style="width:100%;justify-content:center;margin-top:10px">Login / Register</button>
     </div>
-  </header>
+  </aside>
 
     <!-- Main content -->
     <div class="main">
@@ -1404,22 +1409,22 @@ int main(){
 
 
 <!-- JS modules -->
-<script src="frontend/js/config.js?v=8382716382"></script>
-<script src="frontend/js/router.js?v=8382716382"></script>
-<script src="frontend/js/auth.js?v=8382716382"></script>
-<script src="frontend/js/ui.js?v=8382716382"></script>
-<script src="frontend/js/pages/dashboard.js?v=8382716382"></script>
-<script src="frontend/js/pages/problems.js?v=8382716382"></script>
-<script src="frontend/js/pages/addproblem.js?v=8382716382"></script>
-<script src="frontend/js/pages/submit.js?v=8382716382"></script>
-<script src="frontend/js/pages/history.js?v=8382716382"></script>
-<script src="frontend/js/pages/analytics.js?v=8382716382"></script>
-<script src="frontend/js/pages/leaderboard.js?v=8382716382"></script>
-<script src="frontend/js/pages/account.js?v=8382716382"></script>
-<script src="frontend/js/pages/admin.js?v=8382716382"></script>
-<script src="frontend/js/pages/settings.js?v=8382716382"></script>
-<script src="frontend/js/pages/contests.js?v=8382716382"></script>
-<script src="frontend/js/main.js?v=8382716382"></script>
+<script src="frontend/js/config.js?v=4819203847"></script>
+<script src="frontend/js/router.js?v=4819203847"></script>
+<script src="frontend/js/auth.js?v=4819203847"></script>
+<script src="frontend/js/ui.js?v=4819203847"></script>
+<script src="frontend/js/pages/dashboard.js?v=4819203847"></script>
+<script src="frontend/js/pages/problems.js?v=4819203847"></script>
+<script src="frontend/js/pages/addproblem.js?v=4819203847"></script>
+<script src="frontend/js/pages/submit.js?v=4819203847"></script>
+<script src="frontend/js/pages/history.js?v=4819203847"></script>
+<script src="frontend/js/pages/analytics.js?v=4819203847"></script>
+<script src="frontend/js/pages/leaderboard.js?v=4819203847"></script>
+<script src="frontend/js/pages/account.js?v=4819203847"></script>
+<script src="frontend/js/pages/admin.js?v=4819203847"></script>
+<script src="frontend/js/pages/settings.js?v=4819203847"></script>
+<script src="frontend/js/pages/contests.js?v=4819203847"></script>
+<script src="frontend/js/main.js?v=4819203847"></script>
 
 <!-- ── Onboarding Modal (shown after register / Google signup) ─────── -->
 <div class="modal-backdrop" id="onboardingModal" style="display:none;align-items:center;justify-content:center">

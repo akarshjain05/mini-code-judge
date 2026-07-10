@@ -21,6 +21,12 @@ window.addEventListener('popstate', () => handleHashNav());
 
 // App startup
 window.onload = async () => {
+  // Init sidebar state
+  if (localStorage.getItem('sidebarCollapsed') === 'true') {
+    const sidebar = document.getElementById('appSidebar');
+    if (sidebar) sidebar.classList.add('collapsed');
+  }
+
   // Always reset verdict box on startup — prevents stale state from previous session
   const vbox = document.getElementById('verdictBox');
   if (vbox) vbox.classList.remove('show');

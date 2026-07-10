@@ -1,5 +1,14 @@
 // ── UI Utilities ─────────────────────────────────────────────────────
 
+function toggleSidebar() {
+  const sidebar = document.getElementById('appSidebar');
+  if (sidebar) {
+    sidebar.classList.toggle('collapsed');
+    const isCollapsed = sidebar.classList.contains('collapsed');
+    localStorage.setItem('sidebarCollapsed', isCollapsed ? 'true' : 'false');
+  }
+}
+
 function togglePasswordVisibility(inputId, btn) {
   const input = document.getElementById(inputId);
   const showing = input.type === 'text';
