@@ -41,8 +41,6 @@
     padding: 16px 12px;
     transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     flex-shrink: 0;
-    overflow-x: hidden;
-    overflow-y: auto;
   }
   .sidebar.collapsed { width: 68px; }
   
