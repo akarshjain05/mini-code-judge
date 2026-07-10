@@ -836,5 +836,5 @@
 .theme-toggle-btn .sun-icon { display: none; }
 .theme-toggle-btn .moon-icon { display: block; }
 
-body.dark-mode .theme-toggle-btn .sun-icon { display: block; }
-body.dark-mode .theme-toggle-btn .moon-icon { display: none; }
+html.light .theme-toggle-btn .sun-icon { display: block; }
+html.light .theme-toggle-btn .moon-icon { display: none; }
