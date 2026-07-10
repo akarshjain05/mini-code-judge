@@ -9,7 +9,7 @@
 <title>Mini Code Judge</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj4KPGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnIiB4MT0iMCIgeTE9IjAiIHgyPSIxMDAiIHkyPSIxMDAiPgo8c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiM1OGE2ZmYiLz4KPHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjM2ZiOTUwIi8+CjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPgo8cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjI0IiBmaWxsPSJ1cmwoI2cpIi8+Cjx0ZXh0IHg9IjUwIiB5PSI2OCIgZm9udC1mYW1pbHk9Ik1lbmxvLENvbnNvbGFzLG1vbm9zcGFjZSIgZm9udC1zaXplPSI0NiIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPiZsdDsvJmd0OzwvdGV4dD4KPC9zdmc+Cg==" />
 <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <link rel="stylesheet" href="frontend/css/main.css?v=8192837167">
+  <link rel="stylesheet" href="frontend/css/main.css?v=8192837168">
 </head>
 <body>
 
@@ -221,23 +221,32 @@
 
     <nav class="sidebar-nav">
       <div class="nav-item" onclick="goTo('problems')">
+        <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg></span>
         <span class="nav-text">Problems</span>
       </div>
       <div class="nav-item" id="navSubmitCode" onclick="goTo('problems')" style="display:none">
+        <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg></span>
         <span class="nav-text">Submit Code</span>
       </div>
       <div class="nav-item" onclick="goTo('history')">
+        <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg></span>
         <span class="nav-text">My Submissions</span>
       </div>
       <div class="nav-item" onclick="goTo('leaderboard')">
+        <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg></span>
         <span class="nav-text">Leaderboard</span>
       </div>
       <div class="nav-item" onclick="goTo('contests')">
+        <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"></path></svg></span>
         <span class="nav-text">Contests</span>
       </div>
-      <div class="nav-item" id="navAdmin" onclick="goTo('admin')" style="display:none"><span class="nav-text">Admin Dashboard</span></div>
+      <div class="nav-item" id="navAdmin" onclick="goTo('admin')" style="display:none">
+        <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg></span>
+        <span class="nav-text">Admin Dashboard</span>
+      </div>
       <div class="nav-section-label" id="settingsSectionLabel" style="display:none"></div>
       <div class="nav-item" id="navAddProblem" onclick="goTo('addproblem')" style="display:none">
+        <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg></span>
         <span class="nav-text">Add Problem</span>
       </div>
     </nav>
@@ -1415,19 +1424,19 @@ int main(){
   </div><!-- /content-wrapper -->
 </div>
 <!-- JS modules -->
-<script src="frontend/js/config.js?v=8192837167"></script>
-<script src="frontend/js/router.js?v=8192837167"></script>
-<script src="frontend/js/auth.js?v=8192837167"></script>
-<script src="frontend/js/ui.js?v=8192837167"></script>
-<script src="frontend/js/pages/dashboard.js?v=8192837167"></script>
-<script src="frontend/js/pages/problems.js?v=8192837167"></script>
-<script src="frontend/js/pages/addproblem.js?v=8192837167"></script>
-<script src="frontend/js/pages/submit.js?v=8192837167"></script>
-<script src="frontend/js/pages/history.js?v=8192837167"></script>
-<script src="frontend/js/pages/analytics.js?v=8192837167"></script>
-<script src="frontend/js/pages/leaderboard.js?v=8192837167"></script>
-<script src="frontend/js/pages/account.js?v=8192837167"></script>
-<script src="frontend/js/pages/admin.js?v=8192837167"></script>
+<script src="frontend/js/config.js?v=8192837168"></script>
+<script src="frontend/js/router.js?v=8192837168"></script>
+<script src="frontend/js/auth.js?v=8192837168"></script>
+<script src="frontend/js/ui.js?v=8192837168"></script>
+<script src="frontend/js/pages/dashboard.js?v=8192837168"></script>
+<script src="frontend/js/pages/problems.js?v=8192837168"></script>
+<script src="frontend/js/pages/addproblem.js?v=8192837168"></script>
+<script src="frontend/js/pages/submit.js?v=8192837168"></script>
+<script src="frontend/js/pages/history.js?v=8192837168"></script>
+<script src="frontend/js/pages/analytics.js?v=8192837168"></script>
+<script src="frontend/js/pages/leaderboard.js?v=8192837168"></script>
+<script src="frontend/js/pages/account.js?v=8192837168"></script>
+<script src="frontend/js/pages/admin.js?v=8192837168"></script>
 <script src="frontend/js/pages/settings.js?v=8192837165"></script>
 <script src="frontend/js/pages/contests.js?v=8192837165"></script>
 <script src="frontend/js/main.js?v=8192837165"></script>

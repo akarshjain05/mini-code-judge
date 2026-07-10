@@ -51,6 +51,9 @@
     padding: 0 10px 24px;
     flex-shrink: 0;
   }
+  .sidebar.collapsed .sidebar-logo { display: none; }
+  .sidebar.collapsed .sidebar-header { justify-content: center; padding-left: 0; padding-right: 0; }
+  
   .sidebar-toggle {
     background: none;
     border: none;
@@ -113,9 +116,10 @@
   }
   .nav-item:hover { color: var(--text); background: rgba(255,255,255,0.04); }
   .nav-item.active { color: var(--accent); background: rgba(88,166,255,0.12); }
-  .nav-item .nav-text { transition: width 0.2s, opacity 0.2s; display: inline-block; }
+  .nav-item .icon { font-size: 16px; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: currentColor; }
+  .nav-item .nav-text { transition: opacity 0.2s; }
   .sidebar.collapsed .nav-item { justify-content: center; padding-left: 0; padding-right: 0; }
-  .sidebar.collapsed .nav-item .nav-text { width: 14px; overflow: hidden; text-align: center; font-weight: 700; font-size: 14px; }
+  .sidebar.collapsed .nav-item .nav-text { opacity: 0; width: 0; overflow: hidden; }
   .sidebar.collapsed .user-pill-info,
   .sidebar.collapsed .user-pill-chevron { display: none; }
   .sidebar.collapsed .user-pill { justify-content: center; padding-left: 0; padding-right: 0; }
