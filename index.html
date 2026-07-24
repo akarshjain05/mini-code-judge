@@ -250,11 +250,6 @@
     </nav>
 
     <div class="sidebar-footer">
-      <div class="nav-item" onclick="openSettings()" style="margin-bottom: 8px;">
-        <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></span>
-        <span class="nav-text">Settings</span>
-      </div>
-      
       <!-- Avatar profile block -->
       <div id="userPillWrap" style="display:none;position:relative;width:100%">
         <div class="user-profile-block" id="avatarBtn" onclick="toggleUserMenu(event)" title="My Account" style="display: flex; align-items: center; gap: 12px; padding: 10px; border-top: 1px solid var(--border); cursor: pointer; color: var(--text);">
@@ -263,9 +258,6 @@
             <div style="display:flex; align-items:center; gap:6px;">
               <div class="user-pill-name" id="pillName" style="font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">—</div>
               <span id="adminBadge" style="display:none; font-size:9px; background:rgba(227,179,65,0.15); color:var(--yellow); border:1px solid rgba(227,179,65,0.3); padding:0px 4px; border-radius:10px;">ADMIN</span>
-            </div>
-            <div class="user-pill-status" style="display:flex;align-items:center;gap:6px; font-size: 12px; color: var(--muted);">
-              <div style="width: 8px; height: 8px; background: #3fb950; border-radius: 50%;"></div> Status
             </div>
           </div>
           <svg class="user-pill-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--muted); flex-shrink: 0;"><polyline points="6 9 12 15 18 9"/></svg>
@@ -285,6 +277,10 @@
           <div class="user-dropdown-item" onclick="closeUserMenu(); goTo('account')">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
             My Profile
+          </div>
+          <div class="user-dropdown-item" onclick="closeUserMenu(); openSettings()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            Settings
           </div>
           <div class="user-dropdown-divider"></div>
           <div class="user-dropdown-item danger" onclick="closeUserMenu(); handleAuthNav()">
