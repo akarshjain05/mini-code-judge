@@ -260,7 +260,10 @@
         <div class="user-profile-block" id="avatarBtn" onclick="toggleUserMenu(event)" title="My Account" style="display: flex; align-items: center; gap: 12px; padding: 10px; border-top: 1px solid var(--border); cursor: pointer; color: var(--text);">
           <div class="avatar" id="userAvatar" style="width: 32px; height: 32px; border-radius: 50%; background: #4b5563; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0;">A</div>
           <div class="user-pill-info" style="flex: 1; min-width: 0;">
-            <div class="user-pill-name" id="pillName" style="font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">—</div>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <div class="user-pill-name" id="pillName" style="font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">—</div>
+              <span id="adminBadge" style="display:none; font-size:9px; background:rgba(227,179,65,0.15); color:var(--yellow); border:1px solid rgba(227,179,65,0.3); padding:0px 4px; border-radius:10px;">ADMIN</span>
+            </div>
             <div class="user-pill-status" style="display:flex;align-items:center;gap:6px; font-size: 12px; color: var(--muted);">
               <div style="width: 8px; height: 8px; background: #3fb950; border-radius: 50%;"></div> Status
             </div>
