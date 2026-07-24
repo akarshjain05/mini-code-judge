@@ -74,18 +74,6 @@ function renderAnalytics(subs, problems = []) {
   document.getElementById('statAccuracy').textContent = accuracy + '%';
   document.getElementById('statStreak').textContent = streak + (streak === 1 ? ' day' : ' days');
 
-  const meterTotal = document.getElementById('meterTotal');
-  if (meterTotal) meterTotal.style.width = '100%';
-  
-  const meterAccepted = document.getElementById('meterAccepted');
-  if (meterAccepted) meterAccepted.style.width = (total ? (accepted / total) * 100 : 0) + '%';
-  
-  const meterAccuracy = document.getElementById('meterAccuracy');
-  if (meterAccuracy) meterAccuracy.style.width = accuracy + '%';
-  
-  const meterStreak = document.getElementById('meterStreak');
-  if (meterStreak) meterStreak.style.width = Math.min((streak / 30) * 100, 100) + '%';
-
   // ── Difficulty breakdown ───────────────────────────────────────────
   if (problems.length) {
     // Map problem id -> difficulty
@@ -110,34 +98,35 @@ function renderAnalytics(subs, problems = []) {
     document.getElementById('diffEasyTotal').textContent    = `of ${diffTotals.easy} problem${diffTotals.easy !== 1 ? 's' : ''}`;
     document.getElementById('diffMediumTotal').textContent  = `of ${diffTotals.medium} problem${diffTotals.medium !== 1 ? 's' : ''}`;
     document.getElementById('diffHardTotal').textContent    = `of ${diffTotals.hard} problem${diffTotals.hard !== 1 ? 's' : ''}`;
-    document.getElementById('totalSolvedLine').innerHTML    =
-      `<strong style="color:var(--text)">${totalSolved}</strong> unique problem${totalSolved !== 1 ? 's' : ''} solved out of <strong style="color:var(--text)">${totalProbs}</strong> available`;
+    document.getElementById('totalSolvedLine').innerHTML    = `<strong>${totalSolved}</strong> unique problems solved out of <strong>${totalProbs}</strong> available`;
   }
 
   // ── Language accuracy ──────────────────────────────────────────────
-  const langs = {};
+  const langStats = {};
   subs.forEach(s => {
-    if (!langs[s.language]) langs[s.language] = { total: 0, accepted: 0 };
-    langs[s.language].total++;
-    if (s.verdict === 'accepted') langs[s.language].accepted++;
+    const l = s.language || 'unknown';
+    if (!langStats[l]) langStats[l] = { total: 0, accepted: 0 };
+    langStats[l].total++;
+    if (s.verdict === 'accepted') langStats[l].accepted++;
   });
-  const langColors = { cpp: '#3b82f6', python: '#f59e0b', java: '#ef4444', c: '#10b981' };
-  document.getElementById('langAccuracyChart').innerHTML = Object.entries(langs).map(([lang, d]) => {
-    const pct = Math.round((d.accepted / d.total) * 100);
-    const color = langColors[lang] || '#8b5cf6';
+  
+  const lColors = { python: '#f59e0b', cpp: '#007bff', nodejs: '#10b981', java: '#ef4444', go: '#0ea5e9' };
+  document.getElementById('langAccuracyChart').innerHTML = Object.entries(langStats).map(([l, st]) => {
+    const acc = Math.round((st.accepted / st.total) * 100);
+    const color = lColors[l] || '#6b7280';
     return `
       <div style="margin-bottom:14px">
-        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px">
-          <span style="font-weight:600;color:var(--text)">${lang.toUpperCase()}</span>
-          <span style="color:var(--muted)">${d.accepted}/${d.total} (${pct}%)</span>
+        <div style="display:flex;justify-content:space-between;font-size:11px;font-weight:700;margin-bottom:6px">
+          <span style="text-transform:uppercase">${l}</span>
+          <span style="color:var(--muted)">${st.accepted}/${st.total} (${acc}%)</span>
         </div>
-        <div style="height:8px;background:var(--surface2);border-radius:4px;overflow:hidden">
-          <div style="height:100%;width:${pct}%;background:${color};border-radius:4px;transition:width 0.6s ease"></div>
+        <div style="height:6px;background:var(--surface2);border-radius:3px;overflow:hidden">
+          <div style="height:100%;width:${acc}%;background:${color};border-radius:3px"></div>
         </div>
       </div>`;
-  }).join('') || '<p style="color:var(--muted);font-size:13px">No data yet</p>';
+  }).join('');
 
-  // ── Verdict breakdown ──────────────────────────────────────────────
+  // ── Verdict breakdown (Donut Chart) ──────────────────────────────────────────────
   const verdicts = {};
   subs.forEach(s => {
     const v = s.verdict || s.status || 'unknown';
@@ -145,20 +134,40 @@ function renderAnalytics(subs, problems = []) {
   });
   const vColors = { accepted: '#4ade80', wrong_answer: '#ef4444', time_limit_exceeded: '#f59e0b', compile_error: '#8b5cf6', runtime_error: '#f97316', pending: '#6b7280' };
   const vLabels = { accepted: 'Accepted', wrong_answer: 'Wrong Answer', time_limit_exceeded: 'Time Limit', compile_error: 'Compile Error', runtime_error: 'Runtime Error', pending: 'Pending' };
-  document.getElementById('verdictBreakdown').innerHTML = Object.entries(verdicts).map(([v, count]) => {
-    const pct = Math.round((count / total) * 100);
+  
+  const totalVerdicts = Object.values(verdicts).reduce((a,b)=>a+b, 0);
+  let conicStops = [];
+  let currentAngle = 0;
+  
+  const legendHtml = Object.entries(verdicts).map(([v, count]) => {
+    const pct = Math.round((count / totalVerdicts) * 100);
     const color = vColors[v] || '#6b7280';
+    const angle = (count / totalVerdicts) * 360;
+    conicStops.push(`${color} ${currentAngle}deg ${currentAngle + angle}deg`);
+    currentAngle += angle;
+    
     return `
-      <div style="margin-bottom:10px">
-        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
-          <span style="color:${color};font-weight:600">${vLabels[v] || v}</span>
-          <span style="color:var(--muted)">${count} (${pct}%)</span>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;font-size:12px;">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="width:12px;height:12px;border-radius:3px;background:${color}"></div>
+          <span style="color:var(--text);font-weight:500">${vLabels[v] || v}</span>
         </div>
-        <div style="height:6px;background:var(--surface2);border-radius:3px;overflow:hidden">
-          <div style="height:100%;width:${pct}%;background:${color};border-radius:3px"></div>
-        </div>
+        <span style="color:var(--muted)">${count} (${pct}%)</span>
       </div>`;
   }).join('');
+  
+  const gradient = conicStops.length ? `conic-gradient(${conicStops.join(', ')})` : 'none';
+  
+  document.getElementById('verdictBreakdown').innerHTML = `
+    <div style="display:flex;align-items:center;gap:32px;margin-top:14px;padding-left:10px;">
+      <div style="width:130px;height:130px;border-radius:50%;background:${gradient};flex-shrink:0;display:flex;align-items:center;justify-content:center;">
+        <div style="width:80px;height:80px;border-radius:50%;background:var(--surface);"></div>
+      </div>
+      <div style="flex:1">
+        ${legendHtml}
+      </div>
+    </div>
+  `;
 
   // ── Activity Heatmap (last 12 weeks, IST dates) ────────────────────
   const activityMap = {};
