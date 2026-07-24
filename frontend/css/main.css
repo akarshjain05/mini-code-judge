@@ -117,7 +117,7 @@
     white-space: nowrap;
   }
   .nav-item:hover { color: var(--text); background: rgba(255,255,255,0.04); }
-  .nav-item.active { color: var(--accent); background: rgba(88,166,255,0.12); }
+  .nav-item.active { color: #ffffff; background: var(--accent); }
   .nav-item .icon { font-size: 16px; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: currentColor; }
   .nav-item .nav-text { transition: opacity 0.2s; }
   .sidebar.collapsed .nav-item { justify-content: center; padding-left: 0; padding-right: 0; }
@@ -616,7 +616,6 @@
 :root.light .card    { background: #fff; border-color: #d0d7de; }
 :root.light .user-dropdown { background: #fff; border-color: #d0d7de; box-shadow: 0 8px 32px rgba(0,0,0,0.12); }
 :root.light .nav-item:hover { background: rgba(0,0,0,0.04); }
-:root.light .nav-item.active { background: rgba(9,105,218,0.08); }
 :root.light .page-header h1 { color: #1f2328; }
 :root.light .sfield-row:not(.locked):hover { background: rgba(0,0,0,0.03); }
 :root.light .settings-tab:hover { background: rgba(0,0,0,0.04); }
