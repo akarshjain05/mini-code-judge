@@ -223,14 +223,16 @@ function renderAnalytics(subs, problems = []) {
       ${hourCounts.map((c, h) => {
         const pct = maxCount > 0 ? Math.round((c / maxCount) * 100) : 0;
         const color = pct > 70 ? '#4ade80' : pct > 40 ? '#3d8b42' : pct > 10 ? '#2d6a31' : 'var(--surface2)';
-        const label = h % 6 === 0 ? formatHour(h) : '';
-        return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">
-          <div title="${c} submission${c!==1?'s':''} at ${formatHour(h)} IST" style="width:100%;height:${Math.max(pct*0.5,2)}px;background:${color};border-radius:2px 2px 0 0"></div>
-          <div style="font-size:9px;color:var(--muted);white-space:nowrap">${label}</div>
-        </div>`;
+        return `<div title="${c} submission${c!==1?'s':''} at ${formatHour(h)} IST" style="flex:1;height:${Math.max(pct*0.5,2)}px;background:${color};border-radius:2px 2px 0 0"></div>`;
       }).join('')}
     </div>
-    <div style="margin-top:8px;font-size:12px;color:var(--muted)">
+    <div style="display:flex;gap:3px;margin-top:4px">
+      ${hourCounts.map((c, h) => {
+        const label = h % 6 === 0 ? formatHour(h) : '';
+        return `<div style="flex:1;text-align:center;font-size:9px;color:var(--muted);white-space:nowrap">${label}</div>`;
+      }).join('')}
+    </div>
+    <div style="margin-top:12px;font-size:12px;color:var(--muted)">
       ${peakHour !== null
         ? `Peak time (IST): <strong style="color:var(--text)">${formatHour(peakHour)} – ${formatHour((peakHour+1)%24)}</strong>`
         : `<span>No submissions yet to show peak time</span>`}
