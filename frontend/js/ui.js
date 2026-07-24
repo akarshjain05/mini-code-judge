@@ -414,47 +414,10 @@ async function pollSampleRun(id, vtitle, vsub, vmeta, verr) {
 }
 
 /* ── Appearance / Theme ─────────────────────────────────────────── */
-function _applyTheme(theme) {
-  const root = document.documentElement;
-  root.classList.remove('light');
-  if (theme === 'light') {
-    root.classList.add('light');
-  } else if (theme === 'system') {
-    if (window.matchMedia('(prefers-color-scheme: light)').matches) root.classList.add('light');
-  }
-  // Update checkmarks
-  ['system','dark','light'].forEach(t => {
-    const el = document.getElementById('theme-' + t);
-    if (el) el.classList.toggle('active', t === theme);
-  });
-}
-
-function setTheme(theme) {
-  localStorage.setItem('theme', theme);
-  _applyTheme(theme);
-}
-
-function initTheme() {
-  const saved = localStorage.getItem('theme') || 'system';
-  _applyTheme(saved);
-  // Listen for OS-level changes when in system mode
-  window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => {
-    if ((localStorage.getItem('theme') || 'system') === 'system') _applyTheme('system');
-  });
-}
-
-function toggleTheme() {
-  const current = localStorage.getItem('theme') || 'system';
-  let next = 'dark';
-  if (current === 'dark') next = 'light';
-  else if (current === 'light') next = 'dark';
-  else {
-    // If system, switch to the opposite of current system preference
-    if (window.matchMedia('(prefers-color-scheme: light)').matches) next = 'dark';
-    else next = 'light';
-  }
-  setTheme(next);
-}
+function _applyTheme(theme) {}
+function setTheme(theme) {}
+function initTheme() {}
+function toggleTheme() {}
 
 /* ── Filter Popovers ── */
 function toggleDropdownMenu(popoverId, btnElement, e) {

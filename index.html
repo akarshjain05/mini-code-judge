@@ -221,53 +221,55 @@
 
     <nav class="sidebar-nav">
       <div class="nav-item" onclick="goTo('problems')">
-        <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg></span>
+        <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg></span>
         <span class="nav-text">Problems</span>
       </div>
-      <div class="nav-item" id="navSubmitCode" onclick="goTo('problems')" style="display:none">
-        <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg></span>
-        <span class="nav-text">Submit Code</span>
-      </div>
       <div class="nav-item" onclick="goTo('history')">
-        <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg></span>
+        <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12a10 10 0 1 0 10-10"></path><polyline points="12 6 12 12 16 14"></polyline><path d="M3 6L1 4M1 6l2-2"></path></svg></span>
         <span class="nav-text">My Submissions</span>
       </div>
       <div class="nav-item" onclick="goTo('leaderboard')">
-        <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg></span>
+        <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg></span>
         <span class="nav-text">Leaderboard</span>
       </div>
       <div class="nav-item" onclick="goTo('contests')">
-        <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"></path></svg></span>
+        <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg></span>
         <span class="nav-text">Contests</span>
       </div>
       <div class="nav-item" id="navAdmin" onclick="goTo('admin')" style="display:none">
-        <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg></span>
+        <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg></span>
         <span class="nav-text">Admin Dashboard</span>
       </div>
       <div class="nav-section-label" id="settingsSectionLabel" style="display:none"></div>
-      <div class="nav-item" id="navAddProblem" onclick="goTo('addproblem')" style="display:none">
-        <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg></span>
-        <span class="nav-text">Add Problem</span>
+      
+      <!-- Styled Add Problem Button -->
+      <div class="nav-item btn-nav-primary" id="navAddProblem" onclick="goTo('addproblem')" style="display:none; background: #007bff; color: white; margin-top: 10px; border-radius: 6px; padding: 10px 12px; cursor: pointer; align-items: center; gap: 12px;">
+        <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></span>
+        <span class="nav-text" style="font-weight: 500;">Add Problem</span>
       </div>
     </nav>
 
     <div class="sidebar-footer">
-      <!-- Avatar button + dropdown -->
+      <div class="nav-item" onclick="openSettings()" style="margin-bottom: 8px;">
+        <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></span>
+        <span class="nav-text">Settings</span>
+      </div>
+      
+      <!-- Avatar profile block -->
       <div id="userPillWrap" style="display:none;position:relative;width:100%">
-        <div class="user-pill" id="avatarBtn" onclick="toggleUserMenu(event)" title="My Account">
-          <div class="avatar" id="userAvatar">A</div>
-          <div class="user-pill-info">
-            <div class="user-pill-name" id="pillName">—</div>
-            <div class="user-pill-plan" style="display:flex;align-items:center;gap:4px">
-              Free plan
-              <span id="adminBadge" style="display:none;font-size:9px;background:rgba(227,179,65,0.15);color:var(--yellow);border:1px solid rgba(227,179,65,0.3);padding:0px 4px;border-radius:10px">ADMIN</span>
+        <div class="user-profile-block" id="avatarBtn" onclick="toggleUserMenu(event)" title="My Account" style="display: flex; align-items: center; gap: 12px; padding: 10px; border-top: 1px solid var(--border); cursor: pointer; color: var(--text);">
+          <div class="avatar" id="userAvatar" style="width: 32px; height: 32px; border-radius: 50%; background: #4b5563; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0;">A</div>
+          <div class="user-pill-info" style="flex: 1; min-width: 0;">
+            <div class="user-pill-name" id="pillName" style="font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">—</div>
+            <div class="user-pill-status" style="display:flex;align-items:center;gap:6px; font-size: 12px; color: var(--muted);">
+              <div style="width: 8px; height: 8px; background: #3fb950; border-radius: 50%;"></div> Status
             </div>
           </div>
-          <svg class="user-pill-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-left:auto;color:var(--muted)"><polyline points="8 15 12 11 16 15"/><polyline points="8 9 12 5 16 9"/></svg>
+          <svg class="user-pill-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--muted); flex-shrink: 0;"><polyline points="6 9 12 15 18 9"/></svg>
         </div>
+        
         <!-- Dropdown menu -->
         <div id="userDropdown" class="user-dropdown" style="display:none">
-          <!-- Header: entire box goes to analytics -->
           <div class="user-dropdown-header" onclick="closeUserMenu();goTo('analytics')" style="cursor:pointer">
             <div class="user-dropdown-avatar" id="dropdownAvatar">A</div>
             <div style="min-width:0">
@@ -275,18 +277,12 @@
               <div style="font-size:11px;color:var(--muted);margin-top:2px" id="dropdownUsername">—</div>
             </div>
           </div>
-          <!-- Hidden email element kept for settings sync -->
           <span id="dropdownEmail" style="display:none">—</span>
           <div class="user-dropdown-divider"></div>
           <div class="user-dropdown-item" onclick="closeUserMenu(); goTo('account')">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
             My Profile
           </div>
-          <div class="user-dropdown-item" onclick="closeUserMenu(); openSettings()">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-            Settings
-          </div>
-
           <div class="user-dropdown-divider"></div>
           <div class="user-dropdown-item danger" onclick="closeUserMenu(); handleAuthNav()">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
@@ -301,37 +297,68 @@
   <!-- Main content wrapper (scrollable area) -->
   <div class="content-wrapper" style="position:relative">
     
-    <!-- Theme Toggle Button -->
-    <button class="theme-toggle-btn" id="themeToggleBtn" onclick="toggleTheme()" aria-label="Toggle Theme">
-      <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-      <svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-    </button>
-
     <div class="main">
 
       <!-- ── Dashboard ── -->
       <div class="page active" id="page-dashboard">
-        <div class="page-header">
-          <h1>Dashboard</h1>
-          <p>Welcome to your coding arena. Pick a problem and start solving.</p>
+        <div class="page-header" style="margin-bottom: 24px;">
+          <h1 style="font-size: 28px; margin-bottom: 8px;">Dashboard</h1>
+          <p style="color: var(--muted); font-size: 15px;">Help your track statement with a developer dashboard.</p>
         </div>
-        <div class="stats-row">
-          <div class="stat-card" onclick="goTo('problems')" style="cursor:pointer" title="Browse problems">
-            <div class="stat-value stat-accent" id="statProblems">—</div>
-            <div class="stat-label">Problems available</div>
+        
+        <div class="stats-row" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px;">
+          <!-- Card 1 -->
+          <div class="stat-card" onclick="goTo('problems')" style="cursor:pointer; background: var(--surface); padding: 24px; border-radius: 12px; border: 1px solid var(--border); display: flex; flex-direction: column; justify-content: space-between; min-height: 140px;">
+            <div>
+              <div class="stat-value" id="statProblems" style="font-size: 32px; font-weight: 700; color: var(--text); line-height: 1.2;">350</div>
+              <div class="stat-label" style="color: var(--muted); font-size: 14px; margin-top: 4px;">Problems available</div>
+            </div>
+            <div style="width: 100%; height: 6px; background: rgba(0,123,255,0.2); border-radius: 3px; margin-top: 20px;">
+              <div style="width: 60%; height: 100%; background: #007bff; border-radius: 3px;"></div>
+            </div>
           </div>
-          <div class="stat-card" onclick="goTo('history')" style="cursor:pointer" title="View all submissions">
-            <div class="stat-value stat-green" id="dashStatAccepted">—</div>
-            <div class="stat-label">Accepted submissions</div>
+          
+          <!-- Card 2 -->
+          <div class="stat-card" onclick="goTo('history')" style="cursor:pointer; background: var(--surface); padding: 24px; border-radius: 12px; border: 1px solid var(--border); display: flex; flex-direction: column; justify-content: space-between; min-height: 140px; position: relative;">
+            <div>
+              <div class="stat-value" id="dashStatAccepted" style="font-size: 32px; font-weight: 700; color: var(--text); line-height: 1.2;">125</div>
+              <div class="stat-label" style="color: var(--muted); font-size: 14px; margin-top: 4px;">Accepted submissions</div>
+            </div>
+            <!-- Mini Bar Chart -->
+            <div style="position: absolute; right: 24px; top: 32px; display: flex; align-items: flex-end; gap: 4px; height: 36px;">
+              <div style="width: 6px; height: 40%; background: #28a745; border-radius: 2px;"></div>
+              <div style="width: 6px; height: 60%; background: #28a745; border-radius: 2px;"></div>
+              <div style="width: 6px; height: 30%; background: #28a745; border-radius: 2px;"></div>
+              <div style="width: 6px; height: 80%; background: #28a745; border-radius: 2px;"></div>
+              <div style="width: 6px; height: 100%; background: #28a745; border-radius: 2px;"></div>
+            </div>
+            <div style="width: 100%; height: 6px; background: rgba(40,167,69,0.2); border-radius: 3px; margin-top: 20px;">
+              <div style="width: 75%; height: 100%; background: #28a745; border-radius: 3px;"></div>
+            </div>
           </div>
-          <div class="stat-card" onclick="goTo('history')" style="cursor:pointer" title="View all submissions">
-            <div class="stat-value stat-yellow" id="dashStatTotal">—</div>
-            <div class="stat-label">Total submissions <span style="font-size:10px;color:var(--accent)">→ view all</span></div>
+          
+          <!-- Card 3 -->
+          <div class="stat-card" onclick="goTo('history')" style="cursor:pointer; background: var(--surface); padding: 24px; border-radius: 12px; border: 1px solid var(--border); display: flex; flex-direction: column; justify-content: space-between; min-height: 140px; position: relative;">
+            <div>
+              <div class="stat-value" id="dashStatTotal" style="font-size: 32px; font-weight: 700; color: var(--text); line-height: 1.2;">1500+</div>
+              <div class="stat-label" style="color: var(--muted); font-size: 14px; margin-top: 4px;">Total submissions</div>
+            </div>
+            <!-- Mini Bar Chart -->
+            <div style="position: absolute; right: 24px; top: 32px; display: flex; align-items: flex-end; gap: 4px; height: 36px;">
+              <div style="width: 6px; height: 50%; background: #fd7e14; border-radius: 2px;"></div>
+              <div style="width: 6px; height: 70%; background: #fd7e14; border-radius: 2px;"></div>
+              <div style="width: 6px; height: 40%; background: #fd7e14; border-radius: 2px;"></div>
+              <div style="width: 6px; height: 100%; background: #fd7e14; border-radius: 2px;"></div>
+              <div style="width: 6px; height: 60%; background: #fd7e14; border-radius: 2px;"></div>
+            </div>
+            <div style="width: 100%; height: 6px; background: rgba(253,126,20,0.2); border-radius: 3px; margin-top: 20px;">
+              <div style="width: 85%; height: 100%; background: #fd7e14; border-radius: 3px;"></div>
+            </div>
           </div>
         </div>
 
-        <div class="card">
-          <div class="card-title">🚀 Recent submissions</div>
+        <div class="card" style="background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px;">
+          <div class="card-title" style="font-size: 18px; font-weight: 600; margin-bottom: 20px;">Recent Submissions</div>
           <div id="dashRecentList"><p style="color:var(--muted);font-size:13px">Login to see your recent submissions.</p></div>
         </div>
       </div>
@@ -1387,23 +1414,14 @@ int main(){
       </div>
     </div><!-- /main -->
 
-    <footer class="site-footer">
-        <div class="footer-inner">
-        <div class="footer-brand">
-          <span>Code Judge</span>
-          <span class="footer-copyright">All Rights Reserved © 2026</span>
-        </div>
-        <div class="footer-links">
-          <a href="https://github.com/akarshjain05/mini-code-judge" target="_blank" rel="noopener">GitHub</a>
-          <span class="footer-sep">·</span>
-          <a href="javascript:void(0)" onclick="goTo('terms')">Terms</a>
-          <span class="footer-sep">·</span>
-          <a href="javascript:void(0)" onclick="goTo('privacy')">Privacy</a>
-          <span class="footer-sep">·</span>
-          <a href="javascript:void(0)" onclick="goTo('faq')">FAQ</a>
-          <span class="footer-sep">·</span>
-          <a href="javascript:void(0)" onclick="goTo('help')">Help</a>
-        </div>
+    <footer class="site-footer" style="display:flex; justify-content:space-between; align-items:center; margin-top:40px; padding-top:24px; font-size:13px; color:var(--muted);">
+      <div>Code Judge - &copy; Copyright</div>
+      <div style="display:flex; gap:16px;">
+        <a href="https://github.com/akarshjain05/mini-code-judge" target="_blank" rel="noopener" style="color:var(--muted);text-decoration:none;" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--muted)'">GitHub</a>
+        <a href="javascript:void(0)" onclick="goTo('terms')" style="color:var(--muted);text-decoration:none;" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--muted)'">Terms</a>
+        <a href="javascript:void(0)" onclick="goTo('privacy')" style="color:var(--muted);text-decoration:none;" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--muted)'">Privacy</a>
+        <a href="javascript:void(0)" onclick="goTo('faq')" style="color:var(--muted);text-decoration:none;" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--muted)'">FAQ</a>
+        <a href="javascript:void(0)" onclick="goTo('help')" style="color:var(--muted);text-decoration:none;" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--muted)'">Help</a>
       </div>
     </footer>
   </div><!-- /content-wrapper -->

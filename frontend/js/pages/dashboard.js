@@ -22,13 +22,21 @@ async function loadDashboard() {
     if (!subs.length) { el.innerHTML = '<p style="color:var(--muted);font-size:13px">No submissions yet. <a href="#" onclick="goTo(\'problems\')" style="color:var(--accent)">Try a problem →</a></p>'; return; }
     el.innerHTML = subs.map(s => {
       const hasCode = !!s.code;
+      // Attempt to look up the problem title
+      const p = window._problemsData ? window._problemsData.find(p => p.id === s.problem_id) : null;
+      const pTitle = p ? p.title : 'Problem';
+      
       return `
-      <div onclick="openSubmissionViewer(${s.id})" style="display:flex;align-items:center;gap:12px;padding:10px 8px;border-bottom:1px solid rgba(48,54,61,0.5);cursor:pointer;border-radius:6px" onmouseenter="this.style.background='rgba(88,166,255,0.05)'" onmouseleave="this.style.background=''">
-        <span class="badge ${verdictClass(s.verdict || s.status)}">${formatVerdict(s.verdict || s.status)}</span>
-        <span style="font-size:13px">Problem #${s.problem_id}</span>
-        <span style="font-family:var(--mono);font-size:11px;color:var(--muted)">${s.language}</span>
-        <span style="font-size:12px;color:var(--muted);margin-left:auto">${timeAgo(s.created_at)}</span>
-        ${hasCode ? `<button onclick="event.stopPropagation();openSubmissionViewer(${s.id})" style="background:var(--surface2);border:1px solid var(--border);color:var(--accent);font-size:10px;padding:3px 10px;border-radius:6px;cursor:pointer">View</button>` : `<span style="color:var(--muted);font-size:11px;width:44px;text-align:center">—</span>`}
+      <div onclick="openSubmissionViewer(${s.id})" style="display:flex;align-items:center;gap:12px;padding:16px 24px;border-bottom:1px solid rgba(48,54,61,0.5);cursor:pointer;" onmouseenter="this.style.background='rgba(88,166,255,0.05)'" onmouseleave="this.style.background=''">
+        <div style="flex:1;font-size:14px;color:var(--text);font-weight:500;">Problem #${s.problem_id}: ${pTitle}</div>
+        <div style="width:100px;font-family:var(--mono);font-size:13px;color:var(--muted);">${s.language === 'python' ? 'Python' : s.language === 'cpp' ? 'C++' : s.language === 'java' ? 'Java' : s.language}</div>
+        <div style="width:180px;">
+          <span class="badge ${verdictClass(s.verdict || s.status)}" style="padding:4px 10px; border-radius: 12px; font-weight: 500;">${formatVerdict(s.verdict || s.status)}</span>
+        </div>
+        <div style="width:120px;font-size:13px;color:var(--muted);">${timeAgo(s.created_at)}</div>
+        <div>
+          ${hasCode ? `<button onclick="event.stopPropagation();openSubmissionViewer(${s.id})" style="background:transparent;border:1px solid var(--border);color:var(--text);font-size:12px;padding:5px 16px;border-radius:20px;cursor:pointer;" onmouseenter="this.style.background='var(--border)'" onmouseleave="this.style.background='transparent'">View</button>` : `<span style="color:var(--muted);font-size:11px;width:44px;text-align:center">—</span>`}
+        </div>
       </div>`;
     }).join('');
   } catch(e) {}
