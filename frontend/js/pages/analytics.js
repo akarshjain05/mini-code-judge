@@ -74,6 +74,18 @@ function renderAnalytics(subs, problems = []) {
   document.getElementById('statAccuracy').textContent = accuracy + '%';
   document.getElementById('statStreak').textContent = streak + (streak === 1 ? ' day' : ' days');
 
+  const meterTotal = document.getElementById('meterTotal');
+  if (meterTotal) meterTotal.style.width = '100%';
+  
+  const meterAccepted = document.getElementById('meterAccepted');
+  if (meterAccepted) meterAccepted.style.width = (total ? (accepted / total) * 100 : 0) + '%';
+  
+  const meterAccuracy = document.getElementById('meterAccuracy');
+  if (meterAccuracy) meterAccuracy.style.width = accuracy + '%';
+  
+  const meterStreak = document.getElementById('meterStreak');
+  if (meterStreak) meterStreak.style.width = Math.min((streak / 30) * 100, 100) + '%';
+
   // ── Difficulty breakdown ───────────────────────────────────────────
   if (problems.length) {
     // Map problem id -> difficulty
