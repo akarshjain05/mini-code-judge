@@ -226,24 +226,18 @@ def complete_google_signup(payload: GoogleCompleteSignup, response: Response, db
 @limiter.limit("5/hour")
 def forgot_password(request: Request, payload: ForgotPasswordRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == payload.email).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="No account found with that email")
 
-    from datetime import datetime, timedelta
-    from jose import jwt
-    reset_token = jwt.encode(
-        {"sub": str(user.id), "purpose": "password_reset", "exp": datetime.utcnow() + timedelta(minutes=15)},
-        settings.SECRET_KEY, algorithm=settings.ALGORITHM,
-    )
-
-    sent = send_password_reset_email(user.email, user.username, reset_token)
-    if not sent:
-        raise HTTPException(
-            status_code=503,
-            detail="Could not send the reset email right now. Please try again shortly or contact the admin.",
+    # Always return the same response to prevent email enumeration
+    if user:
+        from datetime import datetime, timedelta
+        from jose import jwt
+        reset_token = jwt.encode(
+            {"sub": str(user.id), "purpose": "password_reset", "exp": datetime.utcnow() + timedelta(minutes=15)},
+            settings.SECRET_KEY, algorithm=settings.ALGORITHM,
         )
+        send_password_reset_email(user.email, user.username, reset_token)
 
-    return {"message": f"A password reset link has been sent to {user.email}."}
+    return {"message": "If an account exists with that email, a password reset link has been sent."}
 
 
 @router.post("/reset-password")
