@@ -27,84 +27,25 @@ async function loadLeaderboard() {
   `).join('');
 
   try {
-    // Fetch all we need in parallel
-    const [subsRes, probsRes, usersRes] = await Promise.all([
+    // Fetch pre-aggregated leaderboard stats and problems count in parallel
+    const [statsRes, probsRes] = await Promise.all([
       fetch(`${API}/leaderboard/submissions`),
       fetch(`${API}/problems`),
-      fetch(`${API}/leaderboard/users`),
     ]);
 
     // If the dedicated leaderboard endpoints don't exist yet, fall back gracefully
-    if (!subsRes.ok || !probsRes.ok) {
+    if (!statsRes.ok) {
       tbody.innerHTML = '<tr><td colspan="10" style="padding:28px;color:var(--warn);text-align:center">⚠ Leaderboard backend not set up yet — see instructions below table.</td></tr>';
       return;
     }
 
-    const allSubs = await subsRes.json();
+    _lbData = await statsRes.json();
     const problems = probsRes.ok ? await probsRes.json() : [];
-    const users    = usersRes.ok ? await usersRes.json() : [];
-
-    // Build problem id → difficulty map
-    const probMap = {};
-    problems.forEach(p => { probMap[p.id] = (p.difficulty || 'unknown').toLowerCase(); });
-
-    // Group submissions by user
-    const byUser = {};
-    allSubs.forEach(s => {
-      if (!byUser[s.user_id]) byUser[s.user_id] = { user_id: s.user_id, username: s.username || `user${s.user_id}`, subs: [] };
-      byUser[s.user_id].subs.push(s);
-    });
-
-    // Build leaderboard rows
-    _lbData = Object.values(byUser).map(u => {
-      const subs = u.subs;
-      const total = subs.length;
-      const accepted = subs.filter(s => s.verdict === 'accepted').length;
-      const accuracy = total ? Math.round((accepted / total) * 100) : 0;
-
-      // Unique solved by difficulty
-      const solvedIds = { easy: new Set(), medium: new Set(), hard: new Set(), unknown: new Set() };
-      subs.filter(s => s.verdict === 'accepted').forEach(s => {
-        const diff = probMap[s.problem_id] || 'unknown';
-        if (solvedIds[diff]) solvedIds[diff].add(s.problem_id);
-        else solvedIds.unknown.add(s.problem_id);
-      });
-      const solved = solvedIds.easy.size + solvedIds.medium.size + solvedIds.hard.size + solvedIds.unknown.size;
-
-      // Streak in IST
-      const acceptedDaySet = new Set(
-        subs.filter(s => s.verdict === 'accepted').map(s => toISTDateKey(s.created_at)).filter(Boolean)
-      );
-      let streak = 0;
-      const nowIST2 = toIST(new Date().toISOString());
-      for (let i = 0; i < 365; i++) {
-        const d = new Date(nowIST2.getTime() - i * 86400000);
-        const key = `${d.getUTCFullYear()}-${d.getUTCMonth()}-${d.getUTCDate()}`;
-        if (acceptedDaySet.has(key)) streak++;
-        else if (i > 0) break;
-      }
-
-      // Languages used
-      const langs = [...new Set(subs.map(s => s.language).filter(Boolean))];
-
-      return {
-        user_id: u.user_id,
-        username: u.username,
-        solved,
-        total,
-        accepted,
-        accuracy,
-        easy: solvedIds.easy.size,
-        medium: solvedIds.medium.size,
-        hard: solvedIds.hard.size,
-        streak,
-        langs,
-      };
-    });
+    const totalSubs = _lbData.reduce((sum, u) => sum + u.total, 0);
 
     // Update summary bar
     document.getElementById('lbTotalUsers').textContent = _lbData.length;
-    document.getElementById('lbTotalSubs').textContent = allSubs.length;
+    document.getElementById('lbTotalSubs').textContent = totalSubs;
     document.getElementById('lbTotalProbs').textContent = problems.length;
 
     lbSort(_lbSortKey);
@@ -127,7 +68,7 @@ function lbSort(key) {
   const sorted = [..._lbData].sort((a, b) => {
     if (key === 'solved')   return b.solved   - a.solved   || b.accuracy - a.accuracy;
     if (key === 'accuracy') return b.accuracy - a.accuracy || b.solved   - a.solved;
-    if (key === 'streak')   return b.streak   - a.streak   || b.solved   - a.solved;
+    if (key === 'streak')   return (b.streak||0) - (a.streak||0) || b.solved - a.solved;
     return 0;
   });
 
@@ -143,12 +84,12 @@ function lbSort(key) {
     const nameSuffix = isMe ? ' <span style="font-size:10px;color:var(--accent);margin-left:4px">(you)</span>' : '';
     const avatarBg = isMe ? 'var(--accent)' : '#444';
 
-    const langBadges = u.langs.slice(0, 4).map(l => {
+    const langBadges = (u.langs || []).slice(0, 4).map(l => {
       const c = langColors[l] || '#8b5cf6';
       return `<span style="font-size:9px;background:${c}22;color:${c};border:1px solid ${c}44;padding:1px 6px;border-radius:8px">${l.toUpperCase()}</span>`;
     }).join(' ');
 
-    const streakDisplay = u.streak > 0
+    const streakDisplay = (u.streak || 0) > 0
       ? `<span style="color:#f59e0b">🔥 ${u.streak}</span>`
       : `<span style="color:var(--muted)">—</span>`;
 
