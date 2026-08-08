@@ -9,3 +9,7 @@ fi
 
 # Install Python dependencies
 pip install -r requirements.txt
+
+# Apply database migrations (creates tables on first deploy, no-op if already up to date)
+echo "Running Alembic migrations..."
+alembic upgrade head
