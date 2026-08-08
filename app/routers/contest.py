@@ -1,6 +1,6 @@
 """
 Contest Mode endpoints.
-POST /contests              → create a contest (admin only)
+POST /contests              → create a contest (any authenticated user)
 GET  /contests              → list all contests
 GET  /contests/{id}         → get contest details + leaderboard
 POST /contests/{id}/join    → join a contest
