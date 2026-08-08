@@ -103,7 +103,7 @@ const FIELD_CONFIG = {
       <div class="form-group" style="margin:0">
         <label>Full Name</label>
         <input type="text" id="sfe-fullname" placeholder="e.g. Akarsh Jain" maxlength="100"
-          value="${escapeHTML((_settingsData && _settingsData.full_name) || '')}"
+          value="${(_settingsData && _settingsData.full_name) || ''}"
           style="font-size:14px" />
       </div>`,
     save: async () => {
@@ -123,7 +123,7 @@ const FIELD_CONFIG = {
       <div class="form-group" style="margin:0">
         <label>Phone Number</label>
         <input type="tel" id="sfe-phone" placeholder="+91 98765 43210" maxlength="20"
-          value="${escapeHTML((_settingsData && _settingsData.phone_number) || '')}"
+          value="${(_settingsData && _settingsData.phone_number) || ''}"
           style="font-size:14px" />
       </div>`,
     save: async () => {
@@ -224,7 +224,7 @@ function openFieldEdit(field) {
   if (!cfg) return;
   _currentField = field;
   document.getElementById('sFieldTitle').textContent = cfg.title;
-  document.getElementById('sFieldBody').innerHTML = DOMPurify.sanitize(cfg.body());
+  document.getElementById('sFieldBody').innerHTML = cfg.body();
   document.getElementById('sFieldAlert').className = 'alert';
   document.getElementById('sFieldAlert').textContent = '';
   document.getElementById('sFieldOverlay').style.display = 'flex';

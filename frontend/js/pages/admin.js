@@ -5,16 +5,16 @@ async function loadAdminDashboard() {
     const usersRes = await fetch(`${API}/admin/users`, { headers: {} });
     if (usersRes.ok) {
       const users = await usersRes.json();
-      document.getElementById('adminUsersList').innerHTML = DOMPurify.sanitize(`<table style="width:100%;font-size:12px">
+      document.getElementById('adminUsersList').innerHTML = `<table style="width:100%;font-size:12px">
         <thead><tr><th style="text-align:left;padding:4px 6px;color:var(--muted)">#</th><th style="text-align:left;padding:4px 6px;color:var(--muted)">Username</th><th style="text-align:left;padding:4px 6px;color:var(--muted)">Email</th><th style="text-align:left;padding:4px 6px;color:var(--muted)">Joined</th></tr></thead>
-        <tbody>${users.map(u => `<tr><td style="padding:4px 6px;color:var(--muted)">${u.id}</td><td style="padding:4px 6px;font-weight:600">${escapeHTML(u.username)}</td><td style="padding:4px 6px;color:var(--muted)">${escapeHTML(u.email)}</td><td style="padding:4px 6px;color:var(--muted);font-size:11px">${timeAgo(u.created_at)}</td></tr>`).join('')}</tbody>
-      </table>`);
+        <tbody>${users.map(u => `<tr><td style="padding:4px 6px;color:var(--muted)">${u.id}</td><td style="padding:4px 6px;font-weight:600">${u.username}</td><td style="padding:4px 6px;color:var(--muted)">${u.email}</td><td style="padding:4px 6px;color:var(--muted);font-size:11px">${timeAgo(u.created_at)}</td></tr>`).join('')}</tbody>
+      </table>`;
     }
     const subsRes = await fetch(`${API}/admin/submissions`, { headers: {} });
     if (subsRes.ok) {
       const subs = await subsRes.json();
       const accepted = subs.filter(s => s.verdict === 'accepted').length;
-      document.getElementById('adminStatsBox').innerHTML = DOMPurify.sanitize(`
+      document.getElementById('adminStatsBox').innerHTML = `
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
           <div style="background:var(--surface2);border-radius:8px;padding:12px;text-align:center">
             <div style="font-size:24px;font-weight:700">${subs.length}</div><div style="font-size:11px;color:var(--muted)">Total Submissions</div>
@@ -22,11 +22,11 @@ async function loadAdminDashboard() {
           <div style="background:var(--surface2);border-radius:8px;padding:12px;text-align:center">
             <div style="font-size:24px;font-weight:700;color:var(--accent2)">${accepted}</div><div style="font-size:11px;color:var(--muted)">Accepted</div>
           </div>
-        </div>`);
-      document.getElementById('adminSubsTable').innerHTML = DOMPurify.sanitize(subs.length
+        </div>`;
+      document.getElementById('adminSubsTable').innerHTML = subs.length
         ? subs.map(s => `<tr onclick="openAdminSubmissionViewer(${s.id})" style="cursor:pointer" onmouseenter="this.style.background='rgba(88,166,255,0.05)'" onmouseleave="this.style.background=''">
             <td style="font-family:var(--mono);color:var(--muted)">#${s.id}</td>
-            <td style="font-weight:600">${escapeHTML(s.username || s.user_id)}</td>
+            <td style="font-weight:600">${s.username || s.user_id}</td>
             <td>Problem #${s.problem_id}</td>
             <td><span style="font-family:var(--mono);font-size:12px;color:var(--muted)">${s.language}</span></td>
             <td><span class="badge ${verdictClass(s.verdict || s.status)}">${formatVerdict(s.verdict || s.status)}</span></td>
@@ -34,14 +34,14 @@ async function loadAdminDashboard() {
             <td style="color:var(--muted);font-size:11px">${timeAgo(s.created_at)}</td>
             <td style="text-align:center">${s.code ? `<button onclick="event.stopPropagation();openAdminSubmissionViewer(${s.id})" style="background:var(--surface2);border:1px solid var(--border);color:var(--accent);font-size:10px;padding:3px 10px;border-radius:6px;cursor:pointer">View</button>` : '<span style="color:var(--muted);font-size:11px">—</span>'}</td>
           </tr>`).join('')
-        : '<tr><td colspan="8" style="color:var(--muted);padding:16px">No submissions yet.</td></tr>');
+        : '<tr><td colspan="8" style="color:var(--muted);padding:16px">No submissions yet.</td></tr>';
 
       // Cache for the code viewer modal
       window._adminSubsCache = {};
       subs.forEach(s => { window._adminSubsCache[s.id] = s; });
     }
   } catch(e) {
-    document.getElementById('adminUsersList').innerHTML = DOMPurify.sanitize('<p style="color:var(--warn)">⚠ Error loading data. Check if admin endpoints are deployed.</p>');
+    document.getElementById('adminUsersList').innerHTML = '<p style="color:var(--warn)">⚠ Error loading data. Check if admin endpoints are deployed.</p>';
   }
 }
 
@@ -60,7 +60,7 @@ async function requestAIReview() {
   // this innerHTML is replaced, so that node no longer exists. Looking it
   // up and touching .style on it crashed with "Cannot read properties of
   // null" on every retry/refresh click.
-  content.innerHTML = DOMPurify.sanitize('<div id="aiReviewLoading" style="display:flex;align-items:center;gap:10px;color:var(--muted)"><span class="spinner"></span> Analyzing your code with Claude AI…</div>');
+  content.innerHTML = '<div id="aiReviewLoading" style="display:flex;align-items:center;gap:10px;color:var(--muted)"><span class="spinner"></span> Analyzing your code with Claude AI…</div>';
 
   // Scroll to panel
   panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -74,7 +74,7 @@ async function requestAIReview() {
 
     if (!res.ok) {
       const err = await res.json();
-      content.innerHTML = DOMPurify.sanitize(`<p style="color:var(--warn)">⚠ ${escapeHTML(err.detail || 'AI review failed. Try again.')}</p>`);
+      content.innerHTML = `<p style="color:var(--warn)">⚠ ${err.detail || 'AI review failed. Try again.'}</p>`;
       btn.disabled = false;
       btn.textContent = '🤖 Get AI Code Review';
       return;
@@ -86,7 +86,7 @@ async function requestAIReview() {
     btn.disabled = false;
 
   } catch(e) {
-    content.innerHTML = DOMPurify.sanitize('<p style="color:var(--warn)">⚠ Could not reach AI service. Try again.</p>');
+    content.innerHTML = '<p style="color:var(--warn)">⚠ Could not reach AI service. Try again.</p>';
     btn.disabled = false;
     btn.textContent = '🤖 Get AI Code Review';
   }
@@ -115,7 +115,7 @@ function renderAIReview(reviewText, container) {
     const body = remaining.slice(idx + sec.key.length, nextIdx).trim();
     if (!body) return;
     // Convert markdown-like formatting
-    const formatted = escapeHTML(body)
+    const formatted = body
       .replace(/`([^`]+)`/g, '<code style="background:rgba(255,255,255,0.1);padding:1px 5px;border-radius:3px;font-family:var(--mono);font-size:12px">$1</code>')
       .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
       .replace(/\n- /g, '<br>• ')
@@ -129,12 +129,12 @@ function renderAIReview(reviewText, container) {
 
   if (!html) {
     // Fallback: just render the raw text nicely
-    const formatted = escapeHTML(reviewText)
+    const formatted = reviewText
       .replace(/`([^`]+)`/g, '<code style="background:rgba(255,255,255,0.1);padding:1px 5px;border-radius:3px;font-family:var(--mono);font-size:12px">$1</code>')
       .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
       .replace(/\n/g, '<br>');
     html = `<div style="line-height:1.7">${formatted}</div>`;
   }
 
-  container.innerHTML = DOMPurify.sanitize(html);
+  container.innerHTML = html;
 }

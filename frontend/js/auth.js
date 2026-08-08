@@ -42,8 +42,9 @@ async function doLogin() {
 
       // Unverified email — show resend button
       if (res.status === 403) {
-        err.className = 'alert alert-error show';
-        err.innerHTML = DOMPurify.sanitize(`<span>${escapeHTML(msg)}</span> <a href="#" onclick="resendVerificationEmail(event)" style="color:var(--accent);margin-left:6px;font-size:12px">Resend email →</a>`);
+        showAlert(err, msg + ' <a href="#" onclick="resendVerificationEmail(event)" style="color:var(--accent);margin-left:6px">Resend email →</a>', 'error');
+        err.innerHTML = err.textContent; // allow the link HTML
+        err.innerHTML = `<span>${msg}</span> <a href="#" onclick="resendVerificationEmail(event)" style="color:var(--accent);margin-left:6px;font-size:12px">Resend email →</a>`;
       } else {
         showAlert(err, msg, 'error');
       }

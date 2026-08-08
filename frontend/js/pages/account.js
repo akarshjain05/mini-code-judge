@@ -106,7 +106,7 @@ function _syncTopBarAvatar(profilePicture, uname) {
   const av = document.getElementById('userAvatar');
   if (!av) return;
   if (profilePicture) {
-    av.innerHTML = DOMPurify.sanitize(`<img src="${escapeHTML(profilePicture)}" style="width:100%;height:100%;border-radius:50%;object-fit:cover" />`);
+    av.innerHTML = `<img src="${profilePicture}" style="width:100%;height:100%;border-radius:50%;object-fit:cover" />`;
   } else {
     av.textContent = (uname || '?')[0].toUpperCase();
   }

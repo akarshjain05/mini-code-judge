@@ -3,7 +3,7 @@
 
 async function loadLeaderboard() {
   const tbody = document.getElementById('lbTableBody');
-  tbody.innerHTML = DOMPurify.sanitize(Array(6).fill(0).map(() => `
+  tbody.innerHTML = Array(6).fill(0).map(() => `
     <tr>
       <td style="padding:12px 16px;"><div class="skeleton" style="height:20px;width:20px;margin:0 auto"></div></td>
       <td style="padding:12px 16px;">
@@ -24,7 +24,7 @@ async function loadLeaderboard() {
       <td style="padding:12px 16px;"><div class="skeleton" style="height:14px;width:30px;margin:0 auto"></div></td>
       <td style="padding:12px 16px;"><div class="skeleton" style="height:14px;width:60px;margin:0 auto"></div></td>
     </tr>
-  `).join(''));
+  `).join('');
 
   try {
     // Fetch all we need in parallel
@@ -36,7 +36,7 @@ async function loadLeaderboard() {
 
     // If the dedicated leaderboard endpoints don't exist yet, fall back gracefully
     if (!subsRes.ok || !probsRes.ok) {
-      tbody.innerHTML = DOMPurify.sanitize('<tr><td colspan="10" style="padding:28px;color:var(--warn);text-align:center">⚠ Leaderboard backend not set up yet — see instructions below table.</td></tr>');
+      tbody.innerHTML = '<tr><td colspan="10" style="padding:28px;color:var(--warn);text-align:center">⚠ Leaderboard backend not set up yet — see instructions below table.</td></tr>';
       return;
     }
 
@@ -110,7 +110,7 @@ async function loadLeaderboard() {
     lbSort(_lbSortKey);
   } catch(e) {
     console.error('Leaderboard error:', e);
-    tbody.innerHTML = DOMPurify.sanitize(`<tr><td colspan="10" style="padding:28px;color:var(--warn);text-align:center">⚠ ${escapeHTML(e.message)}</td></tr>`);
+    tbody.innerHTML = `<tr><td colspan="10" style="padding:28px;color:var(--warn);text-align:center">⚠ ${e.message}</td></tr>`;
   }
 }
 
@@ -135,7 +135,7 @@ function lbSort(key) {
   const medals = ['🥇','🥈','🥉'];
   const langColors = { cpp:'#3b82f6', python:'#f59e0b', java:'#ef4444', c:'#10b981' };
 
-  document.getElementById('lbTableBody').innerHTML = DOMPurify.sanitize(sorted.map((u, i) => {
+  document.getElementById('lbTableBody').innerHTML = sorted.map((u, i) => {
     const rank = i + 1;
     const isMe = u.username === me;
     const medal = rank <= 3 ? medals[rank - 1] : rank;
@@ -145,7 +145,7 @@ function lbSort(key) {
 
     const langBadges = u.langs.slice(0, 4).map(l => {
       const c = langColors[l] || '#8b5cf6';
-      return `<span style="font-size:9px;background:${c}22;color:${c};border:1px solid ${c}44;padding:1px 6px;border-radius:8px">${escapeHTML(l).toUpperCase()}</span>`;
+      return `<span style="font-size:9px;background:${c}22;color:${c};border:1px solid ${c}44;padding:1px 6px;border-radius:8px">${l.toUpperCase()}</span>`;
     }).join(' ');
 
     const streakDisplay = u.streak > 0
@@ -159,10 +159,10 @@ function lbSort(key) {
       <td>
         <div style="display:flex;align-items:center;gap:10px">
           <div style="width:30px;height:30px;border-radius:50%;background:${avatarBg};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0">
-            ${escapeHTML(u.username[0]).toUpperCase()}
+            ${u.username[0].toUpperCase()}
           </div>
           <div>
-            <div style="font-weight:600;font-size:13px;color:var(--text)">${escapeHTML(u.username)}${nameSuffix}</div>
+            <div style="font-weight:600;font-size:13px;color:var(--text)">${u.username}${nameSuffix}</div>
             <div style="font-size:10px;color:var(--muted)">${u.total} submission${u.total!==1?'s':''}</div>
           </div>
         </div>
@@ -176,5 +176,5 @@ function lbSort(key) {
       <td style="text-align:center">${streakDisplay}</td>
       <td style="text-align:center">${langBadges || '<span style="color:var(--muted);font-size:11px">—</span>'}</td>
     </tr>`;
-  }).join('') || '<tr><td colspan="10" style="padding:28px;color:var(--muted);text-align:center">No data yet</td></tr>');
+  }).join('') || '<tr><td colspan="10" style="padding:28px;color:var(--muted);text-align:center">No data yet</td></tr>';
 }

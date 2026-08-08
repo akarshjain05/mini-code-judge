@@ -2,8 +2,8 @@
 // ── History ────────────────────────────────────────────────────────
 async function loadHistory() {
   const tbody = document.getElementById('historyTable');
-  if (!token) { tbody.innerHTML = DOMPurify.sanitize('<tr><td colspan="7" style="color:var(--muted);padding:20px">Login to see your submissions.</td></tr>'); return; }
-  tbody.innerHTML = DOMPurify.sanitize('<tr><td colspan="7" style="color:var(--muted);padding:16px">Loading…</td></tr>');
+  if (!token) { tbody.innerHTML = '<tr><td colspan="7" style="color:var(--muted);padding:20px">Login to see your submissions.</td></tr>'; return; }
+  tbody.innerHTML = '<tr><td colspan="7" style="color:var(--muted);padding:16px">Loading…</td></tr>';
   try {
     const res = await fetch(`${API}/submissions`, { headers: {} });
     const subs = await res.json();
@@ -17,15 +17,15 @@ async function loadHistory() {
     document.getElementById('dashStatTotal').textContent = _allSubs.length;
     document.getElementById('dashStatAccepted').textContent = _allSubs.filter(s => s.verdict === 'accepted').length;
 
-    if (!_allSubs.length) { tbody.innerHTML = DOMPurify.sanitize('<tr><td colspan="7" style="color:var(--muted);padding:16px">No submissions yet.</td></tr>'); return; }
+    if (!_allSubs.length) { tbody.innerHTML = '<tr><td colspan="7" style="color:var(--muted);padding:16px">No submissions yet.</td></tr>'; return; }
 
     // Populate language filter (distinct languages actually present)
     const langs = [...new Set(_allSubs.map(s => s.language).filter(Boolean))].sort();
     const langSel = document.getElementById('histFilterLang');
     if (langSel) {
       const prevLang = langSel.value;
-      langSel.innerHTML = DOMPurify.sanitize('<option value="">All Languages</option>' +
-        langs.map(l => `<option value="${escapeHTML(l)}">${escapeHTML(l).toUpperCase()}</option>`).join(''));
+      langSel.innerHTML = '<option value="">All Languages</option>' +
+        langs.map(l => `<option value="${l}">${l.toUpperCase()}</option>`).join('');
       if (langs.includes(prevLang)) langSel.value = prevLang;
     }
 
@@ -34,13 +34,13 @@ async function loadHistory() {
     const verdictSel = document.getElementById('histFilterVerdict');
     if (verdictSel) {
       const prevVerdict = verdictSel.value;
-      verdictSel.innerHTML = DOMPurify.sanitize('<option value="">All Verdicts</option>' +
-        verdicts.map(v => `<option value="${escapeHTML(v)}">${escapeHTML(formatVerdict(v))}</option>`).join(''));
+      verdictSel.innerHTML = '<option value="">All Verdicts</option>' +
+        verdicts.map(v => `<option value="${v}">${formatVerdict(v)}</option>`).join('');
       if (verdicts.includes(prevVerdict)) verdictSel.value = prevVerdict;
     }
 
     filterHistory();
-  } catch(e) { tbody.innerHTML = DOMPurify.sanitize('<tr><td colspan="7" style="color:var(--warn);padding:16px">⚠ Error loading submissions.</td></tr>'); }
+  } catch(e) { tbody.innerHTML = '<tr><td colspan="7" style="color:var(--warn);padding:16px">⚠ Error loading submissions.</td></tr>'; }
 }
 
 function filterHistory() {
@@ -63,19 +63,19 @@ function filterHistory() {
   });
 
   if (!filtered.length) {
-    tbody.innerHTML = DOMPurify.sanitize(`<tr><td colspan="7" style="color:var(--muted);padding:16px">${_allSubs.length ? 'No submissions match your filters.' : 'No submissions yet.'}</td></tr>`);
+    tbody.innerHTML = `<tr><td colspan="7" style="color:var(--muted);padding:16px">${_allSubs.length ? 'No submissions match your filters.' : 'No submissions yet.'}</td></tr>`;
     return;
   }
 
-  tbody.innerHTML = DOMPurify.sanitize(filtered.map(s => {
+  tbody.innerHTML = filtered.map(s => {
     const submittedAt = s.created_at ? timeAgo(s.created_at) : '—';
     const hasCode = !!s.code;
     return `
     <tr onclick="openSubmissionViewer(${s.id})" style="cursor:pointer" title="Click to view submitted code" onmouseenter="this.style.background='rgba(88,166,255,0.05)'" onmouseleave="this.style.background=''">
       <td style="font-family:var(--mono);color:var(--muted)">#${s.id}</td>
       <td style="font-weight:500">Problem #${s.problem_id}</td>
-      <td><span style="font-family:var(--mono);font-size:12px;color:var(--muted)">${escapeHTML(s.language)}</span></td>
-      <td><span class="badge ${escapeHTML(verdictClass(s.verdict || s.status))}">${escapeHTML(formatVerdict(s.verdict || s.status))}</span></td>
+      <td><span style="font-family:var(--mono);font-size:12px;color:var(--muted)">${s.language}</span></td>
+      <td><span class="badge ${verdictClass(s.verdict || s.status)}">${formatVerdict(s.verdict || s.status)}</span></td>
       <td style="font-family:var(--mono);font-size:12px">${s.runtime_ms ? s.runtime_ms.toFixed(1)+' ms' : '—'}</td>
       <td style="color:var(--muted);font-size:12px">${submittedAt}</td>
       <td style="text-align:center">
@@ -84,7 +84,7 @@ function filterHistory() {
           : `<span style="color:var(--muted);font-size:11px">—</span>`}
       </td>
     </tr>`;
-  }).join(''));
+  }).join('');
 }
 
 function clearHistoryFilters() {
