@@ -80,11 +80,15 @@ The frontend is static — open `index.html` directly, or serve it with any stat
 
 You'll need `docker` running on your local machine for the primary sandbox to work. If Docker is not found, the app requires `gcc`, `g++`, and a JDK (`javac`/`java`) natively installed to use the local OS-level fallback sandbox. 
 
+## Testing & CI
+
+- **23 tests** across five areas: auth (6), submissions (6), contests (5), AI review (3), and leaderboard (3).
+- **CI pipeline** via GitHub Actions (`.github/workflows/ci.yml`) — runs the full test suite against Postgres and Redis services on every push.
+
 ## Known limitations
 
-Being upfront about what's out of scope right now:
-- **Test coverage is thin** relative to the project's surface area — solid coverage on the submission flow, little to none on auth, contests, leaderboard, or the AI review path.
-- **No CI pipeline** — tests exist but aren't run automatically on push yet.
+- **No end-to-end / browser tests** — the test suite covers the API layer but not the frontend UI.
+- **Worker requires Docker** — the code-execution sandbox needs a Docker-capable host, which Render's free tier doesn't provide (the worker must be run separately).
 
 ## License
 
