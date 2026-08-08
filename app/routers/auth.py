@@ -255,8 +255,12 @@ def reset_password(payload: ResetPasswordRequest, db: Session = Depends(get_db))
         raise HTTPException(status_code=401, detail="Reset link expired or invalid. Please request a new one.")
     if claims.get("purpose") != "password_reset":
         raise HTTPException(status_code=401, detail="Invalid reset link")
-    if len(payload.new_password) < 6:
-        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+    if len(payload.new_password) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters")
+    if not re.search(r'[A-Za-z]', payload.new_password):
+        raise HTTPException(status_code=400, detail="Password must contain at least one letter")
+    if not re.search(r'[0-9]', payload.new_password):
+        raise HTTPException(status_code=400, detail="Password must contain at least one number")
     user = db.query(User).filter(User.id == int(claims["sub"])).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
