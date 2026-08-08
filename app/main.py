@@ -45,7 +45,9 @@ async def global_exception_handler(request: Request, exc: Exception):
 app.add_middleware(SlowAPIMiddleware)
 
 # --- Metrics ---
-Instrumentator().instrument(app).expose(app)
+import os
+if not os.getenv("TESTING"):
+    Instrumentator().instrument(app).expose(app)
 
 # ── CORS — only allow the real frontend ───────────────────────────────
 origins = [

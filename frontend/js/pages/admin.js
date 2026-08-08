@@ -1,6 +1,6 @@
 // ── Admin Dashboard ─────────────────────────────────────────────────
 async function loadAdminDashboard() {
-  if ((username || localStorage.getItem('username')) !== 'akarsh') return;
+  if (!isAdmin) return;
   try {
     const usersRes = await fetch(`${API}/admin/users`, { headers: {} });
     if (usersRes.ok) {
@@ -115,7 +115,7 @@ function renderAIReview(reviewText, container) {
     const body = remaining.slice(idx + sec.key.length, nextIdx).trim();
     if (!body) return;
     // Convert markdown-like formatting
-    const formatted = body
+    const formatted = escapeHtml(body)
       .replace(/`([^`]+)`/g, '<code style="background:rgba(255,255,255,0.1);padding:1px 5px;border-radius:3px;font-family:var(--mono);font-size:12px">$1</code>')
       .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
       .replace(/\n- /g, '<br>• ')
@@ -129,7 +129,7 @@ function renderAIReview(reviewText, container) {
 
   if (!html) {
     // Fallback: just render the raw text nicely
-    const formatted = reviewText
+    const formatted = escapeHtml(reviewText)
       .replace(/`([^`]+)`/g, '<code style="background:rgba(255,255,255,0.1);padding:1px 5px;border-radius:3px;font-family:var(--mono);font-size:12px">$1</code>')
       .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
       .replace(/\n/g, '<br>');

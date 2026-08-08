@@ -61,7 +61,7 @@ function renderContestsList(contests) {
           onclick="openContest(${c.id})">
           <div style="display:flex;justify-content:space-between;align-items:center">
             <div>
-              <div style="font-weight:700;font-size:15px;margin-bottom:3px">${c.title}</div>
+              <div style="font-weight:700;font-size:15px;margin-bottom:3px">${escapeHtml(c.title)}</div>
               <div style="font-size:12px;color:var(--muted)">
                 ${new Date(c.starts_at).toLocaleString('en-IN',{timeZone:'Asia/Kolkata'})} · ${c.duration_minutes} min
                 ${c.is_mine ? ' · <span style="color:var(--accent)">Created by you</span>' : ''}
@@ -141,7 +141,7 @@ function renderContestDetail(c) {
       ${c.problems.map((p, i) => `
         <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)">
           <div>
-            <span style="font-weight:600">${String.fromCharCode(65+i)}. ${p.title}</span>
+            <span style="font-weight:600">${String.fromCharCode(65+i)}. ${escapeHtml(p.title)}</span>
             <span class="badge badge-${p.difficulty}" style="margin-left:8px">${p.difficulty}</span>
           </div>
           <div style="display:flex;align-items:center;gap:12px">
@@ -155,8 +155,8 @@ function renderContestDetail(c) {
   document.getElementById('contestDetailContent').innerHTML = `
     <div style="display:grid;grid-template-columns:1fr auto;gap:18px;align-items:start;margin-bottom:18px">
       <div>
-        <h2 style="margin:0 0 6px;font-size:22px">${c.title}</h2>
-        <div style="font-size:13px;color:var(--muted);margin-bottom:8px">${c.description || ''}</div>
+        <h2 style="margin:0 0 6px;font-size:22px">${escapeHtml(c.title)}</h2>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:8px">${escapeHtml(c.description || '')}</div>
         <div style="display:flex;gap:16px;font-size:12px;color:var(--muted);flex-wrap:wrap">
           <span>⏱ ${c.duration_minutes} min</span>
           <span>👥 ${c.participants} participants</span>

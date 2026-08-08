@@ -33,3 +33,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 settings = Settings()
+
+# Startup guard: Refuse to boot if using the default secret key in production
+if _is_render and settings.SECRET_KEY == "change-this-in-production":
+    raise RuntimeError("SECURITY FATAL: SECRET_KEY must be overridden in production!")

@@ -1,5 +1,14 @@
 // ── UI Utilities ─────────────────────────────────────────────────────
 
+function escapeHtml(unsafe) {
+  if (unsafe == null) return '';
+  return unsafe.toString()
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
 function toggleSidebar() {
   const sidebar = document.getElementById('appSidebar');
   if (sidebar) {

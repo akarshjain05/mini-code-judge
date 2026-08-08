@@ -109,15 +109,15 @@ function filterProblems() {
     const rateColor = rate === null ? 'var(--muted)' : rate >= 70 ? '#4ade80' : rate >= 40 ? '#f59e0b' : '#ef4444';
     const catList = (p.category || '').split(',').map(c => c.trim()).filter(Boolean);
     const catBadge = catList.length
-      ? `<div style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center">${catList.map(c => `<span style="font-size:10px;background:rgba(88,166,255,0.12);color:var(--accent);padding:2px 8px;border-radius:8px;border:1px solid rgba(88,166,255,0.2);white-space:nowrap">${c}</span>`).join('')}</div>`
+      ? `<div style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center">${catList.map(c => `<span style="font-size:10px;background:rgba(88,166,255,0.12);color:var(--accent);padding:2px 8px;border-radius:8px;border:1px solid rgba(88,166,255,0.2);white-space:nowrap">${escapeHtml(c)}</span>`).join('')}</div>`
       : '<span style="color:var(--muted);font-size:11px">—</span>';
     return `<tr onclick="openProblem(${JSON.stringify(p).replace(/"/g,'&quot;')})"
       style="cursor:pointer;border-bottom:1px solid var(--border);transition:background 0.1s"
       onmouseover="this.style.background='rgba(88,166,255,0.04)'" onmouseout="this.style.background=''">
       <td style="padding:12px 16px;font-family:var(--mono);color:var(--muted);font-size:12px">${p.id}</td>
       <td style="padding:12px 16px">
-        <div style="font-weight:600;font-size:13px;color:var(--text)">${p.title}</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:2px">${(p.description||'').slice(0,60)}${(p.description||'').length>60?'…':''}</div>
+        <div style="font-weight:600;font-size:13px;color:var(--text)">${escapeHtml(p.title)}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">${escapeHtml((p.description||'').slice(0,60))}${(p.description||'').length>60?'…':''}</div>
       </td>
       <td style="padding:12px 16px;text-align:center">${catBadge}</td>
       <td style="padding:12px 16px;text-align:center"><span class="badge badge-${p.difficulty}">${p.difficulty}</span></td>
