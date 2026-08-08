@@ -298,7 +298,7 @@ def _build_leaderboard(contest, db):
                     wrong += 1
 
             if accepted_at:
-                elapsed = (accepted_at.replace(tzinfo=timezone.utc) - starts).seconds // 60
+                elapsed = int((accepted_at.replace(tzinfo=timezone.utc) - starts).total_seconds()) // 60
                 total_points += cp.points
                 penalty += elapsed + wrong * 20
                 solved += 1
