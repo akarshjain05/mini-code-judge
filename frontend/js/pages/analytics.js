@@ -13,7 +13,7 @@ async function loadAnalytics() {
     renderAnalytics(subs, problems);
   } catch(e) {
     console.error('Analytics error:', e);
-    document.getElementById('analyticsStatsRow').innerHTML = '<p style="color:var(--warn)">⚠ Error loading analytics.</p>';
+    document.getElementById('analyticsStatsRow').innerHTML = DOMPurify.sanitize('<p style="color:var(--warn)">⚠ Error loading analytics.</p>');
   }
 }
 
@@ -48,7 +48,7 @@ function formatHour(h) {
 
 function renderAnalytics(subs, problems = []) {
   if (!subs.length) {
-    document.getElementById('analyticsStatsRow').innerHTML = '<p style="color:var(--muted)">No submissions yet. Solve some problems first!</p>';
+    document.getElementById('analyticsStatsRow').innerHTML = DOMPurify.sanitize('<p style="color:var(--muted)">No submissions yet. Solve some problems first!</p>');
     return;
   }
 
@@ -98,7 +98,7 @@ function renderAnalytics(subs, problems = []) {
     document.getElementById('diffEasyTotal').textContent    = `of ${diffTotals.easy} problem${diffTotals.easy !== 1 ? 's' : ''}`;
     document.getElementById('diffMediumTotal').textContent  = `of ${diffTotals.medium} problem${diffTotals.medium !== 1 ? 's' : ''}`;
     document.getElementById('diffHardTotal').textContent    = `of ${diffTotals.hard} problem${diffTotals.hard !== 1 ? 's' : ''}`;
-    document.getElementById('totalSolvedLine').innerHTML    = `<strong>${totalSolved}</strong> unique problems solved out of <strong>${totalProbs}</strong> available`;
+    document.getElementById('totalSolvedLine').innerHTML    = DOMPurify.sanitize(`<strong>${totalSolved}</strong> unique problems solved out of <strong>${totalProbs}</strong> available`);
   }
 
   // ── Language accuracy ──────────────────────────────────────────────
@@ -111,20 +111,20 @@ function renderAnalytics(subs, problems = []) {
   });
   
   const lColors = { python: '#f59e0b', cpp: '#007bff', nodejs: '#10b981', java: '#ef4444', go: '#0ea5e9' };
-  document.getElementById('langAccuracyChart').innerHTML = Object.entries(langStats).map(([l, st]) => {
+  document.getElementById('langAccuracyChart').innerHTML = DOMPurify.sanitize(Object.entries(langStats).map(([l, st]) => {
     const acc = Math.round((st.accepted / st.total) * 100);
     const color = lColors[l] || '#6b7280';
     return `
       <div style="margin-bottom:14px">
         <div style="display:flex;justify-content:space-between;font-size:11px;font-weight:700;margin-bottom:6px">
-          <span style="text-transform:uppercase">${l}</span>
+          <span style="text-transform:uppercase">${escapeHTML(l)}</span>
           <span style="color:var(--muted)">${st.accepted}/${st.total} (${acc}%)</span>
         </div>
         <div style="height:6px;background:var(--surface2);border-radius:3px;overflow:hidden">
           <div style="height:100%;width:${acc}%;background:${color};border-radius:3px"></div>
         </div>
       </div>`;
-  }).join('');
+  }).join(''));
 
   // ── Verdict breakdown (Donut Chart) ──────────────────────────────────────────────
   const verdicts = {};
@@ -150,7 +150,7 @@ function renderAnalytics(subs, problems = []) {
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;font-size:12px;">
         <div style="display:flex;align-items:center;gap:8px">
           <div style="width:12px;height:12px;border-radius:3px;background:${color}"></div>
-          <span style="color:var(--text);font-weight:500">${vLabels[v] || v}</span>
+          <span style="color:var(--text);font-weight:500">${escapeHTML(vLabels[v] || v)}</span>
         </div>
         <span style="color:var(--muted)">${count} (${pct}%)</span>
       </div>`;
@@ -158,7 +158,7 @@ function renderAnalytics(subs, problems = []) {
   
   const gradient = conicStops.length ? `conic-gradient(${conicStops.join(', ')})` : 'none';
   
-  document.getElementById('verdictBreakdown').innerHTML = `
+  document.getElementById('verdictBreakdown').innerHTML = DOMPurify.sanitize(`
     <div style="display:flex;align-items:center;gap:32px;margin-top:14px;padding-left:10px;">
       <div style="width:130px;height:130px;border-radius:50%;background:${gradient};flex-shrink:0;display:flex;align-items:center;justify-content:center;">
         <div style="width:80px;height:80px;border-radius:50%;background:var(--surface);"></div>
@@ -167,7 +167,7 @@ function renderAnalytics(subs, problems = []) {
         ${legendHtml}
       </div>
     </div>
-  `;
+  `);
 
   // ── Activity Heatmap (last 12 weeks, IST dates) ────────────────────
   const activityMap = {};
@@ -207,7 +207,7 @@ function renderAnalytics(subs, problems = []) {
     heatmapHTML += '</div>';
   }
   heatmapHTML += '</div>';
-  document.getElementById('activityHeatmap').innerHTML = heatmapHTML;
+  document.getElementById('activityHeatmap').innerHTML = DOMPurify.sanitize(heatmapHTML);
 
   // ── Best Time to Code (IST hours) ─────────────────────────────────
   const hourCounts = Array(24).fill(0);
@@ -237,5 +237,5 @@ function renderAnalytics(subs, problems = []) {
         ? `Peak time (IST): <strong style="color:var(--text)">${formatHour(peakHour)} – ${formatHour((peakHour+1)%24)}</strong>`
         : `<span>No submissions yet to show peak time</span>`}
     </div>`;
-  document.getElementById('timeHeatmap').innerHTML = timeHTML;
+  document.getElementById('timeHeatmap').innerHTML = DOMPurify.sanitize(timeHTML);
 }

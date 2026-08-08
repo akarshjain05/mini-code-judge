@@ -1,5 +1,14 @@
 // ── UI Utilities ─────────────────────────────────────────────────────
 
+window.escapeHTML = function(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+};
 function toggleSidebar() {
   const sidebar = document.getElementById('appSidebar');
   if (sidebar) {
@@ -13,7 +22,7 @@ function togglePasswordVisibility(inputId, btn) {
   const input = document.getElementById(inputId);
   const showing = input.type === 'text';
   input.type = showing ? 'password' : 'text';
-  btn.innerHTML = showing ? EYE_OPEN_SVG : EYE_OFF_SVG;
+  btn.innerHTML = DOMPurify.sanitize(showing ? EYE_OPEN_SVG : EYE_OFF_SVG);
   btn.setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
 }
 
@@ -51,9 +60,9 @@ function updateAuthUI() {
   
   const welcomeMsg = document.getElementById('welcomeMsg');
   if (welcomeMsg) {
-    welcomeMsg.innerHTML = loggedIn 
-      ? `Welcome back, <strong style="color:var(--text)">${username}</strong>! Pick a problem and start solving.` 
-      : `Welcome to your coding arena. Pick a problem and start solving.`;
+    welcomeMsg.innerHTML = DOMPurify.sanitize(loggedIn 
+      ? `Welcome back, <strong style="color:var(--text)">${escapeHTML(username)}</strong>! Pick a problem and start solving.` 
+      : `Welcome to your coding arena. Pick a problem and start solving.`);
   }
 
   if (loggedIn && username) {
@@ -155,7 +164,7 @@ function showToast(msg, type = 'info') {
   toast.className = `toast ${type}`;
   
   const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️';
-  toast.innerHTML = `<div>${icon}</div><div>${msg}</div>`;
+  toast.innerHTML = DOMPurify.sanitize(`<div>${icon}</div><div>${escapeHTML(msg)}</div>`);
   
   container.appendChild(toast);
   
@@ -234,7 +243,7 @@ function resetSubmitScreen() {
   if (aiPanel) aiPanel.style.display = 'none';
   const aiContent = document.getElementById('aiReviewContent');
   if (aiContent) {
-    aiContent.innerHTML = '<div id="aiReviewLoading" style="display:flex;align-items:center;gap:10px;color:var(--muted)"><span class="spinner"></span> Analyzing your code…</div>';
+    aiContent.innerHTML = DOMPurify.sanitize('<div id="aiReviewLoading" style="display:flex;align-items:center;gap:10px;color:var(--muted)"><span class="spinner"></span> Analyzing your code…</div>');
   }
 
   // Sample tests card (loadSampleTestCases will re-show it if applicable).
@@ -264,7 +273,7 @@ async function loadSampleTestCases(problemId, retriesLeft = 2) {
     const tests = await res.json();
     if (!tests || !tests.length) { card.style.display = 'none'; return; }
     card.style.display = 'block';
-    list.innerHTML = tests.map((t, i) => `
+    list.innerHTML = DOMPurify.sanitize(tests.map((t, i) => `
       <div style="margin-bottom:10px;border:1px solid var(--border);border-radius:6px;overflow:hidden">
         <div style="padding:5px 10px;background:var(--surface2);font-size:11px;color:var(--muted)">Sample ${i+1}</div>
         <div style="display:grid;grid-template-columns:1fr 1fr">
@@ -277,7 +286,7 @@ async function loadSampleTestCases(problemId, retriesLeft = 2) {
             <pre style="font-size:12px;font-family:var(--mono);color:var(--accent2);margin:0;white-space:pre-wrap">${t.expected}</pre>
           </div>
         </div>
-      </div>`).join('');
+      </div>`).join(''));
   } catch(e) {
     // Render free-tier cold start can make the very first request fail —
     // retry a couple of times with backoff before giving up silently.
@@ -309,7 +318,7 @@ async function runCode() {
   document.getElementById('submitLogText').textContent = '';
   vbox.classList.add('show');
   vtitle.className = 'verdict-title verdict-pending';
-  vtitle.innerHTML = '<span class="spinner"></span> Testing sample cases…';
+  vtitle.innerHTML = DOMPurify.sanitize('<span class="spinner"></span> Testing sample cases…');
   vsub.textContent = '';
   vmeta.textContent = ''; verr.style.display = 'none';
   const aiBtn = document.getElementById('aiReviewBtn');
@@ -388,7 +397,7 @@ async function pollSampleRun(id, vtitle, vsub, vmeta, verr) {
       vtitle.className = 'verdict-title verdict-accepted';
       vtitle.textContent = '✓ All sample tests passed!';
       vsub.textContent = 'Sample test cases passed · not submitted';
-      vmeta.innerHTML = sub.runtime_ms ? `<span>⚡ ${sub.runtime_ms.toFixed(1)} ms</span>` : '';
+      vmeta.innerHTML = DOMPurify.sanitize(sub.runtime_ms ? `<span>⚡ ${escapeHTML(sub.runtime_ms.toFixed(1))} ms</span>` : '');
     } else if (sub.verdict === 'compile_error') {
       vtitle.className = 'verdict-title verdict-compile_error';
       vtitle.textContent = '✗ Compile Error';
@@ -400,7 +409,7 @@ async function pollSampleRun(id, vtitle, vsub, vmeta, verr) {
       vtitle.textContent = labels[sub.verdict] || '✗ ' + formatVerdict(sub.verdict || sub.status);
       vsub.textContent = 'Failed on a sample test case · not submitted';
       if (sub.error_output && sub.error_output !== 'SAMPLE_ONLY') { verr.textContent = sub.error_output; verr.style.display = 'block'; }
-      vmeta.innerHTML = sub.runtime_ms ? `<span>⚡ ${sub.runtime_ms.toFixed(1)} ms</span>` : '';
+      vmeta.innerHTML = DOMPurify.sanitize(sub.runtime_ms ? `<span>⚡ ${escapeHTML(sub.runtime_ms.toFixed(1))} ms</span>` : '');
     }
   } catch(e) {
     window._runPollFailCount = (window._runPollFailCount || 0) + 1;

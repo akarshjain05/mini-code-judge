@@ -30,18 +30,18 @@ async function _fetchContests() {
     const contests = await res.json();
     renderContestsList(contests);
   } catch(e) {
-    document.getElementById('contestsList').innerHTML = '<p style="color:var(--warn)">⚠ Error loading contests.</p>';
+    document.getElementById('contestsList').innerHTML = DOMPurify.sanitize('<p style="color:var(--warn)">⚠ Error loading contests.</p>');
   }
 }
 
 function renderContestsList(contests) {
   const el = document.getElementById('contestsList');
   if (!contests.length) {
-    el.innerHTML = `<div class="card" style="text-align:center;padding:40px">
+    el.innerHTML = DOMPurify.sanitize(`<div class="card" style="text-align:center;padding:40px">
       <div style="font-size:40px;margin-bottom:12px">🏆</div>
       <div style="font-weight:600;margin-bottom:8px">No contests yet</div>
       <div style="color:var(--muted);font-size:13px">Create a contest or join one with an invite code!</div>
-    </div>`;
+    </div>`);
     return;
   }
   const statusColor = { live: '#4ade80', upcoming: '#f59e0b', ended: '#6b7280' };
@@ -61,7 +61,7 @@ function renderContestsList(contests) {
           onclick="openContest(${c.id})">
           <div style="display:flex;justify-content:space-between;align-items:center">
             <div>
-              <div style="font-weight:700;font-size:15px;margin-bottom:3px">${c.title}</div>
+              <div style="font-weight:700;font-size:15px;margin-bottom:3px">${escapeHTML(c.title)}</div>
               <div style="font-size:12px;color:var(--muted)">
                 ${new Date(c.starts_at).toLocaleString('en-IN',{timeZone:'Asia/Kolkata'})} · ${c.duration_minutes} min
                 ${c.is_mine ? ' · <span style="color:var(--accent)">Created by you</span>' : ''}
@@ -75,16 +75,16 @@ function renderContestsList(contests) {
     </div>`;
   };
 
-  el.innerHTML = renderGroup('🔴 Live Now', groups.live)
+  el.innerHTML = DOMPurify.sanitize(renderGroup('🔴 Live Now', groups.live)
     + renderGroup('⏳ Upcoming', groups.upcoming)
-    + renderGroup('✓ Past Contests', groups.ended);
+    + renderGroup('✓ Past Contests', groups.ended));
 }
 
 async function openContest(id) {
   document.getElementById('contestsList').style.display = 'none';
   const detail = document.getElementById('contestDetail');
   detail.style.display = 'block';
-  document.getElementById('contestDetailContent').innerHTML = '<p style="color:var(--muted)">Loading…</p>';
+  document.getElementById('contestDetailContent').innerHTML = DOMPurify.sanitize('<p style="color:var(--muted)">Loading…</p>');
   history.pushState({ page: 'contest', id }, '', '#contest/' + id);
 
   try {
@@ -99,7 +99,7 @@ async function openContest(id) {
       }, 30000);
     }
   } catch(e) {
-    document.getElementById('contestDetailContent').innerHTML = '<p style="color:var(--warn)">⚠ Error loading contest.</p>';
+    document.getElementById('contestDetailContent').innerHTML = DOMPurify.sanitize('<p style="color:var(--warn)">⚠ Error loading contest.</p>');
   }
 }
 
@@ -141,8 +141,8 @@ function renderContestDetail(c) {
       ${c.problems.map((p, i) => `
         <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)">
           <div>
-            <span style="font-weight:600">${String.fromCharCode(65+i)}. ${p.title}</span>
-            <span class="badge badge-${p.difficulty}" style="margin-left:8px">${p.difficulty}</span>
+            <span style="font-weight:600">${String.fromCharCode(65+i)}. ${escapeHTML(p.title)}</span>
+            <span class="badge badge-${escapeHTML(p.difficulty)}" style="margin-left:8px">${escapeHTML(p.difficulty)}</span>
           </div>
           <div style="display:flex;align-items:center;gap:12px">
             <span style="font-size:12px;color:var(--accent);font-weight:600">${p.points} pts</span>
@@ -152,11 +152,11 @@ function renderContestDetail(c) {
     </div>`;
   }
 
-  document.getElementById('contestDetailContent').innerHTML = `
+  document.getElementById('contestDetailContent').innerHTML = DOMPurify.sanitize(`
     <div style="display:grid;grid-template-columns:1fr auto;gap:18px;align-items:start;margin-bottom:18px">
       <div>
-        <h2 style="margin:0 0 6px;font-size:22px">${c.title}</h2>
-        <div style="font-size:13px;color:var(--muted);margin-bottom:8px">${c.description || ''}</div>
+        <h2 style="margin:0 0 6px;font-size:22px">${escapeHTML(c.title)}</h2>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:8px">${escapeHTML(c.description || '')}</div>
         <div style="display:flex;gap:16px;font-size:12px;color:var(--muted);flex-wrap:wrap">
           <span>⏱ ${c.duration_minutes} min</span>
           <span>👥 ${c.participants} participants</span>
@@ -187,7 +187,7 @@ function renderContestDetail(c) {
         ${c.status === 'live' ? '<span style="font-size:11px;color:var(--accent)">🔴 Updates every 30s</span>' : ''}
       </div>
       <div id="liveLeaderboard">${renderLeaderboardHTML(c.leaderboard, c.problems)}</div>
-    </div>`;
+    </div>`);
 
   // Live countdown ticker
   if (c.status === 'live') {
@@ -204,7 +204,7 @@ function renderContestDetail(c) {
 }
 
 function renderLeaderboard(lb, problems, container) {
-  if (container) container.innerHTML = renderLeaderboardHTML(lb, problems);
+  if (container) container.innerHTML = DOMPurify.sanitize(renderLeaderboardHTML(lb, problems));
 }
 
 function renderLeaderboardHTML(lb, problems) {
@@ -220,7 +220,7 @@ function renderLeaderboardHTML(lb, problems) {
     <tbody>${lb.map(row => `
       <tr style="border-bottom:1px solid var(--border)">
         <td style="padding:8px 6px;font-weight:700;color:${['#ffd700','#c0c0c0','#cd7f32'][row.rank-1]||'var(--text)'}">${row.rank<=3?['🥇','🥈','🥉'][row.rank-1]:'#'+row.rank}</td>
-        <td style="padding:8px 6px;font-weight:600">${row.username}</td>
+        <td style="padding:8px 6px;font-weight:600">${escapeHTML(row.username)}</td>
         ${problems.map(p => {
           const ps = row.problem_status[p.id];
           if (!ps||ps.status==='none') return '<td style="text-align:center;padding:8px 6px;color:var(--muted)">—</td>';
@@ -283,13 +283,13 @@ async function createContest() {
     });
     const d = await res.json();
     if (!res.ok) { alert(d.detail); return; }
-    document.getElementById('createContestResult').innerHTML = `
+    document.getElementById('createContestResult').innerHTML = DOMPurify.sanitize(`
       <div style="padding:14px;background:rgba(74,222,128,0.1);border:1px solid #4ade80;border-radius:8px">
         <div style="font-weight:700;color:#4ade80;margin-bottom:6px">✓ Contest Created!</div>
         <div style="font-size:13px;color:var(--text)">Invite code: <code style="background:var(--surface2);padding:2px 8px;border-radius:4px;font-size:14px;color:var(--accent)">${d.invite_code}</code></div>
         <div style="font-size:12px;color:var(--muted);margin-top:6px">Share this code with your friends to join!</div>
         <button onclick="document.getElementById('createContestBox').style.display='none';loadContests()" class="btn btn-success" style="margin-top:10px;padding:6px 16px;font-size:12px">View Contest</button>
-      </div>`;
+      </div>`);
   } catch(e) { alert('Failed to create contest'); }
 }
 

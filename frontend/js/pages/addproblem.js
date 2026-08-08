@@ -17,12 +17,12 @@ let _catDropdownInit = false;
 
 function initCategoryDropdown() {
   const panel = document.getElementById('catDropdownPanel');
-  panel.innerHTML = DSA_CATEGORIES.map(c => `
+  panel.innerHTML = DOMPurify.sanitize(DSA_CATEGORIES.map(c => `
     <label onclick="event.stopPropagation()" style="display:flex;align-items:center;gap:9px;padding:9px 12px;cursor:pointer;font-size:13px;color:var(--text)"
       onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background='none'">
-      <input type="checkbox" value="${c}" onchange="toggleCategory('${c.replace(/'/g,"\\'")}')" ${_selectedCategories.has(c)?'checked':''} style="cursor:pointer;accent-color:var(--accent)" />
-      ${c}
-    </label>`).join('');
+      <input type="checkbox" value="${escapeHTML(c)}" onchange="toggleCategory('${escapeHTML(c).replace(/'/g,"\\'")}')" ${_selectedCategories.has(c)?'checked':''} style="cursor:pointer;accent-color:var(--accent)" />
+      ${escapeHTML(c)}
+    </label>`).join(''));
   _catDropdownInit = true;
 }
 

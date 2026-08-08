@@ -19,7 +19,7 @@ async function submitCode() {
   vtitle.className = 'verdict-title verdict-pending';
   log.style.display = 'none';
   logText.textContent = '';
-  vtitle.innerHTML = '<span class="spinner"></span> &nbsp;Judging…';
+  vtitle.innerHTML = DOMPurify.sanitize('<span class="spinner"></span> &nbsp;Judging…');
   vsub.textContent = ''; vmeta.textContent = ''; verr.style.display = 'none';
   log.style.display = 'none';
   logText.textContent = '→ Sending code to judge…\n';
@@ -52,7 +52,7 @@ async function submitCode() {
     if (!res.ok) { vtitle.textContent = '✗ Error'; vsub.textContent = sub.detail || 'Submit failed'; vtitle.className = 'verdict-title verdict-wrong_answer'; return; }
     if (!sub.id) { vtitle.textContent = '✗ Error'; vsub.textContent = 'Invalid server response (missing submission id)'; vtitle.className = 'verdict-title verdict-wrong_answer'; return; }
 
-    vtitle.innerHTML = '<span class="spinner"></span> &nbsp;Judging…';
+    vtitle.innerHTML = DOMPurify.sanitize('<span class="spinner"></span> &nbsp;Judging…');
 
     if (pollInterval) clearInterval(pollInterval);
     window._pollStartedAt = Date.now();
@@ -96,7 +96,7 @@ async function pollVerdict(id, logText, vtitle, vsub, vmeta, verr, vbox) {
     vtitle.className = `verdict-title verdict-${sub.verdict || sub.status}`;
     vtitle.textContent = `${icons[sub.verdict] || '?'}  ${formatVerdict(sub.verdict || sub.status)}`;
     vsub.textContent = sub.verdict === 'accepted' ? 'All test cases passed!' : 'Check your logic and try again.';
-    if (sub.runtime_ms) vmeta.innerHTML = `<span>⚡ ${sub.runtime_ms.toFixed(1)} ms</span><span>🧠 ${sub.memory_kb || '—'} KB</span>`;
+    if (sub.runtime_ms) vmeta.innerHTML = DOMPurify.sanitize(`<span>⚡ ${escapeHTML(Number(sub.runtime_ms).toFixed(1))} ms</span><span>🧠 ${escapeHTML(sub.memory_kb || '—')} KB</span>`);
     if (sub.error_output && sub.error_output !== 'SAMPLE_ONLY') { verr.textContent = sub.error_output; verr.style.display = 'block'; }
     const aiBtn = document.getElementById('aiReviewBtn');
     if (aiBtn) {
