@@ -46,8 +46,9 @@ def test_leaderboard_submissions_with_data(client, auth_headers, db_session):
     assert resp.status_code == 200
     subs = resp.json()
     
-    # Assert real submission is in the list
-    assert any(s["id"] == sub.id for s in subs)
-    
-    # Assert sample submission is NOT in the list
-    assert not any(s["id"] == sub_sample.id for s in subs)
+    # Assert our test user is in the aggregated list and stats reflect only the real submission
+    user_stats = next((s for s in subs if s["username"] == "akarsh"), None)
+    assert user_stats is not None
+    assert user_stats["total"] == 1
+    assert user_stats["accepted"] == 1
+    assert "python" in user_stats["langs"]
