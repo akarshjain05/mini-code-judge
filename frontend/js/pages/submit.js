@@ -96,7 +96,7 @@ async function pollVerdict(id, logText, vtitle, vsub, vmeta, verr, vbox) {
     vtitle.className = `verdict-title verdict-${sub.verdict || sub.status}`;
     vtitle.textContent = `${icons[sub.verdict] || '?'}  ${formatVerdict(sub.verdict || sub.status)}`;
     vsub.textContent = sub.verdict === 'accepted' ? 'All test cases passed!' : 'Check your logic and try again.';
-    if (sub.runtime_ms) vmeta.innerHTML = `<span>⚡ ${sub.runtime_ms.toFixed(1)} ms</span><span>🧠 ${sub.memory_kb || '—'} KB</span>`;
+    if (sub.runtime_ms) vmeta.innerHTML = `<span>⚡ ${sub.runtime_ms.toFixed(1)} ms</span>`;
     if (sub.error_output && sub.error_output !== 'SAMPLE_ONLY') { verr.textContent = sub.error_output; verr.style.display = 'block'; }
     const aiBtn = document.getElementById('aiReviewBtn');
     if (aiBtn) {
