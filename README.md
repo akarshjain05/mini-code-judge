@@ -82,7 +82,7 @@ You'll need `docker` running on your local machine for the primary sandbox to wo
 
 ## Testing & CI
 
-- **23 tests** across five areas: auth (6), submissions (6), contests (5), AI review (3), and leaderboard (3).
+- **34 tests** across seven areas: auth, submissions, contests, AI review, leaderboard, problems, and admin.
 - **CI pipeline** via GitHub Actions (`.github/workflows/ci.yml`) — runs the full test suite against Postgres and Redis services on every push.
 
 ## Known limitations
