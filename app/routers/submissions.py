@@ -8,6 +8,9 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import Optional
+from rq import Queue
+
+from app.core.redis_client import get_redis
 
 from slowapi import Limiter
 from slowapi.util import get_remote_address
@@ -51,9 +54,6 @@ def create_submission(
     db.refresh(submission)
 
     # Enqueue the job durably in Redis using RQ
-    from rq import Queue
-    from app.core.redis_client import get_redis
-    
     q = Queue("judge", connection=get_redis())
     q.enqueue(
         "app.worker.judge.judge_submission",

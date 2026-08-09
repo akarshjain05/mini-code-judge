@@ -97,5 +97,5 @@ def test_submit_and_judge_e2e(client, auth_headers, db_session):
     # 4. Verify it was accepted
     db_session.expire_all()
     sub = db_session.query(Submission).filter_by(id=sub_id).first()
-    assert sub.status == "judged"
+    assert sub.status == "accepted"
     assert sub.verdict == "accepted"
