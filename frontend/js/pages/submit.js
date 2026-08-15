@@ -3,7 +3,7 @@
 async function submitCode() {
   if (!token) { openAuthModal(); return; }
   if (!currentProblem) { alert('No problem selected'); return; }
-  const code = document.getElementById('codeInput').value;
+  const code = window.codeEditor ? window.codeEditor.getValue() : document.getElementById('codeInput').value;
   const lang = document.getElementById('langSelect').value;
 
   const vbox = document.getElementById('verdictBox');

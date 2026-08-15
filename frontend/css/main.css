@@ -284,6 +284,19 @@
     color: #c9d1d9;
   }
   .code-editor textarea:focus { box-shadow: none; border: none; }
+  .CodeMirror {
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.7;
+    border-radius: 0 0 12px 12px;
+  }
+  .cm-s-material-darker.CodeMirror {
+    background-color: var(--surface);
+  }
+  .CodeMirror-gutters {
+    background-color: var(--surface2);
+    border-right: 1px solid var(--border);
+  }
 
   /* ── Table ────────────────────────────────────────────────────── */
   .table-wrap { overflow-x: auto; }

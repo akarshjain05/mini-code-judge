@@ -248,6 +248,13 @@ function resetSubmitScreen() {
   if (sampleCard) sampleCard.style.display = 'none';
 }
 
+function getCodeMirrorMode(lang) {
+  if (lang === 'python') return 'python';
+  if (lang === 'cpp' || lang === 'c') return 'text/x-c++src';
+  if (lang === 'java') return 'text/x-java';
+  return 'javascript';
+}
+
 function updateCodePlaceholder() {
   const lang = document.getElementById('langSelect').value;
   const ta = document.getElementById('codeInput');
@@ -257,8 +264,34 @@ function updateCodePlaceholder() {
     java: 'import java.util.*;\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        \n    }\n}',
     python: '# Python solution\nimport sys\ninput = sys.stdin.readline\n\n'
   };
-  ta.placeholder = ph[lang] || '';
-  ta.value = ph[lang] || '';
+  const code = ph[lang] || '';
+  
+  if (!window.codeEditor) {
+    ta.value = code;
+    window.codeEditor = CodeMirror.fromTextArea(ta, {
+      lineNumbers: true,
+      mode: getCodeMirrorMode(lang),
+      theme: 'material-darker',
+      matchBrackets: true,
+      autoCloseBrackets: true,
+      indentUnit: 4,
+      tabSize: 4,
+      indentWithTabs: false,
+      extraKeys: {
+        "Tab": (cm) => {
+          if (cm.somethingSelected()) cm.execCommand("indentMore");
+          else cm.replaceSelection("    ", "end");
+        },
+        "Shift-Tab": (cm) => cm.execCommand("indentLess")
+      }
+    });
+    
+    // Ensure the editor fits its container properly
+    window.codeEditor.setSize("100%", "450px");
+  } else {
+    window.codeEditor.setValue(code);
+    window.codeEditor.setOption('mode', getCodeMirrorMode(lang));
+  }
 }
 
 async function loadSampleTestCases(problemId, retriesLeft = 2) {
@@ -300,7 +333,7 @@ let runPollInterval = null;
 async function runCode() {
   if (!token) { openAuthModal(); return; }
   if (!currentProblem) { alert('Select a problem first'); return; }
-  const code = document.getElementById('codeInput').value.trim();
+  const code = (window.codeEditor ? window.codeEditor.getValue() : document.getElementById('codeInput').value).trim();
   const lang = document.getElementById('langSelect').value;
   if (!code) { alert('Please write some code first'); return; }
 
