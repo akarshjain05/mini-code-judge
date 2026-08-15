@@ -117,7 +117,7 @@
     white-space: nowrap;
   }
   .nav-item:hover { color: var(--text); background: rgba(255,255,255,0.04); }
-  .nav-item.active { color: #ffffff; background: var(--accent); }
+  .nav-item.active { color: #ffffff; background: rgba(255,255,255,0.08); font-weight: 600; }
   .nav-item .icon { font-size: 16px; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: currentColor; }
   .nav-item .nav-text { transition: opacity 0.2s; }
   .sidebar.collapsed .nav-item { justify-content: center; padding-left: 0; padding-right: 0; }

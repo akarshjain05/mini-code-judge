@@ -189,7 +189,7 @@ async function goTo(page, pushState = true) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   pageEl.classList.add('active');
   const items = document.querySelectorAll('.nav-item');
-  const map = { problems: 0, submit: 1, history: 2 };
+  const map = { problems: 0, submit: 0, history: 1, leaderboard: 2, contests: 3, admin: 4 };
   if (map[page] !== undefined) items[map[page]].classList.add('active');
   if (pushState) history.pushState({ page }, '', '#' + page);
 
