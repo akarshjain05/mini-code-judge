@@ -111,12 +111,12 @@ app.include_router(contest_router)
 app.include_router(leaderboard_router)
 
 
-@app.get("/", tags=["health"])
+@app.api_route("/", methods=["GET", "HEAD"], tags=["health"])
 def root():
     return {"status": "ok", "message": "Code Judge is running"}
 
 
-@app.get("/health")
+@app.api_route("/health", methods=["GET", "HEAD"])
 def check_health(db: Session = Depends(get_db)):
     try:
         db.execute(text("SELECT 1"))
