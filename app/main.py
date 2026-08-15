@@ -71,12 +71,16 @@ async def request_id_and_logging_middleware(request: Request, call_next):
     req_id = request.headers.get("X-Request-ID", str(uuid.uuid4()))
     request_id_var.set(req_id)
     
-    log.info("request_started", method=request.method, url=str(request.url))
+    is_health = request.url.path in ("/", "/health", "/metrics")
+    
+    if not is_health:
+        log.info("request_started", method=request.method, url=str(request.url))
     
     response = await call_next(request)
     response.headers["X-Request-ID"] = req_id
     
-    log.info("request_finished", status_code=response.status_code)
+    if not is_health:
+        log.info("request_finished", status_code=response.status_code)
     return response
 
 @app.middleware("http")
