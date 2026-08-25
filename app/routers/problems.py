@@ -38,6 +38,19 @@ class SampleTestOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
+from sqlalchemy import func, case
+from app.models.submission import Submission
+
+@router.get("/acceptance-rates")
+def get_acceptance_rates(db: Session = Depends(get_db)):
+    stats = db.query(
+        Submission.problem_id,
+        func.count(Submission.id).label("total"),
+        func.sum(case((Submission.verdict == "accepted", 1), else_=0)).label("accepted")
+    ).filter(Submission.is_sample_only == False).group_by(Submission.problem_id).all()
+    
+    return {row.problem_id: {"total": row.total, "accepted": row.accepted or 0} for row in stats}
+
 @router.get("", response_model=list[ProblemOut])
 def list_problems(db: Session = Depends(get_db)):
     return db.query(Problem).order_by(Problem.id).all()

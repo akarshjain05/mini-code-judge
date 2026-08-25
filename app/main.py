@@ -16,7 +16,7 @@ from app.core.logger import request_id_var, get_logger
 from app.routers import auth, submissions, problems, admin
 from app.routers.ai_review import router as ai_review_router
 from app.routers.contest import router as contest_router
-from app.routers.contest import Contest, ContestProblem, ContestParticipant
+from app.models.contest import Contest, ContestProblem, ContestParticipant
 from app.routers.leaderboard import router as leaderboard_router
 
 # ── Rate Limiter ───────────────────────────────────────────────────────

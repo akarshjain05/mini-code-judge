@@ -14,7 +14,7 @@ from app.core.database import Base
 import app.models.user
 import app.models.problem
 import app.models.submission
-import app.routers.contest
+import app.models.contest
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

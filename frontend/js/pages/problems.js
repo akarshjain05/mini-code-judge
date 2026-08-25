@@ -20,21 +20,16 @@ async function loadProblems(retriesLeft = 2) {
   try {
     const [probRes, subRes] = await Promise.all([
       fetch(`${API}/problems`),
-      token ? fetch(`${API}/leaderboard/submissions`) : Promise.resolve(null),
+      token ? fetch(`${API}/problems/acceptance-rates`) : Promise.resolve(null),
     ]);
     const problems = await probRes.json();
     _allProblems = problems;
     document.getElementById('statProblems').textContent = problems.length;
 
-    // Build acceptance rates from all submissions
+    // Use pre-aggregated acceptance rates
     _problemAcceptance = {};
     if (subRes && subRes.ok) {
-      const subs = await subRes.json();
-      subs.forEach(s => {
-        if (!_problemAcceptance[s.problem_id]) _problemAcceptance[s.problem_id] = { total: 0, accepted: 0 };
-        _problemAcceptance[s.problem_id].total++;
-        if (s.verdict === 'accepted') _problemAcceptance[s.problem_id].accepted++;
-      });
+      _problemAcceptance = await subRes.json();
     }
 
     // Populate category filter (problems can have multiple comma-separated categories)
