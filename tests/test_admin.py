@@ -13,7 +13,10 @@ def admin_token(client, db_session):
 
 @pytest.fixture
 def admin_headers(admin_token):
-    return {"Authorization": f"Bearer {admin_token}"}
+    return {
+        "Authorization": f"Bearer {admin_token}",
+        "X-Requested-With": "XMLHttpRequest"
+    }
 
 
 def test_admin_get_users_not_admin(client, auth_headers):

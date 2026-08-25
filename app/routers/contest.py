@@ -10,6 +10,7 @@ GET  /contests/{id}/leaderboard → live leaderboard
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, Float, func
+from sqlalchemy.exc import IntegrityError
 from pydantic import BaseModel
 from typing import Optional, List
 from datetime import datetime, timezone, timedelta
@@ -167,7 +168,10 @@ def join_contest(
     ).first()
     if not existing:
         db.add(ContestParticipant(contest_id=contest.id, user_id=current_user.id))
-        db.commit()
+        try:
+            db.commit()
+        except IntegrityError:
+            db.rollback()
 
     return {"message": "Joined successfully", "contest_id": contest.id}
 

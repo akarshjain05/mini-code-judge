@@ -6,8 +6,10 @@ import os
 import json
 import asyncio
 import httpx
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
 from app.core.database import get_db
 from app.core.security import get_current_user
@@ -15,6 +17,7 @@ from app.models.submission import Submission
 from app.models.problem import Problem
 
 router = APIRouter(tags=["ai-review"])
+limiter = Limiter(key_func=get_remote_address)
 
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 # gemini-2.0-flash was deprecated Feb 2026 and fully retired June 1 2026.
@@ -117,7 +120,9 @@ async def _call_gemini(client: httpx.AsyncClient, prompt: str):
 
 
 @router.post("/submissions/{submission_id}/ai-review")
+@limiter.limit("5/minute")
 async def get_ai_review(
+    request: Request,
     submission_id: int,
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),

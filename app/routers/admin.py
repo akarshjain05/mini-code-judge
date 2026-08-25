@@ -41,19 +41,19 @@ def list_all_submissions(
     admin=Depends(require_admin),
     db: Session = Depends(get_db)
 ):
-    subs = (
-        db.query(Submission)
-        .filter(Submission.is_sample_only == False)  # "Run (Samples)" is never a real submission
+    rows = (
+        db.query(Submission, User.username)
+        .outerjoin(User, User.id == Submission.user_id)
+        .filter(Submission.is_sample_only == False)
         .order_by(Submission.id.desc())
         .all()
     )
     result = []
-    for s in subs:
-        user = db.query(User).filter(User.id == s.user_id).first()
+    for s, username in rows:
         result.append({
             "id": s.id,
             "user_id": s.user_id,
-            "username": user.username if user else f"user_{s.user_id}",
+            "username": username or f"user_{s.user_id}",
             "problem_id": s.problem_id,
             "language": s.language,
             "code": s.code,

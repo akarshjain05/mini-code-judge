@@ -26,7 +26,7 @@ from app.models.user import User
 from app.schemas.user import (
     UserRegister, UserOut, Token, GoogleLoginRequest, GoogleCompleteSignup,
     UserUpdate, PasswordChange, ForgotPasswordRequest, ResetPasswordRequest,
-    DeleteAccountRequest, GitHubConnectRequest,
+    DeleteAccountRequest,
 )
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -289,8 +289,8 @@ def update_me(payload: UserUpdate, current_user: User = Depends(get_current_user
         pic = payload.profile_picture
         if pic and not pic.startswith("data:image/"):
             raise HTTPException(status_code=400, detail="profile_picture must be a base64 data URL")
-        if pic and len(pic) > 300_000:
-            raise HTTPException(status_code=400, detail="Profile picture too large (max ~200 KB)")
+        if pic and len(pic) > settings.MAX_PROFILE_PICTURE_B64_LEN:
+            raise HTTPException(status_code=400, detail="Profile picture too large")
         current_user.profile_picture = pic or None
     db.commit(); db.refresh(current_user)
     current_user.has_google = current_user.google_id is not None

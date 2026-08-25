@@ -74,8 +74,6 @@ class ResetPasswordRequest(BaseModel):
 class DeleteAccountRequest(BaseModel):
     password: Optional[str] = None   # required only if user has a password set
 
-class GitHubConnectRequest(BaseModel):
-    code: str   # OAuth code from GitHub callback
 
 class UserOut(BaseModel):
     id: int

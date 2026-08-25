@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, func
+from sqlalchemy import Column, Integer, String, Text, DateTime, func, ForeignKey
 from app.core.database import Base
 
 
@@ -23,7 +23,7 @@ class TestCase(Base):
     """
     __tablename__ = "test_cases"
     id         = Column(Integer, primary_key=True, index=True)
-    problem_id = Column(Integer, nullable=False, index=True)  # FK to problems.id
+    problem_id = Column(Integer, ForeignKey("problems.id", ondelete="CASCADE"), nullable=False, index=True)  # FK to problems.id
     stdin      = Column(Text, nullable=False)   # Input fed to the program
     expected   = Column(Text, nullable=False)   # Expected stdout output
     is_sample  = Column(Integer, default=0)     # 1 = shown to user, 0 = hidden

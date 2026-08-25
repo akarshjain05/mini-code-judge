@@ -32,8 +32,12 @@ class Settings(BaseSettings):
     # Modern Pydantic V2 Config
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
+    # App Limits
+    MAX_PROFILE_PICTURE_B64_LEN: int = 300_000
+
 settings = Settings()
 
 # Startup guard: Refuse to boot if using the default secret key in production
-if _is_render and settings.SECRET_KEY == "change-this-in-production":
+_is_prod = os.environ.get("RENDER") == "true" or "RAILWAY_ENVIRONMENT" in os.environ or os.environ.get("ENV") == "production"
+if _is_prod and settings.SECRET_KEY == "change-this-in-production":
     raise RuntimeError("SECURITY FATAL: SECRET_KEY must be overridden in production!")

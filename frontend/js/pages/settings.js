@@ -291,9 +291,6 @@ document.addEventListener('keydown', e => {
   }
 });
 
-// Stubs kept for backward compat (no longer used as open inputs)
-function saveGeneralSettings() {}
-function settingsChangePassword() {}
 
 function handleGoogleConnect() {
   const al = document.getElementById('sSocialAlert');

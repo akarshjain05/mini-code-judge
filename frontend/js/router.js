@@ -174,6 +174,9 @@ async function goTo(page, pushState = true) {
     window.globalAbortController.abort();
     window.globalAbortController = new AbortController();
   }
+  if (window.contestRefreshInterval) clearInterval(window.contestRefreshInterval);
+  if (window.pollInterval) clearInterval(window.pollInterval);
+  if (window.runPollInterval) clearInterval(window.runPollInterval);
   if (!token && ['history','analytics','contests','account','leaderboard'].includes(page)) { openAuthModal(); return; }
   const pageEl = document.getElementById('page-' + page);
   if (!pageEl) return;

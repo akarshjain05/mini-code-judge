@@ -240,14 +240,14 @@ async function joinContest(inviteCode, contestId) {
       headers: { 'Content-Type': 'application/json' }
     });
     const d = await res.json();
-    if (!res.ok) { alert(d.detail || 'Failed to join'); return; }
+    if (!res.ok) { showToast(d.detail || 'Failed to join', 'error'); return; }
     openContest(contestId);
-  } catch(e) { alert('Failed to join contest'); }
+  } catch(e) { showToast('Failed to join contest', 'error'); }
 }
 
 async function joinByCode() {
   const code = document.getElementById('inviteCodeInput').value.trim();
-  if (!code) { alert('Please enter an invite code'); return; }
+  if (!code) { showToast('Please enter an invite code', 'error'); return; }
   if (!token) { openAuthModal(); return; }
   try {
     const res = await fetch(`${API}/contests/join/${code}`, {
@@ -255,10 +255,10 @@ async function joinByCode() {
       headers: { 'Content-Type': 'application/json' }
     });
     const d = await res.json();
-    if (!res.ok) { alert(d.detail || 'Invalid invite code'); return; }
+    if (!res.ok) { showToast(d.detail || 'Invalid invite code', 'error'); return; }
     document.getElementById('joinContestBox').style.display = 'none';
     openContest(d.contest_id);
-  } catch(e) { alert('Invalid invite code'); }
+  } catch(e) { showToast('Invalid invite code', 'error'); }
 }
 
 async function createContest() {
@@ -268,7 +268,7 @@ async function createContest() {
   const problemIds = document.getElementById('contestProblems').value.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n));
 
   if (!title || !start || !problemIds.length) {
-    alert('Please fill in all fields'); return;
+    showToast('Please fill in all fields', 'error'); return;
   }
 
   try {
@@ -282,7 +282,7 @@ async function createContest() {
       })
     });
     const d = await res.json();
-    if (!res.ok) { alert(d.detail); return; }
+    if (!res.ok) { showToast(d.detail, 'error'); return; }
     document.getElementById('createContestResult').innerHTML = `
       <div style="padding:14px;background:rgba(74,222,128,0.1);border:1px solid #4ade80;border-radius:8px">
         <div style="font-weight:700;color:#4ade80;margin-bottom:6px">✓ Contest Created!</div>
@@ -290,7 +290,7 @@ async function createContest() {
         <div style="font-size:12px;color:var(--muted);margin-top:6px">Share this code with your friends to join!</div>
         <button onclick="document.getElementById('createContestBox').style.display='none';loadContests()" class="btn btn-success" style="margin-top:10px;padding:6px 16px;font-size:12px">View Contest</button>
       </div>`;
-  } catch(e) { alert('Failed to create contest'); }
+  } catch(e) { showToast('Failed to create contest', 'error'); }
 }
 
 function openProblemForContest(problemId, contestId) {
@@ -298,5 +298,5 @@ function openProblemForContest(problemId, contestId) {
   fetch(`${API}/problems/${problemId}`)
     .then(r => r.json())
     .then(p => { openProblem(p); })
-    .catch(() => alert('Failed to load problem'));
+    .catch(() => showToast('Failed to load problem', 'error'));
 }

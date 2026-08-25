@@ -62,7 +62,13 @@ def test_join_contest(client, auth_headers, setup_problem):
     from tests.conftest import register_and_login_helper
     user2_token = register_and_login_helper(client, "user2", "password123")
     
-    resp_join = client.post(f"/contests/join/{invite_code}", headers={"Authorization": f"Bearer {user2_token}"})
+    resp_join = client.post(
+        f"/contests/join/{invite_code}", 
+        headers={
+            "Authorization": f"Bearer {user2_token}",
+            "X-Requested-With": "XMLHttpRequest"
+        }
+    )
     assert resp_join.status_code == 200
     assert "Joined successfully" in resp_join.json()["message"]
 

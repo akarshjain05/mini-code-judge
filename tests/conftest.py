@@ -75,5 +75,8 @@ def auth_token(client):
 
 @pytest.fixture
 def auth_headers(auth_token):
-    """Fixture that returns headers with a valid auth token."""
-    return {"Authorization": f"Bearer {auth_token}"}
+    """Return headers for the logged-in test user."""
+    return {
+        "Authorization": f"Bearer {auth_token}",
+        "X-Requested-With": "XMLHttpRequest"
+    }

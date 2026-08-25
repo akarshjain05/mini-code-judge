@@ -60,14 +60,15 @@ function _renderAccountAvatar(profilePicture, uname) {
 function previewAvatar(input) {
   const file = input.files[0];
   if (!file) return;
-  if (file.size > 200 * 1024) {
-    showAlert(document.getElementById('profileAlert'), 'Image must be under 200 KB. Try a smaller photo.', 'error');
-    input.value = '';
-    return;
-  }
   const reader = new FileReader();
   reader.onload = e => {
-    _renderAccountAvatar(e.target.result, _accountData?.username);
+    const b64 = e.target.result;
+    if (b64.length > 300000) {
+      showAlert(document.getElementById('profileAlert'), 'Image must be under 200 KB. Try a smaller photo.', 'error');
+      input.value = '';
+      return;
+    }
+    _renderAccountAvatar(b64, _accountData?.username);
   };
   reader.readAsDataURL(file);
 }

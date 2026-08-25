@@ -1,16 +1,18 @@
 from sqlalchemy import Column, Integer, String, Text, Float, DateTime, Boolean, func
 from app.core.database import Base
 
+from sqlalchemy import ForeignKey
+
 class Submission(Base):
     __tablename__ = "submissions"
 
     id             = Column(Integer, primary_key=True, index=True)
-    user_id        = Column(Integer, nullable=False, index=True)
-    problem_id     = Column(Integer, nullable=False, index=True)
+    user_id        = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    problem_id     = Column(Integer, ForeignKey("problems.id", ondelete="CASCADE"), nullable=False, index=True)
     language       = Column(String(20), nullable=False)
     code           = Column(Text, nullable=False)
     status         = Column(String(20), default="pending")
-    verdict        = Column(String(30), nullable=True)
+    verdict        = Column(String(30), nullable=True, index=True)
     runtime_ms     = Column(Float, nullable=True)
     memory_kb      = Column(Integer, nullable=True)
     error_output   = Column(Text, nullable=True)
@@ -19,6 +21,6 @@ class Submission(Base):
     # NEVER be treated as a real submission (not shown in My Submissions,
     # not counted in accepted/total stats, not used for leaderboard/acceptance
     # rate calculations, since they only ran a subset of the test cases).
-    is_sample_only = Column(Boolean, nullable=False, default=False, server_default="false")
+    is_sample_only = Column(Boolean, nullable=False, default=False, server_default="false", index=True)
     created_at     = Column(DateTime(timezone=True), server_default=func.now(), index=True)
     judged_at      = Column(DateTime(timezone=True), nullable=True)

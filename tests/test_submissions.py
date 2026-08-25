@@ -83,16 +83,16 @@ def test_submit_and_judge_e2e(client, auth_headers, db_session):
 
     # 3. Manually run the worker function to judge it synchronously
     from app.worker.judge import judge_submission
-    import app.core.database
+    import app.worker.judge
     from tests.conftest import TestingSession
     
     # Mock SessionLocal so the worker uses the test SQLite DB
-    original_session = app.core.database.SessionLocal
-    app.core.database.SessionLocal = TestingSession
+    original_session = app.worker.judge.SessionLocal
+    app.worker.judge.SessionLocal = TestingSession
     try:
         judge_submission(sub_id)
     finally:
-        app.core.database.SessionLocal = original_session
+        app.worker.judge.SessionLocal = original_session
 
     # 4. Verify it was accepted
     db_session.expire_all()

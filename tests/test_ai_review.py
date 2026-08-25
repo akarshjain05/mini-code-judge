@@ -70,7 +70,13 @@ def test_ai_review_unauthorized_user(client, setup_data):
     from tests.conftest import register_and_login_helper
     user2_token = register_and_login_helper(client, "user2", "password123")
     
-    resp = client.post(f"/submissions/{sub.id}/ai-review", headers={"Authorization": f"Bearer {user2_token}"})
+    resp = client.post(
+        f"/submissions/{sub.id}/ai-review", 
+        headers={
+            "Authorization": f"Bearer {user2_token}",
+            "X-Requested-With": "XMLHttpRequest"
+        }
+    )
     assert resp.status_code == 403
     assert "Not your submission" in resp.json()["detail"]
 
@@ -80,5 +86,7 @@ def test_ai_review_missing_key(client, auth_headers, setup_data):
     # We explicitly patch it to empty
     with patch("app.routers.ai_review.GEMINI_API_KEY", ""):
         resp = client.post(f"/submissions/{sub.id}/ai-review", headers=auth_headers)
+        print("STATUS:", resp.status_code)
+        print("BODY:", resp.text)
         assert resp.status_code == 503
         assert "not configured" in resp.json()["detail"]
