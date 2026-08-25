@@ -269,9 +269,32 @@ def _build_leaderboard(contest, db):
     starts = contest.starts_at.replace(tzinfo=timezone.utc) if contest.starts_at.tzinfo is None else contest.starts_at
     ends = contest.ends_at.replace(tzinfo=timezone.utc) if contest.ends_at.tzinfo is None else contest.ends_at
 
+    participant_user_ids = [p.user_id for p in participants]
+    problem_ids = [cp.problem_id for cp in contest_problems]
+
+    # Bulk fetch users
+    users = db.query(User).filter(User.id.in_(participant_user_ids)).all()
+    user_dict = {u.id: u for u in users}
+
+    # Bulk fetch submissions
+    all_subs = []
+    if participant_user_ids and problem_ids:
+        all_subs = db.query(Submission).filter(
+            Submission.user_id.in_(participant_user_ids),
+            Submission.problem_id.in_(problem_ids),
+            Submission.created_at >= starts,
+            Submission.created_at <= ends,
+            Submission.is_sample_only == False
+        ).order_by(Submission.created_at.asc()).all()
+
+    from collections import defaultdict
+    user_prob_subs = defaultdict(lambda: defaultdict(list))
+    for sub in all_subs:
+        user_prob_subs[sub.user_id][sub.problem_id].append(sub)
+
     leaderboard = []
     for p in participants:
-        user = db.query(User).filter(User.id == p.user_id).first()
+        user = user_dict.get(p.user_id)
         if not user:
             continue
         total_points = 0
@@ -280,14 +303,7 @@ def _build_leaderboard(contest, db):
         problem_status = {}
 
         for cp in contest_problems:
-            subs = db.query(Submission).filter(
-                Submission.user_id == p.user_id,
-                Submission.problem_id == cp.problem_id,
-                Submission.created_at >= starts,
-                Submission.created_at <= ends,
-                Submission.is_sample_only == False,  # "Run (Samples)" isn't a real attempt
-            ).order_by(Submission.created_at.asc()).all()
-
+            subs = user_prob_subs[p.user_id][cp.problem_id]
             wrong = 0
             accepted_at = None
             for s in subs:
