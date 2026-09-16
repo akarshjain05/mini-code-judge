@@ -1,12 +1,14 @@
 """
 Start the RQ worker. Run this in a SEPARATE terminal alongside uvicorn.
 
-    python run_worker.py
+    python scripts/run_worker.py
 
 The worker watches the "judge" queue on Redis and processes jobs as they arrive.
 Each job calls app.worker.judge.judge_submission(submission_id).
 """
 
+import os, sys
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import redis
 from rq import Worker, Queue
 
