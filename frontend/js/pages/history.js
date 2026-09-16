@@ -1,26 +1,30 @@
+import { timeAgo } from '../ui.js';
+import { formatVerdict } from './submit.js';
+import { state } from '../state.js';
+import { API, GOOGLE_CLIENT_ID, apiFetch } from '../api.js';
 // ── Submission History ──────────────────────────────────────────────
 // ── History ────────────────────────────────────────────────────────
-async function loadHistory() {
+export async function loadHistory() {
   const tbody = document.getElementById('historyTable');
-  if (!token) { tbody.innerHTML = '<tr><td colspan="7" style="color:var(--muted);padding:20px">Login to see your submissions.</td></tr>'; return; }
+  if (!state.token) { tbody.innerHTML = '<tr><td colspan="7" style="color:var(--muted);padding:20px">Login to see your submissions.</td></tr>'; return; }
   tbody.innerHTML = '<tr><td colspan="7" style="color:var(--muted);padding:16px">Loading…</td></tr>';
   try {
-    const res = await fetch(`${API}/submissions`, { headers: {} });
+    const res = await apiFetch(`${API}/submissions`, { headers: {} });
     const subs = await res.json();
-    _allSubs = subs || [];
+    state._allSubs = subs || [];
 
     // Cache submissions for the code viewer (always the FULL set, independent of filters)
     window._submissionsCache = {};
-    _allSubs.forEach(s => { window._submissionsCache[s.id] = s; });
+    state._allSubs.forEach(s => { window._submissionsCache[s.id] = s; });
 
     // Update dashboard stats from the unfiltered list
-    document.getElementById('dashStatTotal').textContent = _allSubs.length;
-    document.getElementById('dashStatAccepted').textContent = _allSubs.filter(s => s.verdict === 'accepted').length;
+    document.getElementById('dashStatTotal').textContent = state._allSubs.length;
+    document.getElementById('dashStatAccepted').textContent = state._allSubs.filter(s => s.verdict === 'accepted').length;
 
-    if (!_allSubs.length) { tbody.innerHTML = '<tr><td colspan="7" style="color:var(--muted);padding:16px">No submissions yet.</td></tr>'; return; }
+    if (!state._allSubs.length) { tbody.innerHTML = '<tr><td colspan="7" style="color:var(--muted);padding:16px">No submissions yet.</td></tr>'; return; }
 
     // Populate language filter (distinct languages actually present)
-    const langs = [...new Set(_allSubs.map(s => s.language).filter(Boolean))].sort();
+    const langs = [...new Set(state._allSubs.map(s => s.language).filter(Boolean))].sort();
     const langSel = document.getElementById('histFilterLang');
     if (langSel) {
       const prevLang = langSel.value;
@@ -30,7 +34,7 @@ async function loadHistory() {
     }
 
     // Populate verdict filter (distinct verdicts/statuses actually present)
-    const verdicts = [...new Set(_allSubs.map(s => s.verdict || s.status).filter(Boolean))].sort();
+    const verdicts = [...new Set(state._allSubs.map(s => s.verdict || s.status).filter(Boolean))].sort();
     const verdictSel = document.getElementById('histFilterVerdict');
     if (verdictSel) {
       const prevVerdict = verdictSel.value;
@@ -43,7 +47,7 @@ async function loadHistory() {
   } catch(e) { tbody.innerHTML = '<tr><td colspan="7" style="color:var(--warn);padding:16px">⚠ Error loading submissions.</td></tr>'; }
 }
 
-function filterHistory() {
+export function filterHistory() {
   const tbody = document.getElementById('historyTable');
   if (!tbody) return;
 
@@ -51,7 +55,7 @@ function filterHistory() {
   const lang    = document.getElementById('histFilterLang')?.value || '';
   const verdict = document.getElementById('histFilterVerdict')?.value || '';
 
-  const filtered = _allSubs.filter(s => {
+  const filtered = state._allSubs.filter(s => {
     if (lang && s.language !== lang) return false;
     if (verdict && (s.verdict || s.status) !== verdict) return false;
     if (search) {
@@ -63,7 +67,7 @@ function filterHistory() {
   });
 
   if (!filtered.length) {
-    tbody.innerHTML = `<tr><td colspan="7" style="color:var(--muted);padding:16px">${_allSubs.length ? 'No submissions match your filters.' : 'No submissions yet.'}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" style="color:var(--muted);padding:16px">${state._allSubs.length ? 'No submissions match your filters.' : 'No submissions yet.'}</td></tr>`;
     return;
   }
 
@@ -87,14 +91,14 @@ function filterHistory() {
   }).join('');
 }
 
-function clearHistoryFilters() {
+export function clearHistoryFilters() {
   const s = document.getElementById('histSearch'); if (s) s.value = '';
   const l = document.getElementById('histFilterLang'); if (l) l.value = '';
   const v = document.getElementById('histFilterVerdict'); if (v) v.value = '';
   filterHistory();
 }
 
-function openSubmissionViewer(id) {
+export function openSubmissionViewer(id) {
   const s = window._submissionsCache && window._submissionsCache[id];
   if (!s) return;
   document.getElementById('cvTitle').textContent = `Submission #${s.id} — Problem #${s.problem_id}`;
@@ -111,7 +115,7 @@ function openSubmissionViewer(id) {
   history.pushState({ page: 'submission', id }, '', '#submission/' + id);
 }
 
-function openAdminSubmissionViewer(id) {
+export function openAdminSubmissionViewer(id) {
   const s = window._adminSubsCache && window._adminSubsCache[id];
   if (!s) return;
   document.getElementById('cvTitle').textContent = `Submission #${s.id} — ${s.username} — Problem #${s.problem_id}`;
@@ -128,12 +132,12 @@ function openAdminSubmissionViewer(id) {
   history.pushState({ page: 'admin-submission', id }, '', '#admin');
 }
 
-function closeCodeViewer() {
+export function closeCodeViewer() {
   document.getElementById('codeViewerModal').style.display = 'none';
   history.back();
 }
 
-function copySubmissionCode() {
+export function copySubmissionCode() {
   const code = document.getElementById('cvCode').textContent;
   navigator.clipboard.writeText(code).then(() => {
     const btn = document.getElementById('cvCopyBtn');
@@ -142,9 +146,18 @@ function copySubmissionCode() {
   });
 }
 
-function verdictClass(v) {
+export function verdictClass(v) {
   if (v === 'accepted') return 'badge-accepted';
   if (v === 'wrong_answer') return 'badge-wrong';
   if (v === 'pending' || v === 'running') return 'badge-running';
   return 'badge-error';
 }
+
+window.loadHistory = loadHistory;
+window.filterHistory = filterHistory;
+window.clearHistoryFilters = clearHistoryFilters;
+window.openSubmissionViewer = openSubmissionViewer;
+window.openAdminSubmissionViewer = openAdminSubmissionViewer;
+window.closeCodeViewer = closeCodeViewer;
+window.copySubmissionCode = copySubmissionCode;
+window.verdictClass = verdictClass;

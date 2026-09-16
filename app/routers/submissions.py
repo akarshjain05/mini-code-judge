@@ -18,8 +18,8 @@ from slowapi.util import get_remote_address
 from app.core.database import get_db
 from app.core.security import get_current_user
 from app.models.submission import Submission
-from app.models.problem import Problem
 from app.schemas.submission import SubmissionCreate, SubmissionOut
+from app.services.submission_service import SubmissionService
 
 router = APIRouter(prefix="/submissions", tags=["submissions"])
 limiter = Limiter(key_func=get_remote_address)
@@ -37,21 +37,16 @@ def create_submission(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
-    problem = db.query(Problem).filter(Problem.id == payload.problem_id).first()
-    if not problem:
-        raise HTTPException(status_code=404, detail=f"Problem {payload.problem_id} not found")
-
-    submission = Submission(
+    submission, error = SubmissionService.create_submission(
+        db=db,
         user_id=current_user.id,
         problem_id=payload.problem_id,
         language=payload.language,
         code=payload.code,
-        status="pending",
-        is_sample_only=bool(payload.sample_only),
+        is_sample_only=bool(payload.sample_only)
     )
-    db.add(submission)
-    db.commit()
-    db.refresh(submission)
+    if error:
+        raise HTTPException(status_code=404, detail=error)
 
     # Enqueue the job durably in Redis using RQ
     q = Queue("judge", connection=get_redis())
@@ -70,7 +65,7 @@ def get_submission(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
-    submission = db.query(Submission).filter(Submission.id == submission_id).first()
+    submission = SubmissionService.get_submission(db, submission_id)
     if not submission:
         raise HTTPException(status_code=404, detail="Submission not found")
     if submission.user_id != current_user.id:
@@ -85,12 +80,4 @@ def list_my_submissions(
     limit: int = 200,
     offset: int = 0,
 ):
-    return (
-        db.query(Submission)
-        .filter(Submission.user_id == current_user.id)
-        .filter(Submission.is_sample_only == False)  # "Run (Samples)" is never a real submission
-        .order_by(Submission.created_at.desc())
-        .offset(offset)
-        .limit(limit)
-        .all()
-    )
+    return SubmissionService.list_user_submissions(db, current_user.id, limit, offset)

@@ -1,14 +1,19 @@
+import { goTo } from '../router.js';
+import { openAuthModal, closeAuthModal } from '../auth.js';
+import { showAlert, updateAdminUI, updateAuthUI } from '../ui.js';
+import { state } from '../state.js';
+import { API, GOOGLE_CLIENT_ID, apiFetch } from '../api.js';
 // ── Account / Profile Page ──────────────────────────────────────────
 // ── My Account ─────────────────────────────────────────────────────
-let _accountData = null;
+export let _accountData = null;
 
-async function loadAccount() {
-  if (!token) { openAuthModal(); return; }
+export async function loadAccount() {
+  if (!state.token) { openAuthModal(); return; }
   try {
-    const res = await fetch(`${API}/auth/me`, { headers: {} });
+    const res = await apiFetch(`${API}/auth/me`, { headers: {} });
     if (res.status === 401) {
       // Token expired — clear and redirect to login
-       token = null; username = null; isAdmin = false;
+       state.token = null; state.username = null; state.isAdmin = false;
        localStorage.removeItem('username');
        localStorage.removeItem('token');
       updateAuthUI(); updateAdminUI();
@@ -18,10 +23,10 @@ async function loadAccount() {
     }
     if (!res.ok) { console.error('loadAccount: API error', res.status); return; }
     const data = await res.json();
-    if (!data.username) { console.error('loadAccount: no username in response'); return; }
+    if (!data.username) { console.error('loadAccount: no state.username in response'); return; }
     _accountData = data;
 
-    // Show display name (full_name) as headline, username below it
+    // Show display name (full_name) as headline, state.username below it
     const displayName = data.full_name || data.username;
     document.getElementById('accountDisplayName').textContent = displayName;
     document.getElementById('accountUsername').textContent = '@' + data.username;
@@ -40,7 +45,7 @@ async function loadAccount() {
   }
 }
 
-function _renderAccountAvatar(profilePicture, uname) {
+export function _renderAccountAvatar(profilePicture, uname) {
   const img = document.getElementById('accountAvatarImg');
   const txt = document.getElementById('accountAvatarText');
   const wrap = document.getElementById('accountAvatarWrapper');
@@ -57,7 +62,7 @@ function _renderAccountAvatar(profilePicture, uname) {
   }
 }
 
-function previewAvatar(input) {
+export function previewAvatar(input) {
   const file = input.files[0];
   if (!file) return;
   const reader = new FileReader();
@@ -73,8 +78,8 @@ function previewAvatar(input) {
   reader.readAsDataURL(file);
 }
 
-async function saveProfile() {
-  if (!token) return;
+export async function saveProfile() {
+  if (!state.token) return;
   const btn = event.target;
   const alertEl = document.getElementById('profileAlert');
   alertEl.className = 'alert'; alertEl.textContent = '';
@@ -85,7 +90,7 @@ async function saveProfile() {
   const profile_picture = img.style.display !== 'none' && img.src && !img.src.endsWith('/') ? img.src : null;
 
   try {
-    const res = await fetch(`${API}/auth/me`, {
+    const res = await apiFetch(`${API}/auth/me`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ date_of_birth: dob, profile_picture }),
@@ -103,7 +108,7 @@ async function saveProfile() {
   }
 }
 
-function _syncTopBarAvatar(profilePicture, uname) {
+export function _syncTopBarAvatar(profilePicture, uname) {
   const av = document.getElementById('userAvatar');
   if (!av) return;
   if (profilePicture) {
@@ -113,8 +118,8 @@ function _syncTopBarAvatar(profilePicture, uname) {
   }
 }
 
-async function changePassword() {
-  if (!token) return;
+export async function changePassword() {
+  if (!state.token) return;
   const btn = event.target;
   const alertEl = document.getElementById('pwAlert');
   alertEl.className = 'alert'; alertEl.textContent = '';
@@ -127,7 +132,7 @@ async function changePassword() {
 
   btn.disabled = true; btn.textContent = 'Updating…';
   try {
-    const res = await fetch(`${API}/auth/change-password`, {
+    const res = await apiFetch(`${API}/auth/change-password`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ current_password: current || null, new_password: newPw }),
@@ -146,7 +151,7 @@ async function changePassword() {
 }
 
 // ── Forgot Password ─────────────────────────────────────────────────
-function showForgotPassword(show = true) {
+export function showForgotPassword(show = true) {
   document.getElementById('loginForm').style.display = show ? 'none' : 'block';
   document.getElementById('forgotPasswordForm').style.display = show ? 'block' : 'none';
   if (show) {
@@ -158,7 +163,7 @@ function showForgotPassword(show = true) {
   }
 }
 
-async function doForgotPassword() {
+export async function doForgotPassword() {
   const email = document.getElementById('forgotEmail').value.trim();
   const alertEl = document.getElementById('forgotErr');
   const btn = document.getElementById('forgotSendBtn');
@@ -166,7 +171,7 @@ async function doForgotPassword() {
   if (!email) { showAlert(alertEl, 'Please enter your email', 'error'); return; }
   btn.disabled = true; btn.textContent = 'Sending…';
   try {
-    const res = await fetch(`${API}/auth/forgot-password`, {
+    const res = await apiFetch(`${API}/auth/forgot-password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email }),
@@ -182,9 +187,9 @@ async function doForgotPassword() {
 }
 
 // ── Reset Password (landing from the emailed link) ──────────────────
-let _resetPwToken = null;
+export let _resetPwToken = null;
 
-function openResetPasswordModal(resetToken) {
+export function openResetPasswordModal(resetToken) {
   closeAuthModal();
   _resetPwToken = resetToken;
   document.getElementById('resetPwFormView').style.display = 'block';
@@ -198,14 +203,14 @@ function openResetPasswordModal(resetToken) {
   document.getElementById('resetPasswordModal').style.display = 'flex';
 }
 
-function closeResetPasswordModal(openLogin) {
+export function closeResetPasswordModal(openLogin) {
   document.getElementById('resetPasswordModal').style.display = 'none';
   _resetPwToken = null;
   history.replaceState({}, '', '#dashboard');
   if (openLogin) openAuthModal();
 }
 
-async function submitResetPassword() {
+export async function submitResetPassword() {
   const alertEl = document.getElementById('resetPwErr');
   const btn = document.getElementById('resetPwSubmitBtn');
   alertEl.className = 'alert'; alertEl.textContent = '';
@@ -218,7 +223,7 @@ async function submitResetPassword() {
 
   btn.disabled = true; btn.textContent = 'Resetting…';
   try {
-    const res = await fetch(`${API}/auth/reset-password`, {
+    const res = await apiFetch(`${API}/auth/reset-password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ reset_token: _resetPwToken, new_password: newPw }),
@@ -236,3 +241,15 @@ async function submitResetPassword() {
     btn.disabled = false; btn.textContent = 'Reset Password';
   }
 }
+
+window.loadAccount = loadAccount;
+window._renderAccountAvatar = _renderAccountAvatar;
+window.previewAvatar = previewAvatar;
+window.saveProfile = saveProfile;
+window._syncTopBarAvatar = _syncTopBarAvatar;
+window.changePassword = changePassword;
+window.showForgotPassword = showForgotPassword;
+window.doForgotPassword = doForgotPassword;
+window.openResetPasswordModal = openResetPasswordModal;
+window.closeResetPasswordModal = closeResetPasswordModal;
+window.submitResetPassword = submitResetPassword;

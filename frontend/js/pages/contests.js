@@ -1,13 +1,18 @@
+import { openProblem } from './problems.js';
+import { openAuthModal } from '../auth.js';
+import { showToast, timeAgo, escapeHtml } from '../ui.js';
+import { state } from '../state.js';
+import { API, GOOGLE_CLIENT_ID, apiFetch } from '../api.js';
 // ── Contests Page ────────────────────────────────────────────────────
 // ── Contest Mode ─────────────────────────────────────────────────────
-let contestRefreshInterval = null;
+export let contestRefreshInterval = null;
 
-function showJoinContest() {
+export function showJoinContest() {
   const box = document.getElementById('joinContestBox');
   box.style.display = box.style.display === 'none' ? 'block' : 'none';
 }
 
-function showCreateContest() {
+export function showCreateContest() {
   const box = document.getElementById('createContestBox');
   box.style.display = box.style.display === 'none' ? 'block' : 'none';
   // Set default start time to 5 minutes from now
@@ -16,16 +21,16 @@ function showCreateContest() {
   document.getElementById('contestStart').value = d.toISOString().slice(0,16);
 }
 
-async function loadContests() {
-  if (!token) { openAuthModal(); return; }
+export async function loadContests() {
+  if (!state.token) { openAuthModal(); return; }
   if (contestRefreshInterval) clearInterval(contestRefreshInterval);
   await _fetchContests();
   contestRefreshInterval = setInterval(_fetchContests, 30000);
 }
 
-async function _fetchContests() {
+export async function _fetchContests() {
   try {
-    const res = await fetch(`${API}/contests`, { headers: {} });
+    const res = await apiFetch(`${API}/contests`, { headers: {} });
     if (!res.ok) throw new Error();
     const contests = await res.json();
     renderContestsList(contests);
@@ -34,7 +39,7 @@ async function _fetchContests() {
   }
 }
 
-function renderContestsList(contests) {
+export function renderContestsList(contests) {
   const el = document.getElementById('contestsList');
   if (!contests.length) {
     el.innerHTML = `<div class="card" style="text-align:center;padding:40px">
@@ -80,7 +85,7 @@ function renderContestsList(contests) {
     + renderGroup('✓ Past Contests', groups.ended);
 }
 
-async function openContest(id) {
+export async function openContest(id) {
   document.getElementById('contestsList').style.display = 'none';
   const detail = document.getElementById('contestDetail');
   detail.style.display = 'block';
@@ -88,13 +93,13 @@ async function openContest(id) {
   history.pushState({ page: 'contest', id }, '', '#contest/' + id);
 
   try {
-    const res = await fetch(`${API}/contests/${id}`, { headers: {} });
+    const res = await apiFetch(`${API}/contests/${id}`, { headers: {} });
     const c = await res.json();
     renderContestDetail(c);
     if (c.status === 'live') {
       if (contestRefreshInterval) clearInterval(contestRefreshInterval);
       contestRefreshInterval = setInterval(async () => {
-        const r = await fetch(`${API}/contests/${id}/leaderboard`, { headers: {} });
+        const r = await apiFetch(`${API}/contests/${id}/leaderboard`, { headers: {} });
         if (r.ok) { const lb = await r.json(); renderLeaderboard(lb, c.problems, document.getElementById('liveLeaderboard')); }
       }, 30000);
     }
@@ -103,7 +108,7 @@ async function openContest(id) {
   }
 }
 
-function renderContestDetail(c) {
+export function renderContestDetail(c) {
   const now    = new Date();
   const starts = new Date(c.starts_at);
   const ends   = new Date(c.ends_at);
@@ -203,11 +208,11 @@ function renderContestDetail(c) {
   }
 }
 
-function renderLeaderboard(lb, problems, container) {
+export function renderLeaderboard(lb, problems, container) {
   if (container) container.innerHTML = renderLeaderboardHTML(lb, problems);
 }
 
-function renderLeaderboardHTML(lb, problems) {
+export function renderLeaderboardHTML(lb, problems) {
   if (!lb.length) return '<p style="color:var(--muted);font-size:13px">No participants yet.</p>';
   return `<table style="width:100%;font-size:13px;border-collapse:collapse">
     <thead><tr style="border-bottom:1px solid var(--border)">
@@ -233,9 +238,9 @@ function renderLeaderboardHTML(lb, problems) {
     </tbody></table>`;
 }
 
-async function joinContest(inviteCode, contestId) {
+export async function joinContest(inviteCode, contestId) {
   try {
-    const res = await fetch(`${API}/contests/join/${inviteCode}`, {
+    const res = await apiFetch(`${API}/contests/join/${inviteCode}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' }
     });
@@ -245,12 +250,12 @@ async function joinContest(inviteCode, contestId) {
   } catch(e) { showToast('Failed to join contest', 'error'); }
 }
 
-async function joinByCode() {
+export async function joinByCode() {
   const code = document.getElementById('inviteCodeInput').value.trim();
   if (!code) { showToast('Please enter an invite code', 'error'); return; }
-  if (!token) { openAuthModal(); return; }
+  if (!state.token) { openAuthModal(); return; }
   try {
-    const res = await fetch(`${API}/contests/join/${code}`, {
+    const res = await apiFetch(`${API}/contests/join/${code}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' }
     });
@@ -261,7 +266,7 @@ async function joinByCode() {
   } catch(e) { showToast('Invalid invite code', 'error'); }
 }
 
-async function createContest() {
+export async function createContest() {
   const title = document.getElementById('contestTitle').value.trim();
   const duration = parseInt(document.getElementById('contestDuration').value);
   const start = document.getElementById('contestStart').value;
@@ -272,7 +277,7 @@ async function createContest() {
   }
 
   try {
-    const res = await fetch(`${API}/contests`, {
+    const res = await apiFetch(`${API}/contests`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -293,10 +298,24 @@ async function createContest() {
   } catch(e) { showToast('Failed to create contest', 'error'); }
 }
 
-function openProblemForContest(problemId, contestId) {
+export function openProblemForContest(problemId, contestId) {
   // Load problem and open submit page
-  fetch(`${API}/problems/${problemId}`)
+  apiFetch(`${API}/problems/${problemId}`)
     .then(r => r.json())
     .then(p => { openProblem(p); })
     .catch(() => showToast('Failed to load problem', 'error'));
 }
+
+window.showJoinContest = showJoinContest;
+window.showCreateContest = showCreateContest;
+window.loadContests = loadContests;
+window._fetchContests = _fetchContests;
+window.renderContestsList = renderContestsList;
+window.openContest = openContest;
+window.renderContestDetail = renderContestDetail;
+window.renderLeaderboard = renderLeaderboard;
+window.renderLeaderboardHTML = renderLeaderboardHTML;
+window.joinContest = joinContest;
+window.joinByCode = joinByCode;
+window.createContest = createContest;
+window.openProblemForContest = openProblemForContest;

@@ -1,7 +1,9 @@
+import { state } from '../state.js';
+import { API, GOOGLE_CLIENT_ID, apiFetch } from '../api.js';
 // ── Leaderboard Page ────────────────────────────────────────────────
 // ── Leaderboard ────────────────────────────────────────────────────
 
-async function loadLeaderboard() {
+export async function loadLeaderboard() {
   const tbody = document.getElementById('lbTableBody');
   tbody.innerHTML = Array(6).fill(0).map(() => `
     <tr>
@@ -29,8 +31,8 @@ async function loadLeaderboard() {
   try {
     // Fetch pre-aggregated leaderboard stats and problems count in parallel
     const [statsRes, probsRes] = await Promise.all([
-      fetch(`${API}/leaderboard/submissions`),
-      fetch(`${API}/problems`),
+      apiFetch(`${API}/leaderboard/submissions`),
+      apiFetch(`${API}/problems`),
     ]);
 
     // If the dedicated leaderboard endpoints don't exist yet, fall back gracefully
@@ -39,24 +41,24 @@ async function loadLeaderboard() {
       return;
     }
 
-    _lbData = await statsRes.json();
+    state._lbData = await statsRes.json();
     const problems = probsRes.ok ? await probsRes.json() : [];
-    const totalSubs = _lbData.reduce((sum, u) => sum + u.total, 0);
+    const totalSubs = state._lbData.reduce((sum, u) => sum + u.total, 0);
 
     // Update summary bar
-    document.getElementById('lbTotalUsers').textContent = _lbData.length;
+    document.getElementById('lbTotalUsers').textContent = state._lbData.length;
     document.getElementById('lbTotalSubs').textContent = totalSubs;
     document.getElementById('lbTotalProbs').textContent = problems.length;
 
-    lbSort(_lbSortKey);
+    lbSort(state._lbSortKey);
   } catch(e) {
     console.error('Leaderboard error:', e);
     tbody.innerHTML = `<tr><td colspan="10" style="padding:28px;color:var(--warn);text-align:center">⚠ ${e.message}</td></tr>`;
   }
 }
 
-function lbSort(key) {
-  _lbSortKey = key;
+export function lbSort(key) {
+  state._lbSortKey = key;
   // Highlight active sort button
   ['lbSortSolved','lbSortAccuracy','lbSortStreak'].forEach(id => {
     const btn = document.getElementById(id);
@@ -119,3 +121,6 @@ function lbSort(key) {
     </tr>`;
   }).join('') || '<tr><td colspan="10" style="padding:28px;color:var(--muted);text-align:center">No data yet</td></tr>';
 }
+
+window.loadLeaderboard = loadLeaderboard;
+window.lbSort = lbSort;

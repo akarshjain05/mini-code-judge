@@ -1,11 +1,14 @@
+import { openAuthModal } from '../auth.js';
+import { state } from '../state.js';
+import { API, GOOGLE_CLIENT_ID, apiFetch } from '../api.js';
 // ── Analytics Page ──────────────────────────────────────────────────
 // ── Analytics Dashboard ─────────────────────────────────────────────
-async function loadAnalytics() {
-  if (!token) { openAuthModal(); return; }
+export async function loadAnalytics() {
+  if (!state.token) { openAuthModal(); return; }
   try {
     const [subsRes, probsRes] = await Promise.all([
-      fetch(`${API}/submissions?limit=200`, { headers: {} }),
-      fetch(`${API}/problems`)
+      apiFetch(`${API}/submissions?limit=200`, { headers: {} }),
+      apiFetch(`${API}/problems`)
     ]);
     if (!subsRes.ok) throw new Error('Failed to load submissions');
     const subs = await subsRes.json();
@@ -18,35 +21,35 @@ async function loadAnalytics() {
 }
 
 // ── IST timezone helper (UTC+5:30) ─────────────────────────────────
-const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+export const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
 
-function toIST(dateStr) {
+export function toIST(dateStr) {
   if (!dateStr) return null;
   const d = new Date(dateStr);
   if (isNaN(d.getTime())) return null;
   return new Date(d.getTime() + IST_OFFSET_MS);
 }
 
-function toISTDateKey(dateStr) {
+export function toISTDateKey(dateStr) {
   const d = toIST(dateStr);
   if (!d) return null;
   // use UTC getters on the shifted date to get IST calendar date
   return `${d.getUTCFullYear()}-${d.getUTCMonth()}-${d.getUTCDate()}`;
 }
 
-function toISTHour(dateStr) {
+export function toISTHour(dateStr) {
   const d = toIST(dateStr);
   if (!d) return null;
   return d.getUTCHours();
 }
 
-function formatHour(h) {
+export function formatHour(h) {
   if (h === 0) return '12am';
   if (h === 12) return '12pm';
   return h < 12 ? h + 'am' : (h - 12) + 'pm';
 }
 
-function renderAnalytics(subs, problems = []) {
+export function renderAnalytics(subs, problems = []) {
   if (!subs.length) {
     document.getElementById('analyticsStatsRow').innerHTML = '<p style="color:var(--muted)">No submissions yet. Solve some problems first!</p>';
     return;
@@ -239,3 +242,10 @@ function renderAnalytics(subs, problems = []) {
     </div>`;
   document.getElementById('timeHeatmap').innerHTML = timeHTML;
 }
+
+window.loadAnalytics = loadAnalytics;
+window.toIST = toIST;
+window.toISTDateKey = toISTDateKey;
+window.toISTHour = toISTHour;
+window.formatHour = formatHour;
+window.renderAnalytics = renderAnalytics;

@@ -1,8 +1,13 @@
+import { escapeHtml, timeAgo } from '../ui.js';
+import { openAdminSubmissionViewer, verdictClass } from './history.js';
+import { formatVerdict } from './submit.js';
+import { state } from '../state.js';
+import { API, GOOGLE_CLIENT_ID, apiFetch } from '../api.js';
 // ── Admin Dashboard ─────────────────────────────────────────────────
-async function loadAdminDashboard() {
-  if (!isAdmin) return;
+export async function loadAdminDashboard() {
+  if (!state.isAdmin) return;
   try {
-    const usersRes = await fetch(`${API}/admin/users`, { headers: {} });
+    const usersRes = await apiFetch(`${API}/admin/users`, { headers: {} });
     if (usersRes.ok) {
       const users = await usersRes.json();
       document.getElementById('adminUsersList').innerHTML = `<table style="width:100%;font-size:12px">
@@ -10,7 +15,7 @@ async function loadAdminDashboard() {
         <tbody>${users.map(u => `<tr><td style="padding:4px 6px;color:var(--muted)">${u.id}</td><td style="padding:4px 6px;font-weight:600">${u.username}</td><td style="padding:4px 6px;color:var(--muted)">${u.email}</td><td style="padding:4px 6px;color:var(--muted);font-size:11px">${timeAgo(u.created_at)}</td></tr>`).join('')}</tbody>
       </table>`;
     }
-    const subsRes = await fetch(`${API}/admin/submissions`, { headers: {} });
+    const subsRes = await apiFetch(`${API}/admin/submissions`, { headers: {} });
     if (subsRes.ok) {
       const subs = await subsRes.json();
       const accepted = subs.filter(s => s.verdict === 'accepted').length;
@@ -47,7 +52,7 @@ async function loadAdminDashboard() {
 
 
 // ── AI Code Review ──────────────────────────────────────────────────
-async function requestAIReview() {
+export async function requestAIReview() {
   const btn = document.getElementById('aiReviewBtn');
   const panel = document.getElementById('aiReviewPanel');
   const content = document.getElementById('aiReviewContent');
@@ -67,7 +72,7 @@ async function requestAIReview() {
 
   try {
     const subId = window._lastSubId;
-    const res = await fetch(`${API}/submissions/${subId}/ai-review`, {
+    const res = await apiFetch(`${API}/submissions/${subId}/ai-review`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' }
     });
@@ -92,7 +97,7 @@ async function requestAIReview() {
   }
 }
 
-function renderAIReview(reviewText, container) {
+export function renderAIReview(reviewText, container) {
   // Parse sections from the AI response and render nicely
   const sections = [
     { key: '## Complexity', icon: '⚡', label: 'Complexity Analysis', color: '#3b82f6' },
@@ -138,3 +143,7 @@ function renderAIReview(reviewText, container) {
 
   container.innerHTML = html;
 }
+
+window.loadAdminDashboard = loadAdminDashboard;
+window.requestAIReview = requestAIReview;
+window.renderAIReview = renderAIReview;

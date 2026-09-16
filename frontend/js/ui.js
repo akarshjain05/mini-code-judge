@@ -1,6 +1,11 @@
+import { EYE_OPEN_SVG, EYE_OFF_SVG, openAuthModal, closeAuthModal } from './auth.js';
+import { goTo } from './router.js';
+import { formatVerdict } from './pages/submit.js';
+import { state } from './state.js';
+import { API, GOOGLE_CLIENT_ID, apiFetch } from './api.js';
 // ── UI Utilities ─────────────────────────────────────────────────────
 
-function escapeHtml(unsafe) {
+export function escapeHtml(unsafe) {
   if (unsafe == null) return '';
   return unsafe.toString()
     .replace(/&/g, "&amp;")
@@ -9,7 +14,7 @@ function escapeHtml(unsafe) {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
 }
-function toggleSidebar() {
+export function toggleSidebar() {
   const sidebar = document.getElementById('appSidebar');
   if (sidebar) {
     sidebar.classList.toggle('collapsed');
@@ -18,7 +23,7 @@ function toggleSidebar() {
   }
 }
 
-function togglePasswordVisibility(inputId, btn) {
+export function togglePasswordVisibility(inputId, btn) {
   const input = document.getElementById(inputId);
   const showing = input.type === 'text';
   input.type = showing ? 'password' : 'text';
@@ -26,15 +31,15 @@ function togglePasswordVisibility(inputId, btn) {
   btn.setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
 }
 
-function handleAuthNav() {
-  if (token) {
-    // Invalidate token server-side (adds to Redis blacklist)
-    const _t = token;
-    fetch(`${API}/auth/logout`, {
+export function handleAuthNav() {
+  if (state.token) {
+    // Invalidate state.token server-side (adds to Redis blacklist)
+    const _t = state.token;
+    apiFetch(`${API}/auth/logout`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${_t}` },
     }).catch(() => {}); // fire-and-forget — clear locally regardless
-    token = null; username = null; isAdmin = false;
+    state.token = null; state.username = null; state.isAdmin = false;
     localStorage.removeItem('username');
     localStorage.removeItem('token');
     updateAuthUI(); updateAdminUI();
@@ -44,8 +49,8 @@ function handleAuthNav() {
   }
 }
 
-function updateAuthUI() {
-  const loggedIn = !!token;
+export function updateAuthUI() {
+  const loggedIn = !!state.token;
   
   const userPillWrap = document.getElementById('userPillWrap');
   if (userPillWrap) userPillWrap.style.display = loggedIn ? 'block' : 'none';
@@ -55,46 +60,46 @@ function updateAuthUI() {
   
   const navAdminBtn = document.getElementById('navAdminBtn');
   if (navAdminBtn) {
-    navAdminBtn.style.display = isAdmin ? 'flex' : 'none';
+    navAdminBtn.style.display = state.isAdmin ? 'flex' : 'none';
   }
   
   const welcomeMsg = document.getElementById('welcomeMsg');
   if (welcomeMsg) {
     welcomeMsg.innerHTML = loggedIn 
-      ? `Welcome back, <strong style="color:var(--text)">${username}</strong>! Pick a problem and start solving.` 
+      ? `Welcome back, <strong style="color:var(--text)">${state.username}</strong>! Pick a problem and start solving.` 
       : `Welcome to your coding arena. Pick a problem and start solving.`;
   }
 
-  if (loggedIn && username) {
-    const initial = username[0].toUpperCase();
+  if (loggedIn && state.username) {
+    const initial = state.username[0].toUpperCase();
     document.getElementById('userAvatar').textContent = initial;
     document.getElementById('dropdownAvatar').textContent = initial;
-    document.getElementById('dropdownName').textContent = username;
-    document.getElementById('dropdownUsername').textContent = '@' + username;
+    document.getElementById('dropdownName').textContent = state.username;
+    document.getElementById('dropdownUsername').textContent = '@' + state.username;
     document.getElementById('settingsAvatar').textContent = initial;
-    document.getElementById('settingsUsername').textContent = username;
+    document.getElementById('settingsUsername').textContent = state.username;
     const pillName = document.getElementById('pillName');
-    if (pillName) pillName.textContent = username;
+    if (pillName) pillName.textContent = state.username;
   }
 }
 
-async function fetchCurrentUser() {
-  if (!token) { isAdmin = false; updateAdminUI(); return; }
+export async function fetchCurrentUser() {
+  if (!state.token) { state.isAdmin = false; updateAdminUI(); return; }
   try {
-    const res = await fetch(`${API}/auth/me`, { headers: {} });
+    const res = await apiFetch(`${API}/auth/me`, { headers: {} });
     if (res.status === 401) {
       // Token expired or invalid — clear it and show login button
-      token = null; username = null; isAdmin = false;
+      state.token = null; state.username = null; state.isAdmin = false;
       localStorage.removeItem('username');
       localStorage.removeItem('token');
       updateAuthUI(); updateAdminUI();
       return;
     }
-    if (!res.ok) { isAdmin = false; updateAdminUI(); return; }
+    if (!res.ok) { state.isAdmin = false; updateAdminUI(); return; }
     const data = await res.json();
-    isAdmin = !!data.is_admin;
-    username = data.username;
-    localStorage.setItem('username', username);
+    state.isAdmin = !!data.is_admin;
+    state.username = data.username;
+    localStorage.setItem('username', state.username);
     // Populate email in dropdown and settings
     if (data.email) {
       document.getElementById('dropdownEmail').textContent = data.email;
@@ -108,23 +113,23 @@ async function fetchCurrentUser() {
     document.getElementById('dropdownAvatar').textContent = displayName[0].toUpperCase();
     const pillName = document.getElementById('pillName');
     if (pillName) pillName.textContent = displayName;
-  } catch(e) { isAdmin = false; }
+  } catch(e) { state.isAdmin = false; }
   updateAdminUI();
 }
 
-function updateAdminUI() {
-  const display = isAdmin ? 'flex' : 'none';
+export function updateAdminUI() {
+  const display = state.isAdmin ? 'flex' : 'none';
   document.getElementById('navAddProblem').style.display = display;
-  document.getElementById('settingsSectionLabel').style.display = isAdmin ? 'block' : 'none';
-  document.getElementById('adminBadge').style.display = isAdmin ? 'inline-block' : 'none';
+  document.getElementById('settingsSectionLabel').style.display = state.isAdmin ? 'block' : 'none';
+  document.getElementById('adminBadge').style.display = state.isAdmin ? 'inline-block' : 'none';
   const adminNav = document.getElementById('navAdmin');
   if (adminNav) adminNav.style.display = display;
   const createBtn = document.getElementById('createContestBtn');
-  if (createBtn) createBtn.style.display = isAdmin ? 'block' : 'none';
+  if (createBtn) createBtn.style.display = state.isAdmin ? 'block' : 'none';
 }
 
 /* ── User dropdown ────────────────────────────────────────────── */
-function toggleUserMenu(e) {
+export function toggleUserMenu(e) {
   e.stopPropagation();
   const d = document.getElementById('userDropdown');
   const open = d.style.display === 'block';
@@ -134,10 +139,10 @@ function toggleUserMenu(e) {
     setTimeout(() => document.addEventListener('click', closeUserMenuHandler, { once: true }), 0);
   }
 }
-function closeUserMenuHandler() {
+export function closeUserMenuHandler() {
   document.getElementById('userDropdown').style.display = 'none';
 }
-function closeUserMenu() {
+export function closeUserMenu() {
   document.getElementById('userDropdown').style.display = 'none';
 }
 
@@ -145,12 +150,12 @@ function closeUserMenu() {
 /* ── Settings page ────────────────────────────────────────────── */
 
 // ── Utils ──────────────────────────────────────────────────────────
-function showAlert(el, msg, type) {
+export function showAlert(el, msg, type) {
   el.className = `alert alert-${type} show`;
   el.textContent = msg;
 }
 
-function showToast(msg, type = 'info') {
+export function showToast(msg, type = 'info') {
   let container = document.getElementById('toast-container');
   if (!container) {
     container = document.createElement('div');
@@ -171,7 +176,7 @@ function showToast(msg, type = 'info') {
   }, 3000);
 }
 
-function timeAgo(iso) {
+export function timeAgo(iso) {
   if (!iso) return '—';
   const diff = Date.now() - new Date(iso).getTime();
   const m = Math.floor(diff / 60000);
@@ -194,9 +199,9 @@ document.getElementById('authModal').addEventListener('click', function(e) {
  * previous submission (including a stuck "Analyzing…" button) can leak
  * into the freshly opened screen.
  */
-function resetSubmitScreen() {
+export function resetSubmitScreen() {
   // Stop any in-flight polling left over from a previous problem/submission.
-  if (typeof pollInterval !== 'undefined' && pollInterval) { clearInterval(pollInterval); pollInterval = null; }
+  if (typeof state.pollInterval !== 'undefined' && state.pollInterval) { clearInterval(state.pollInterval); state.pollInterval = null; }
   if (typeof runPollInterval !== 'undefined' && runPollInterval) { clearInterval(runPollInterval); runPollInterval = null; }
   window._lastSubId = null;
   window._pollStartedAt = null;
@@ -248,14 +253,14 @@ function resetSubmitScreen() {
   if (sampleCard) sampleCard.style.display = 'none';
 }
 
-function getCodeMirrorMode(lang) {
+export function getCodeMirrorMode(lang) {
   if (lang === 'python') return 'python';
   if (lang === 'cpp' || lang === 'c') return 'text/x-c++src';
   if (lang === 'java') return 'text/x-java';
   return 'javascript';
 }
 
-function updateCodePlaceholder() {
+export function updateCodePlaceholder() {
   const lang = document.getElementById('langSelect').value;
   const ta = document.getElementById('codeInput');
   const ph = {
@@ -294,11 +299,11 @@ function updateCodePlaceholder() {
   }
 }
 
-async function loadSampleTestCases(problemId, retriesLeft = 2) {
+export async function loadSampleTestCases(problemId, retriesLeft = 2) {
   const card = document.getElementById('sampleTestsCard');
   const list = document.getElementById('sampleTestsList');
   try {
-    const res = await fetch(`${API}/problems/${problemId}/sample-tests`);
+    const res = await apiFetch(`${API}/problems/${problemId}/sample-tests`);
     if (!res.ok) { card.style.display = 'none'; return; }
     const tests = await res.json();
     if (!tests || !tests.length) { card.style.display = 'none'; return; }
@@ -328,10 +333,10 @@ async function loadSampleTestCases(problemId, retriesLeft = 2) {
   }
 }
 
-let runPollInterval = null;
+export let runPollInterval = null;
 
-async function runCode() {
-  if (!token) { openAuthModal(); return; }
+export async function runCode() {
+  if (!state.token) { openAuthModal(); return; }
   if (!currentProblem) { alert('Select a problem first'); return; }
   const code = (window.codeEditor ? window.codeEditor.getValue() : document.getElementById('codeInput').value).trim();
   const lang = document.getElementById('langSelect').value;
@@ -398,7 +403,7 @@ async function runCode() {
   }
 }
 
-async function pollSampleRun(id, vtitle, vsub, vmeta, verr) {
+export async function pollSampleRun(id, vtitle, vsub, vmeta, verr) {
   if (window._runPollStartedAt && Date.now() - window._runPollStartedAt > 180000) {
     clearInterval(runPollInterval);
     vtitle.className = 'verdict-title verdict-wrong_answer';
@@ -407,7 +412,7 @@ async function pollSampleRun(id, vtitle, vsub, vmeta, verr) {
     return;
   }
   try {
-    const res = await fetch(`${API}/submissions/${id}`, { headers: {} });
+    const res = await apiFetch(`${API}/submissions/${id}`, { headers: {} });
     if (!res.ok) {
       window._runPollFailCount = (window._runPollFailCount || 0) + 1;
       if (window._runPollFailCount >= 5) {
@@ -453,7 +458,7 @@ async function pollSampleRun(id, vtitle, vsub, vmeta, verr) {
 }
 
 /* ── Appearance / Theme ─────────────────────────────────────────── */
-function _applyTheme(theme) {
+export function _applyTheme(theme) {
   const root = document.documentElement;
   root.classList.remove('light');
   if (theme === 'light') {
@@ -468,12 +473,12 @@ function _applyTheme(theme) {
   });
 }
 
-function setTheme(theme) {
+export function setTheme(theme) {
   localStorage.setItem('theme', theme);
   _applyTheme(theme);
 }
 
-function initTheme() {
+export function initTheme() {
   const saved = localStorage.getItem('theme') || 'system';
   _applyTheme(saved);
   // Listen for OS-level changes when in system mode
@@ -482,7 +487,7 @@ function initTheme() {
   });
 }
 
-function toggleTheme() {
+export function toggleTheme() {
   const current = localStorage.getItem('theme') || 'system';
   let next = 'dark';
   if (current === 'dark') next = 'light';
@@ -496,7 +501,7 @@ function toggleTheme() {
 }
 
 /* ── Filter Popovers ── */
-function toggleDropdownMenu(popoverId, btnElement, e) {
+export function toggleDropdownMenu(popoverId, btnElement, e) {
   if (e) e.stopPropagation();
   const popover = document.getElementById(popoverId);
   const isOpen = popover.classList.contains('show');
@@ -518,3 +523,28 @@ document.addEventListener('click', function(e) {
     document.querySelectorAll('.filter-btn.active').forEach(b => b.classList.remove('active'));
   }
 });
+
+window.escapeHtml = escapeHtml;
+window.toggleSidebar = toggleSidebar;
+window.togglePasswordVisibility = togglePasswordVisibility;
+window.handleAuthNav = handleAuthNav;
+window.updateAuthUI = updateAuthUI;
+window.fetchCurrentUser = fetchCurrentUser;
+window.updateAdminUI = updateAdminUI;
+window.toggleUserMenu = toggleUserMenu;
+window.closeUserMenuHandler = closeUserMenuHandler;
+window.closeUserMenu = closeUserMenu;
+window.showAlert = showAlert;
+window.showToast = showToast;
+window.timeAgo = timeAgo;
+window.resetSubmitScreen = resetSubmitScreen;
+window.getCodeMirrorMode = getCodeMirrorMode;
+window.updateCodePlaceholder = updateCodePlaceholder;
+window.loadSampleTestCases = loadSampleTestCases;
+window.runCode = runCode;
+window.pollSampleRun = pollSampleRun;
+window._applyTheme = _applyTheme;
+window.setTheme = setTheme;
+window.initTheme = initTheme;
+window.toggleTheme = toggleTheme;
+window.toggleDropdownMenu = toggleDropdownMenu;

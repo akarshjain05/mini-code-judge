@@ -1,3 +1,17 @@
+import { loadDashboard } from './pages/dashboard.js';
+import { loadProblems } from './pages/problems.js';
+import { loadHistory } from './pages/history.js';
+import { loadContests } from './pages/contests.js';
+import { loadAccount } from './pages/account.js';
+import { showPageLoader, hidePageLoader, initGoogleSignIn, handleHashNav, PAGE_LOADERS } from './router.js';
+import { initTheme, fetchCurrentUser, updateAuthUI } from './ui.js';
+import { loadLeaderboard } from './pages/leaderboard.js';
+import { openAuthModal, handleGitHubHashResult } from './auth.js';
+import { loadSettings } from './pages/settings.js';
+import { loadAnalytics } from './pages/analytics.js';
+import { loadAdminDashboard } from './pages/admin.js';
+import { state } from './state.js';
+import { API, GOOGLE_CLIENT_ID, apiFetch } from './api.js';
 // ── main.js — loaded last, wires all modules together ────────────────
 
 // Apply saved theme immediately (before first paint)
@@ -38,12 +52,12 @@ window.onload = async () => {
   // Read hash ONCE at the top so it's available for all checks below
   const urlHash = window.location.hash;
 
-  // Handle email verification link (#verify-email/<token>)
+  // Handle email verification link (#verify-email/<state.token>)
   if (urlHash.startsWith('#verify-email/')) {
     const verifyToken = urlHash.replace('#verify-email/', '').trim();
     history.replaceState(null, '', window.location.pathname);
     try {
-      const res = await fetch(`${API}/auth/verify-email/${verifyToken}`);
+      const res = await apiFetch(`${API}/auth/verify-email/${verifyToken}`);
       const data = await res.json();
       openAuthModal();
       const errEl = document.getElementById('loginErr');

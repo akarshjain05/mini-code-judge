@@ -1,6 +1,12 @@
+import { loadProblems } from './problems.js';
+import { goTo } from '../router.js';
+import { openAuthModal } from '../auth.js';
+import { showAlert } from '../ui.js';
+import { state } from '../state.js';
+import { API, GOOGLE_CLIENT_ID, apiFetch } from '../api.js';
 // ── Add / Edit Problem ───────────────────────────────────────────────
 // ── Category dropdown (Add/Edit Problem form) ───────────────────────
-const DSA_CATEGORIES = [
+export const DSA_CATEGORIES = [
   'Arrays','Strings','Linked List','Stack','Queue','Hashing','Two Pointers',
   'Sliding Window','Binary Search','Sorting','Recursion','Backtracking',
   'Dynamic Programming','Greedy','Trees','Binary Tree','Binary Search Tree',
@@ -12,10 +18,10 @@ const DSA_CATEGORIES = [
   'Monotonic Stack','Monotonic Queue','Design','Interactive','Randomized',
   'Implementation','Brute Force','Constructive Algorithms','Probability',
 ];
-let _selectedCategories = new Set();
-let _catDropdownInit = false;
+export let _selectedCategories = new Set();
+export let _catDropdownInit = false;
 
-function initCategoryDropdown() {
+export function initCategoryDropdown() {
   const panel = document.getElementById('catDropdownPanel');
   panel.innerHTML = DSA_CATEGORIES.map(c => `
     <label onclick="event.stopPropagation()" style="display:flex;align-items:center;gap:9px;padding:9px 12px;cursor:pointer;font-size:13px;color:var(--text)"
@@ -26,19 +32,19 @@ function initCategoryDropdown() {
   _catDropdownInit = true;
 }
 
-function toggleCatDropdown() {
+export function toggleCatDropdown() {
   if (!_catDropdownInit) initCategoryDropdown();
   const panel = document.getElementById('catDropdownPanel');
   panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
 }
 
-function toggleCategory(cat) {
+export function toggleCategory(cat) {
   if (_selectedCategories.has(cat)) _selectedCategories.delete(cat);
   else _selectedCategories.add(cat);
   updateCatDropdownLabel();
 }
 
-function updateCatDropdownLabel() {
+export function updateCatDropdownLabel() {
   const label = document.getElementById('catDropdownLabel');
   if (_selectedCategories.size === 0) {
     label.textContent = 'Select categories…';
@@ -49,7 +55,7 @@ function updateCatDropdownLabel() {
   }
 }
 
-function setSelectedCategories(catString) {
+export function setSelectedCategories(catString) {
   _selectedCategories = new Set((catString || '').split(',').map(c => c.trim()).filter(Boolean));
   if (_catDropdownInit) initCategoryDropdown();
   updateCatDropdownLabel();
@@ -63,7 +69,7 @@ document.addEventListener('click', (e) => {
   }
 });
 
-function editProblem(p) {
+export function editProblem(p) {
   goTo('addproblem');
   document.getElementById('editProbId').value = p.id;
   document.getElementById('probTitle').value = p.title;
@@ -77,7 +83,7 @@ function editProblem(p) {
   document.getElementById('addProbErr').className = 'alert';
 }
 
-function cancelProblemEdit() {
+export function cancelProblemEdit() {
   document.getElementById('editProbId').value = '';
   document.getElementById('probTitle').value = '';
   document.getElementById('probDesc').value = '';
@@ -88,8 +94,8 @@ function cancelProblemEdit() {
   document.getElementById('addProbCardTitle').textContent = '📝 Problem details';
 }
 
-async function saveProblem() {
-  if (!token) { openAuthModal(); return; }
+export async function saveProblem() {
+  if (!state.token) { openAuthModal(); return; }
   const editId  = document.getElementById('editProbId').value;
   const title   = document.getElementById('probTitle').value.trim();
   const desc    = document.getElementById('probDesc').value.trim();
@@ -105,7 +111,7 @@ async function saveProblem() {
   const method = isEdit ? 'PUT' : 'POST';
 
   try {
-    const res = await fetch(url, {
+    const res = await apiFetch(url, {
       method,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ title, description: desc, difficulty: diff, category }),
@@ -119,8 +125,8 @@ async function saveProblem() {
   } catch(e) { showAlert(err, 'Cannot reach API.', 'error'); }
 }
 // ── Add Problem ────────────────────────────────────────────────────
-async function addTestCase() {
-  if (!token) { openAuthModal(); return; }
+export async function addTestCase() {
+  if (!state.token) { openAuthModal(); return; }
   const pid  = document.getElementById('tcProbId').value;
   const sin  = document.getElementById('tcStdin').value;
   const exp  = document.getElementById('tcExpected').value.trim();
@@ -130,7 +136,7 @@ async function addTestCase() {
   [err, ok].forEach(e => { e.className = 'alert'; e.textContent = ''; });
   if (!pid || !exp) { showAlert(err, 'Problem ID and expected output are required.', 'error'); return; }
   try {
-    const res = await fetch(`${API}/problems/${pid}/test-cases`, {
+    const res = await apiFetch(`${API}/problems/${pid}/test-cases`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ stdin: sin, expected: exp, is_sample: samp }),
@@ -142,3 +148,13 @@ async function addTestCase() {
     document.getElementById('tcExpected').value = '';
   } catch(e) { showAlert(err, 'Cannot reach API.', 'error'); }
 }
+
+window.initCategoryDropdown = initCategoryDropdown;
+window.toggleCatDropdown = toggleCatDropdown;
+window.toggleCategory = toggleCategory;
+window.updateCatDropdownLabel = updateCatDropdownLabel;
+window.setSelectedCategories = setSelectedCategories;
+window.editProblem = editProblem;
+window.cancelProblemEdit = cancelProblemEdit;
+window.saveProblem = saveProblem;
+window.addTestCase = addTestCase;

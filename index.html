@@ -1205,6 +1205,27 @@ int main(){
       </div><!-- /page-settings -->
 
       <!-- ── Terms of Service ─────────────────────────────────────── -->
+      
+      <div class="page" id="page-about">
+        <div class="legal-page">
+          <div class="page-header">
+            <h1>About Mini Code Judge</h1>
+          </div>
+          <section class="legal-section">
+            <h2>Our Mission</h2>
+            <p>Mini Code Judge is a fast, lightweight, and modern competitive programming platform designed for ease of use and rapid problem solving. Whether you are learning to code, preparing for interviews, or hosting your own contests, we provide a robust set of tools out of the box.</p>
+          </section>
+          <section class="legal-section">
+            <h2>Technology Stack</h2>
+            <p>Our backend is powered by FastAPI, SQLAlchemy, and Docker. Code is executed in secure, isolated Docker containers to prevent malicious behavior, with strict resource limits enforced. The frontend is a vanilla JavaScript single-page application focused on high performance.</p>
+          </section>
+          <section class="legal-section">
+            <h2>Open Source</h2>
+            <p>We are completely open source! You can contribute to the project, report bugs, or run your own instance by visiting our GitHub repository.</p>
+          </section>
+        </div>
+      </div>
+
       <div class="page" id="page-terms">
         <div class="legal-page">
           <div class="page-header">
@@ -1454,6 +1475,7 @@ int main(){
       <div>Code Judge - &copy; Copyright</div>
       <div style="display:flex; gap:16px;">
         <a href="https://github.com/akarshjain05/mini-code-judge" target="_blank" rel="noopener" style="color:var(--muted);text-decoration:none;" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--muted)'">GitHub</a>
+        <a href="javascript:void(0)" onclick="goTo('about')" style="color:var(--muted);text-decoration:none;" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--muted)'">About</a>
         <a href="javascript:void(0)" onclick="goTo('terms')" style="color:var(--muted);text-decoration:none;" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--muted)'">Terms</a>
         <a href="javascript:void(0)" onclick="goTo('privacy')" style="color:var(--muted);text-decoration:none;" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--muted)'">Privacy</a>
         <a href="javascript:void(0)" onclick="goTo('faq')" style="color:var(--muted);text-decoration:none;" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--muted)'">FAQ</a>
@@ -1463,22 +1485,6 @@ int main(){
   </div><!-- /content-wrapper -->
 </div>
 <!-- JS modules -->
-<script src="frontend/js/config.js?v=8192837171"></script>
-<script src="frontend/js/router.js?v=8192837171"></script>
-<script src="frontend/js/auth.js?v=8192837171"></script>
-<script src="frontend/js/ui.js?v=8192837171"></script>
-<script src="frontend/js/pages/dashboard.js?v=8192837171"></script>
-<script src="frontend/js/pages/problems.js?v=8192837171"></script>
-<script src="frontend/js/pages/addproblem.js?v=8192837171"></script>
-<script src="frontend/js/pages/submit.js?v=8192837171"></script>
-<script src="frontend/js/pages/history.js?v=8192837171"></script>
-<script src="frontend/js/pages/analytics.js?v=8192837171"></script>
-<script src="frontend/js/pages/leaderboard.js?v=8192837171"></script>
-<script src="frontend/js/pages/account.js?v=8192837171"></script>
-<script src="frontend/js/pages/admin.js?v=8192837171"></script>
-<script src="frontend/js/pages/settings.js?v=8192837165"></script>
-<script src="frontend/js/pages/contests.js?v=8192837165"></script>
-<script src="frontend/js/main.js?v=8192837165"></script>
 
 <!-- ── Onboarding Modal (shown after register / Google signup) ─────── -->
 <div class="modal-backdrop" id="onboardingModal" style="display:none;align-items:center;justify-content:center">
@@ -1525,5 +1531,6 @@ int main(){
 
   </div>
 </div>
+<script type="module" src="frontend/js/main.js"></script>
 </body>
 </html>

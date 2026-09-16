@@ -12,6 +12,7 @@ from google.auth.transport import requests as google_requests
 
 from app.core.config import settings
 from app.core.database import get_db
+from app.services.auth_service import AuthService
 from app.core.security import (
     hash_password, verify_password, create_access_token, get_current_user,
     create_setup_token, decode_setup_token, decode_token_full,
@@ -306,19 +307,7 @@ def delete_account(
     db: Session = Depends(get_db),
 ):
     """Permanently delete the calling user's account and all associated data."""
-    # Password-based accounts must confirm with their password
-    if current_user.password:
-        if not payload.password:
-            raise HTTPException(status_code=400, detail="Password confirmation is required to delete your account")
-        if not verify_password(payload.password, current_user.password):
-            raise HTTPException(status_code=400, detail="Incorrect password")
-
-    # Delete submissions (foreign key dependency)
-    from app.models.submission import Submission
-    db.query(Submission).filter(Submission.user_id == current_user.id).delete()
-    db.delete(current_user)
-    db.commit()
-    return {"message": "Account deleted successfully"}
+    return AuthService.delete_account(db, current_user, payload)
 
 
 @router.put("/change-password")

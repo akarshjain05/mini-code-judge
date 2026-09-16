@@ -1,107 +1,45 @@
-"""
-Contest Mode endpoints.
-POST /contests              → create a contest (any authenticated user)
-GET  /contests              → list all contests
-GET  /contests/{id}         → get contest details + leaderboard
-POST /contests/{id}/join    → join a contest
-POST /contests/{id}/submit  → submit code for a contest problem
-GET  /contests/{id}/leaderboard → live leaderboard
-"""
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, Float, func
-from sqlalchemy.exc import IntegrityError
-from pydantic import BaseModel
-from typing import Optional, List
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 import secrets
+from fastapi import APIRouter, Depends, HTTPException, Request
+from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
+from pydantic import BaseModel, constr, Field
+from typing import List, Optional
 
-from app.core.database import Base, get_db
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+
+from app.core.database import get_db
 from app.core.security import get_current_user
-from app.models.user import User
+from app.models.contest import Contest, ContestProblem, ContestParticipant
 from app.models.problem import Problem
+from app.models.user import User
 from app.models.submission import Submission
+from app.services.contest_service import ContestService
 
 router = APIRouter(prefix="/contests", tags=["contests"])
+limiter = Limiter(key_func=get_remote_address)
 
 
-from app.models.contest import Contest, ContestProblem, ContestParticipant
-
-# ── Schemas ─────────────────────────────────────────────────────────
 class ContestCreate(BaseModel):
-    title: str
-    description: Optional[str] = ""
-    duration_minutes: int = 60
+    title: constr(min_length=3, max_length=100)
+    description: str = ""
+    duration_minutes: int = Field(default=120, ge=5, le=60*24*7)
     starts_at: datetime
-    problem_ids: List[int]
+    problem_ids: List[int] = Field(min_items=1)
     points_per_problem: Optional[List[int]] = None
-    is_public: bool = False
+    is_public: bool = True
 
 
-class ContestOut(BaseModel):
-    id: int
-    title: str
-    description: Optional[str]
-    invite_code: str
-    duration_minutes: int
-    starts_at: datetime
-    ends_at: datetime
-    is_public: bool
-    created_at: Optional[datetime]
-    model_config = {"from_attributes": True}
-
-
-# ── Helpers ─────────────────────────────────────────────────────────
-def _now():
-    return datetime.now(timezone.utc)
-
-
-def _contest_status(contest: Contest) -> str:
-    now = _now()
-    starts = contest.starts_at.replace(tzinfo=timezone.utc) if contest.starts_at.tzinfo is None else contest.starts_at
-    ends = contest.ends_at.replace(tzinfo=timezone.utc) if contest.ends_at.tzinfo is None else contest.ends_at
-    if now < starts:
-        return "upcoming"
-    if now > ends:
-        return "ended"
-    return "live"
-
-
-# ── Routes ──────────────────────────────────────────────────────────
 @router.post("", status_code=201)
+@limiter.limit("5/minute")
 def create_contest(
+    request: Request,
     payload: ContestCreate,
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
-    for pid in payload.problem_ids:
-        if not db.query(Problem).filter(Problem.id == pid).first():
-            raise HTTPException(status_code=404, detail=f"Problem {pid} not found")
-
-    starts = payload.starts_at.replace(tzinfo=timezone.utc) if payload.starts_at.tzinfo is None else payload.starts_at
-    ends = starts + timedelta(minutes=payload.duration_minutes)
-
-    contest = Contest(
-        title=payload.title,
-        description=payload.description,
-        invite_code=secrets.token_urlsafe(8),
-        created_by=current_user.id,
-        duration_minutes=payload.duration_minutes,
-        starts_at=starts,
-        ends_at=ends,
-        is_public=payload.is_public,
-    )
-    db.add(contest)
-    db.flush()
-
-    for i, pid in enumerate(payload.problem_ids):
-        points = payload.points_per_problem[i] if payload.points_per_problem and i < len(payload.points_per_problem) else 100
-        db.add(ContestProblem(contest_id=contest.id, problem_id=pid, points=points))
-
-    db.add(ContestParticipant(contest_id=contest.id, user_id=current_user.id))
-    db.commit()
-    db.refresh(contest)
-
+    contest = ContestService.create_contest(db, payload, current_user.id)
     return {
         "id": contest.id,
         "title": contest.title,
@@ -118,26 +56,7 @@ def list_contests(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
-    # Show every contest to every logged-in user so they can discover and join it
-    joined_ids = {p.contest_id for p in db.query(ContestParticipant).filter(
-        ContestParticipant.user_id == current_user.id).all()}
-
-    all_contests = db.query(Contest).all()
-    result = []
-    for c in all_contests:
-        result.append({
-            "id": c.id,
-            "title": c.title,
-            "invite_code": c.invite_code,
-            "duration_minutes": c.duration_minutes,
-            "starts_at": c.starts_at,
-            "ends_at": c.ends_at,
-            "status": _contest_status(c),
-            "is_mine": c.created_by == current_user.id,
-            "is_joined": c.id in joined_ids,
-        })
-    result.sort(key=lambda x: x["starts_at"], reverse=True)
-    return result
+    return ContestService.list_contests(db, current_user.id)
 
 
 @router.get("/join/{invite_code}")
@@ -149,7 +68,7 @@ def get_contest_by_code(
     contest = db.query(Contest).filter(Contest.invite_code == invite_code).first()
     if not contest:
         raise HTTPException(status_code=404, detail="Contest not found. Check your invite code.")
-    return _contest_detail(contest, current_user.id, db)
+    return ContestService.get_contest_detail(db, contest, current_user.id)
 
 
 @router.post("/join/{invite_code}")
@@ -162,18 +81,7 @@ def join_contest(
     if not contest:
         raise HTTPException(status_code=404, detail="Invalid invite code")
 
-    existing = db.query(ContestParticipant).filter(
-        ContestParticipant.contest_id == contest.id,
-        ContestParticipant.user_id == current_user.id
-    ).first()
-    if not existing:
-        db.add(ContestParticipant(contest_id=contest.id, user_id=current_user.id))
-        try:
-            db.commit()
-        except IntegrityError:
-            db.rollback()
-
-    return {"message": "Joined successfully", "contest_id": contest.id}
+    return ContestService.join_contest(db, contest, current_user.id)
 
 
 @router.get("/{contest_id}")
@@ -185,7 +93,7 @@ def get_contest(
     contest = db.query(Contest).filter(Contest.id == contest_id).first()
     if not contest:
         raise HTTPException(status_code=404, detail="Contest not found")
-    return _contest_detail(contest, current_user.id, db)
+    return ContestService.get_contest_detail(db, contest, current_user.id)
 
 
 @router.get("/{contest_id}/leaderboard")
@@ -197,119 +105,4 @@ def get_leaderboard(
     contest = db.query(Contest).filter(Contest.id == contest_id).first()
     if not contest:
         raise HTTPException(status_code=404, detail="Contest not found")
-    return _build_leaderboard(contest, db)
-
-
-def _contest_detail(contest, user_id, db):
-    problems = db.query(ContestProblem).filter(ContestProblem.contest_id == contest.id).all()
-    problem_details = []
-    for cp in problems:
-        p = db.query(Problem).filter(Problem.id == cp.problem_id).first()
-        if p:
-            problem_details.append({
-                "id": p.id, "title": p.title,
-                "difficulty": p.difficulty, "points": cp.points
-            })
-
-    participants = db.query(ContestParticipant).filter(
-        ContestParticipant.contest_id == contest.id).count()
-
-    is_joined = db.query(ContestParticipant).filter(
-        ContestParticipant.contest_id == contest.id,
-        ContestParticipant.user_id == user_id).first() is not None
-
-    return {
-        "id": contest.id,
-        "title": contest.title,
-        "description": contest.description,
-        "invite_code": contest.invite_code,
-        "duration_minutes": contest.duration_minutes,
-        "starts_at": contest.starts_at,
-        "ends_at": contest.ends_at,
-        "status": _contest_status(contest),
-        "problems": problem_details,
-        "participants": participants,
-        "is_joined": is_joined,
-        "is_mine": contest.created_by == user_id,
-        "leaderboard": _build_leaderboard(contest, db),
-    }
-
-
-def _build_leaderboard(contest, db):
-    participants = db.query(ContestParticipant).filter(
-        ContestParticipant.contest_id == contest.id).all()
-    contest_problems = db.query(ContestProblem).filter(
-        ContestProblem.contest_id == contest.id).all()
-
-    starts = contest.starts_at.replace(tzinfo=timezone.utc) if contest.starts_at.tzinfo is None else contest.starts_at
-    ends = contest.ends_at.replace(tzinfo=timezone.utc) if contest.ends_at.tzinfo is None else contest.ends_at
-
-    participant_user_ids = [p.user_id for p in participants]
-    problem_ids = [cp.problem_id for cp in contest_problems]
-
-    # Bulk fetch users
-    users = db.query(User).filter(User.id.in_(participant_user_ids)).all()
-    user_dict = {u.id: u for u in users}
-
-    # Bulk fetch submissions
-    all_subs = []
-    if participant_user_ids and problem_ids:
-        all_subs = db.query(Submission).filter(
-            Submission.user_id.in_(participant_user_ids),
-            Submission.problem_id.in_(problem_ids),
-            Submission.created_at >= starts,
-            Submission.created_at <= ends,
-            Submission.is_sample_only == False
-        ).order_by(Submission.created_at.asc()).all()
-
-    from collections import defaultdict
-    user_prob_subs = defaultdict(lambda: defaultdict(list))
-    for sub in all_subs:
-        user_prob_subs[sub.user_id][sub.problem_id].append(sub)
-
-    leaderboard = []
-    for p in participants:
-        user = user_dict.get(p.user_id)
-        if not user:
-            continue
-        total_points = 0
-        solved = 0
-        penalty = 0
-        problem_status = {}
-
-        for cp in contest_problems:
-            subs = user_prob_subs[p.user_id][cp.problem_id]
-            wrong = 0
-            accepted_at = None
-            for s in subs:
-                if s.verdict == 'accepted':
-                    accepted_at = s.created_at
-                    break
-                else:
-                    wrong += 1
-
-            if accepted_at:
-                elapsed = int((accepted_at.replace(tzinfo=timezone.utc) - starts).total_seconds()) // 60
-                total_points += cp.points
-                penalty += elapsed + wrong * 20
-                solved += 1
-                problem_status[cp.problem_id] = {"status": "accepted", "attempts": wrong + 1, "time": elapsed}
-            elif wrong > 0:
-                problem_status[cp.problem_id] = {"status": "wrong", "attempts": wrong}
-            else:
-                problem_status[cp.problem_id] = {"status": "none", "attempts": 0}
-
-        leaderboard.append({
-            "user_id": p.user_id,
-            "username": user.username,
-            "points": total_points,
-            "solved": solved,
-            "penalty": penalty,
-            "problem_status": problem_status,
-        })
-
-    leaderboard.sort(key=lambda x: (-x["points"], x["penalty"]))
-    for i, row in enumerate(leaderboard):
-        row["rank"] = i + 1
-
-    return leaderboard
+    return ContestService.build_leaderboard(db, contest)

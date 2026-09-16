@@ -34,7 +34,7 @@ def test_create_contest(client, auth_headers, setup_problem):
         "is_public": True,
         "duration_minutes": 60
     }, headers=auth_headers)
-    assert resp.status_code == 201
+    print(resp.json()); assert resp.status_code == 201
     assert "invite_code" in resp.json()
     assert resp.json()["title"] == "My Contest"
 

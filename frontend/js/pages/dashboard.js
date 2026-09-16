@@ -1,14 +1,22 @@
+import { loadProblems } from './problems.js';
+import { loadHistory, verdictClass, openSubmissionViewer } from './history.js';
+import { goTo } from '../router.js';
+import { openAuthModal } from '../auth.js';
+import { timeAgo, updateAdminUI, updateAuthUI } from '../ui.js';
+import { formatVerdict } from './submit.js';
+import { state } from '../state.js';
+import { API, GOOGLE_CLIENT_ID, apiFetch } from '../api.js';
 // ── Dashboard ───────────────────────────────────────────────────────
-async function loadDashboard() {
+export async function loadDashboard() {
   loadProblems();
-  if (token) loadHistory();
+  if (state.token) loadHistory();
   const el = document.getElementById('dashRecentList');
-  if (!token) { el.innerHTML = '<p style="color:var(--muted);font-size:13px">Login to see your recent submissions.</p>'; return; }
+  if (!state.token) { el.innerHTML = '<p style="color:var(--muted);font-size:13px">Login to see your recent submissions.</p>'; return; }
   try {
-    const res = await fetch(`${API}/submissions?limit=5`, { headers: {} });
+    const res = await apiFetch(`${API}/submissions?limit=5`, { headers: {} });
     if (res.status === 401) {
       // Token expired — clear and show logged-out state
-      token = null; username = null; isAdmin = false;
+      state.token = null; state.username = null; state.isAdmin = false;
       localStorage.removeItem('username');
       localStorage.removeItem('token');
       updateAuthUI(); updateAdminUI();
@@ -41,3 +49,5 @@ async function loadDashboard() {
     }).join('');
   } catch(e) {}
 }
+
+window.loadDashboard = loadDashboard;

@@ -1,6 +1,11 @@
+import { openAuthModal } from '../auth.js';
+import { setTheme, closeUserMenu, togglePasswordVisibility, _applyTheme, updateAdminUI, updateAuthUI } from '../ui.js';
+import { goTo } from '../router.js';
+import { state } from '../state.js';
+import { API, GOOGLE_CLIENT_ID, apiFetch } from '../api.js';
 // ── Settings Page ────────────────────────────────────────────────────
 
-function switchSettingsTab(tab) {
+export function switchSettingsTab(tab) {
   ['general','social','appearance','delete'].forEach(t => {
     const tabEl = document.getElementById('stab-' + t);
     const panEl = document.getElementById('spanel-' + t);
@@ -15,11 +20,11 @@ function switchSettingsTab(tab) {
   if (tab === 'appearance') _syncAppearancePanel();
 }
 
-function openSettings() { closeUserMenu(); goTo('settings'); }
-function closeSettings() { history.back(); }
+export function openSettings() { closeUserMenu(); goTo('settings'); }
+export function closeSettings() { history.back(); }
 
-async function loadSettings() {
-  if (!token) { openAuthModal(); return; }
+export async function loadSettings() {
+  if (!state.token) { openAuthModal(); return; }
   switchSettingsTab('general');
 
   ['sGeneralAlert','sSocialAlert','sDeleteAlert'].forEach(id => {
@@ -27,21 +32,21 @@ async function loadSettings() {
     if (el) { el.className = 'alert'; el.textContent = ''; }
   });
 
-  const initial = (username || '?')[0].toUpperCase();
+  const initial = (state.username || '?')[0].toUpperCase();
   document.getElementById('settingsAvatar').textContent = initial;
-  document.getElementById('settingsUsername').textContent = username || '—';
-  document.getElementById('sRowUsername').textContent = username || '—';
+  document.getElementById('settingsUsername').textContent = state.username || '—';
+  document.getElementById('sRowUsername').textContent = state.username || '—';
 
   try {
-    const res = await fetch(`${API}/auth/me`, { headers: {} });
+    const res = await apiFetch(`${API}/auth/me`, { headers: {} });
     if (!res.ok) return;
     const d = await res.json();
-    _settingsData = d;
+    state._settingsData = d;
     _syncSettingsRows(d);
-  } catch(e) { console.error('Settings fetch error', e); }
+  } catch(e) { console.error('Settings apiFetch error', e); }
 }
 
-function _syncSettingsRows(d) {
+export function _syncSettingsRows(d) {
   const email = d.email || '—';
   document.getElementById('settingsEmail').textContent = email;
   document.getElementById('dropdownEmail').textContent = email;
@@ -84,7 +89,7 @@ function _syncSettingsRows(d) {
   if (delPwGrp) delPwGrp.style.display = d.has_password ? 'block' : 'none';
 }
 
-function _formatDob(iso) {
+export function _formatDob(iso) {
   if (!iso) return '';
   const [y, m, d] = iso.split('-');
   if (!y || !m || !d) return iso;
@@ -93,9 +98,9 @@ function _formatDob(iso) {
 }
 
 // ── Field edit popup ─────────────────────────────────────────────────
-let _currentField = null;
+export let _currentField = null;
 
-const FIELD_CONFIG = {
+export const FIELD_CONFIG = {
   fullname: {
     title: 'Full Name',
     body: () => `
@@ -103,7 +108,7 @@ const FIELD_CONFIG = {
       <div class="form-group" style="margin:0">
         <label>Full Name</label>
         <input type="text" id="sfe-fullname" placeholder="e.g. Akarsh Jain" maxlength="100"
-          value="${(_settingsData && _settingsData.full_name) || ''}"
+          value="${(state._settingsData && state._settingsData.full_name) || ''}"
           style="font-size:14px" />
       </div>`,
     save: async () => {
@@ -123,7 +128,7 @@ const FIELD_CONFIG = {
       <div class="form-group" style="margin:0">
         <label>Phone Number</label>
         <input type="tel" id="sfe-phone" placeholder="+91 98765 43210" maxlength="20"
-          value="${(_settingsData && _settingsData.phone_number) || ''}"
+          value="${(state._settingsData && state._settingsData.phone_number) || ''}"
           style="font-size:14px" />
       </div>`,
     save: async () => {
@@ -143,7 +148,7 @@ const FIELD_CONFIG = {
       <div class="form-group" style="margin:0">
         <label>Date of Birth</label>
         <input type="date" id="sfe-dob"
-          value="${(_settingsData && _settingsData.date_of_birth) || ''}"
+          value="${(state._settingsData && state._settingsData.date_of_birth) || ''}"
           max="${new Date().toISOString().split('T')[0]}"
           style="color:var(--text);background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;font-size:14px;width:100%;outline:none" />
       </div>`,
@@ -160,10 +165,10 @@ const FIELD_CONFIG = {
   password: {
     title: 'Change Password',
     body: () => {
-      const noPassword = _settingsData && !_settingsData.has_password;
+      const noPassword = state._settingsData && !state._settingsData.has_password;
       return `
       ${noPassword ? `<div style="font-size:12px;color:var(--accent);background:rgba(88,166,255,0.08);border:1px solid rgba(88,166,255,0.2);border-radius:8px;padding:10px 14px;margin-bottom:16px">
-        You signed in with Google. Set a password below to also enable username/password login.
+        You signed in with Google. Set a password below to also enable state.username/password login.
       </div>` : ''}
       <div class="form-group">
         <label>Current Password</label>
@@ -201,14 +206,14 @@ const FIELD_CONFIG = {
       if (!nw) { al.className='alert error'; al.textContent='Enter a new password.'; return null; }
       if (nw.length < 8) { al.className='alert error'; al.textContent='Password must be at least 8 characters with 1 letter and 1 number.'; return null; }
       if (nw !== conf) { al.className='alert error'; al.textContent='Passwords do not match.'; return null; }
-      const res = await fetch(`${API}/auth/change-password`, {
+      const res = await apiFetch(`${API}/auth/change-password`, {
         method: 'PUT',
         headers: { 'Content-Type':'application/json' },
         body: JSON.stringify({ current_password: cur || null, new_password: nw }),
       });
       const data = await res.json();
       if (!res.ok) { al.className='alert error'; al.textContent = data.detail || 'Error updating password.'; return null; }
-      if (_settingsData) _settingsData.has_password = true;
+      if (state._settingsData) state._settingsData.has_password = true;
       return data; // signal success even though it's not a UserOut
     },
     onSuccess: () => {
@@ -219,7 +224,7 @@ const FIELD_CONFIG = {
   },
 };
 
-function openFieldEdit(field) {
+export function openFieldEdit(field) {
   const cfg = FIELD_CONFIG[field];
   if (!cfg) return;
   _currentField = field;
@@ -235,12 +240,12 @@ function openFieldEdit(field) {
   }, 80);
 }
 
-function closeFieldEdit() {
+export function closeFieldEdit() {
   document.getElementById('sFieldOverlay').style.display = 'none';
   _currentField = null;
 }
 
-async function saveFieldEdit() {
+export async function saveFieldEdit() {
   const cfg = FIELD_CONFIG[_currentField];
   if (!cfg) return;
   const btn = document.getElementById('sFieldSaveBtn');
@@ -250,11 +255,11 @@ async function saveFieldEdit() {
   try {
     const result = await cfg.save();
     if (result !== null) {
-      if (_settingsData && result && result.username) {
-        _settingsData = result;
+      if (state._settingsData && result && result.username) {
+        state._settingsData = result;
         _syncSettingsRows(result);
       }
-      if (cfg.onSuccess) cfg.onSuccess(result || _settingsData);
+      if (cfg.onSuccess) cfg.onSuccess(result || state._settingsData);
       closeFieldEdit();
     }
   } catch(e) {
@@ -263,8 +268,8 @@ async function saveFieldEdit() {
   btn.disabled = false; btn.textContent = 'Save';
 }
 
-async function _patchMe(payload) {
-  const res = await fetch(`${API}/auth/me`, {
+export async function _patchMe(payload) {
+  const res = await apiFetch(`${API}/auth/me`, {
     method: 'PUT',
     headers: { 'Content-Type':'application/json' },
     body: JSON.stringify(payload),
@@ -275,7 +280,7 @@ async function _patchMe(payload) {
     al.className = 'alert error'; al.textContent = data.detail || 'Error saving.';
     return null;
   }
-  if (_settingsData) Object.assign(_settingsData, data);
+  if (state._settingsData) Object.assign(state._settingsData, data);
   return data;
 }
 
@@ -292,7 +297,7 @@ document.addEventListener('keydown', e => {
 });
 
 
-function handleGoogleConnect() {
+export function handleGoogleConnect() {
   const al = document.getElementById('sSocialAlert');
   al.className = 'alert'; al.textContent = '';
   if (window.google && google.accounts && google.accounts.id) {
@@ -303,18 +308,18 @@ function handleGoogleConnect() {
   }
 }
 
-async function confirmDeleteAccount() {
+export async function confirmDeleteAccount() {
   const al = document.getElementById('sDeleteAlert');
   al.className = 'alert'; al.textContent = '';
   const pwEl = document.getElementById('sDeletePassword');
   const pw = pwEl ? pwEl.value : null;
-  const hasPassword = _settingsData && _settingsData.has_password;
+  const hasPassword = state._settingsData && state._settingsData.has_password;
   if (hasPassword && !pw) {
     al.className = 'alert error'; al.textContent = 'Please enter your password to confirm.'; return;
   }
   if (!confirm('Are you absolutely sure? This will permanently delete your account and all data. This cannot be undone.')) return;
   try {
-    const res = await fetch(`${API}/auth/me`, {
+    const res = await apiFetch(`${API}/auth/me`, {
       method: 'DELETE',
       headers: { 'Content-Type':'application/json' },
       body: JSON.stringify({ password: pw || null }),
@@ -323,7 +328,7 @@ async function confirmDeleteAccount() {
     if (!res.ok) {
       al.className = 'alert error'; al.textContent = data.detail || 'Error deleting account.';
     } else {
-      token = null; username = null; isAdmin = false;
+      state.token = null; state.username = null; state.isAdmin = false;
       localStorage.removeItem('username');
       localStorage.removeItem('token');
       updateAuthUI(); updateAdminUI();
@@ -335,7 +340,7 @@ async function confirmDeleteAccount() {
 }
 
 // ── Appearance panel sync ─────────────────────────────────────────
-function _syncAppearancePanel() {
+export function _syncAppearancePanel() {
   const saved = localStorage.getItem('theme') || 'system';
   ['system','dark','light'].forEach(t => {
     const el = document.getElementById('choice-' + t);
@@ -344,9 +349,23 @@ function _syncAppearancePanel() {
 }
 
 // Override setTheme to also update the settings panel when it's open
-const _origSetTheme = window.setTheme || setTheme;
+export const _origSetTheme = window.setTheme || setTheme;
 window.setTheme = function(theme) {
   localStorage.setItem('theme', theme);
   if (typeof _applyTheme === 'function') _applyTheme(theme);
   _syncAppearancePanel();
 };
+
+window.switchSettingsTab = switchSettingsTab;
+window.openSettings = openSettings;
+window.closeSettings = closeSettings;
+window.loadSettings = loadSettings;
+window._syncSettingsRows = _syncSettingsRows;
+window._formatDob = _formatDob;
+window.openFieldEdit = openFieldEdit;
+window.closeFieldEdit = closeFieldEdit;
+window.saveFieldEdit = saveFieldEdit;
+window._patchMe = _patchMe;
+window.handleGoogleConnect = handleGoogleConnect;
+window.confirmDeleteAccount = confirmDeleteAccount;
+window._syncAppearancePanel = _syncAppearancePanel;

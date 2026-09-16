@@ -98,3 +98,25 @@ def test_forgot_password_and_reset(mock_send, client, db_session):
     db_session.commit()
     resp = client.post("/auth/login", data={"username": "forgot", "password": "new_secret_pwd123"})
     assert resp.status_code == 200
+
+def test_update_profile(client, auth_headers, db_session):
+    resp = client.put("/auth/me", headers=auth_headers, json={
+        "full_name": "New Name",
+        "phone_number": "1234567890",
+        "date_of_birth": "2000-01-01"
+    })
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["full_name"] == "New Name"
+    
+    # Check DB
+    u = db_session.query(User).filter_by(username="akarsh").first()
+    assert u.full_name == "New Name"
+
+def test_delete_profile(client, auth_headers, db_session):
+    resp = client.request("DELETE", "/auth/me", headers=auth_headers, json={"password": "password123"})
+    assert resp.status_code == 200
+    
+    # Check DB
+    u = db_session.query(User).filter_by(username="akarsh").first()
+    assert u is None

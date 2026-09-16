@@ -1,7 +1,15 @@
+import { openProblem } from './pages/problems.js';
+import { fetchCurrentUser, runPollInterval, showAlert, updateAuthUI } from './ui.js';
+import { openOnboarding, switchAuthTab, openAuthModal, closeAuthModal } from './auth.js';
+import { openResetPasswordModal } from './pages/account.js';
+import { openSubmissionViewer, loadHistory } from './pages/history.js';
+import { openContest, contestRefreshInterval } from './pages/contests.js';
+import { state } from './state.js';
+import { API, GOOGLE_CLIENT_ID, apiFetch } from './api.js';
 // ── Navigation & Router ─────────────────────────────────────────────
 // Startup & PAGE_LOADERS are in main.js (loaded last)
 
-function initGoogleSignIn(retries = 10) {
+export function initGoogleSignIn(retries = 10) {
   // Always render the visual button immediately so the UI doesn't look broken
   const wrap = document.getElementById('googleButtonWrap');
   if (wrap && !wrap.innerHTML.includes('btn-google-signin')) {
@@ -37,7 +45,7 @@ function initGoogleSignIn(retries = 10) {
   }, 100);
 }
 
-function triggerGoogleSignIn() {
+export function triggerGoogleSignIn() {
   if (window.google && google.accounts && google.accounts.id) {
     google.accounts.id.prompt();
   } else {
@@ -45,11 +53,11 @@ function triggerGoogleSignIn() {
   }
 }
 
-async function handleGoogleCredentialResponse(response) {
+export async function handleGoogleCredentialResponse(response) {
   const err = document.getElementById('loginErr');
   err.className = 'alert'; err.textContent = '';
   try {
-    const res = await fetch(`${API}/auth/google`, {
+    const res = await apiFetch(`${API}/auth/google`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ credential: response.credential }),
@@ -76,23 +84,23 @@ async function handleGoogleCredentialResponse(response) {
   }
 }
 
-async function finishLogin(jwt) {
+export async function finishLogin(jwt) {
   if (jwt) {
-    token = jwt;
+    state.token = jwt;
     localStorage.setItem('token', jwt);
   }
-  const meRes = await fetch(`${API}/auth/me`, { headers: {} });
+  const meRes = await apiFetch(`${API}/auth/me`, { headers: {} });
   const me = await meRes.json();
-  username = me.username;
+  state.username = me.username;
   
-  localStorage.setItem('username', username);
+  localStorage.setItem('username', state.username);
   closeAuthModal(); updateAuthUI(); fetchCurrentUser();
   // Dashboard has no nav item anymore (only reachable via the logo, first
   // page load, or login) — so land there with fresh account data on login.
   await goTo('dashboard');
 }
 
-function showGoogleSetupForm() {
+export function showGoogleSetupForm() {
   document.getElementById('authTabs').style.display = 'none';
   document.getElementById('googleButtonWrap').style.display = 'none';
   document.getElementById('googleDivider').style.display = 'none';
@@ -101,7 +109,7 @@ function showGoogleSetupForm() {
   document.getElementById('googleSetupForm').style.display = 'block';
 }
 
-function hideGoogleSetupForm() {
+export function hideGoogleSetupForm() {
   document.getElementById('authTabs').style.display = 'flex';
   document.getElementById('googleButtonWrap').style.display = 'flex';
   document.getElementById('googleDivider').style.display = 'flex';
@@ -109,7 +117,7 @@ function hideGoogleSetupForm() {
   switchAuthTab('login');
 }
 
-async function completeGoogleSignup() {
+export async function completeGoogleSignup() {
   const u = document.getElementById('googleSetupUsername').value.trim();
   const p = document.getElementById('googleSetupPassword').value;
   const err = document.getElementById('googleSetupErr');
@@ -120,12 +128,12 @@ async function completeGoogleSignup() {
     return;
   }
   if (!u) {
-    showAlert(err, 'Please choose a username.', 'error');
+    showAlert(err, 'Please choose a state.username.', 'error');
     return;
   }
 
   try {
-    const res = await fetch(`${API}/auth/complete-google-signup`, {
+    const res = await apiFetch(`${API}/auth/complete-google-signup`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ setup_token: pendingGoogleSetupToken, username: u, password: p }),
@@ -148,18 +156,18 @@ async function completeGoogleSignup() {
 }
 
 // ── Navigation ─────────────────────────────────────────────────────
-function showPageLoader() { document.getElementById('pageLoader').style.display = 'flex'; }
-function hidePageLoader() { document.getElementById('pageLoader').style.display = 'none'; }
+export function showPageLoader() { document.getElementById('pageLoader').style.display = 'flex'; }
+export function hidePageLoader() { document.getElementById('pageLoader').style.display = 'none'; }
 
 // Populated in main.js after all page modules are loaded
-const PAGE_LOADERS = {};
+export const PAGE_LOADERS = {};
 
-function getCurrentPageId() {
+export function getCurrentPageId() {
   const el = document.querySelector('.page.active');
   return el ? el.id.replace('page-', '') : null;
 }
 
-async function refreshCurrentPage() {
+export async function refreshCurrentPage() {
   const id = getCurrentPageId();
   const fn = PAGE_LOADERS[id];
   if (!fn) return;
@@ -169,7 +177,7 @@ async function refreshCurrentPage() {
   finally { hidePageLoader(); }
 }
 
-async function goTo(page, pushState = true) {
+export async function goTo(page, pushState = true) {
   if (window.globalAbortController) {
     window.globalAbortController.abort();
     window.globalAbortController = new AbortController();
@@ -177,7 +185,7 @@ async function goTo(page, pushState = true) {
   if (window.contestRefreshInterval) clearInterval(window.contestRefreshInterval);
   if (window.pollInterval) clearInterval(window.pollInterval);
   if (window.runPollInterval) clearInterval(window.runPollInterval);
-  if (!token && ['history','analytics','contests','account','leaderboard'].includes(page)) { openAuthModal(); return; }
+  if (!state.token && ['history','analytics','contests','account','leaderboard'].includes(page)) { openAuthModal(); return; }
   const pageEl = document.getElementById('page-' + page);
   if (!pageEl) return;
 
@@ -203,12 +211,12 @@ async function goTo(page, pushState = true) {
   }
 }
 
-function goToProblem(problemObj) {
+export function goToProblem(problemObj) {
   openProblem(problemObj);
   history.pushState({ page: 'submit', problem_id: problemObj.id }, '', '#problem/' + problemObj.id);
 }
 
-function handleHashNav() {
+export function handleHashNav() {
   const hash = window.location.hash.replace('#', '');
   
   if (!hash.startsWith('submission/') && !hash.startsWith('admin')) {
@@ -224,7 +232,7 @@ function handleHashNav() {
   }
   if (hash.startsWith('contest/')) {
     const id = parseInt(hash.split('/')[1]);
-    if (id && token) { goTo('contests', false); openContest(id); }
+    if (id && state.token) { goTo('contests', false); openContest(id); }
     else if (id) { openAuthModal(); }
     return;
   }
@@ -239,12 +247,12 @@ function handleHashNav() {
           history.replaceState({ page: 'submit', problem_id: id }, '', '#problem/' + id);
         }
       };
-      // Use already-loaded problems if available (avoids a duplicate fetch
+      // Use already-loaded problems if available (avoids a duplicate apiFetch
       // and avoids silently failing on a cold/slow backend)
-      if (_allProblems && _allProblems.length) {
-        openById(_allProblems);
+      if (state._allProblems && state._allProblems.length) {
+        openById(state._allProblems);
       } else {
-        fetch(`${API}/problems`)
+        apiFetch(`${API}/problems`)
           .then(r => r.json())
           .then(openById)
           .catch(() => {
@@ -257,7 +265,7 @@ function handleHashNav() {
   }
   if (hash.startsWith('submission/')) {
     const id = parseInt(hash.split('/')[1]);
-    if (id && token) {
+    if (id && state.token) {
       goTo('history', false);
       loadHistory().then(() => {
         if (window._submissionsCache && window._submissionsCache[id]) openSubmissionViewer(id);
@@ -269,3 +277,18 @@ function handleHashNav() {
   if (validPages.includes(hash)) goTo(hash, false);
   else goTo('dashboard', false);
 }
+
+window.initGoogleSignIn = initGoogleSignIn;
+window.triggerGoogleSignIn = triggerGoogleSignIn;
+window.handleGoogleCredentialResponse = handleGoogleCredentialResponse;
+window.finishLogin = finishLogin;
+window.showGoogleSetupForm = showGoogleSetupForm;
+window.hideGoogleSetupForm = hideGoogleSetupForm;
+window.completeGoogleSignup = completeGoogleSignup;
+window.showPageLoader = showPageLoader;
+window.hidePageLoader = hidePageLoader;
+window.getCurrentPageId = getCurrentPageId;
+window.refreshCurrentPage = refreshCurrentPage;
+window.goTo = goTo;
+window.goToProblem = goToProblem;
+window.handleHashNav = handleHashNav;

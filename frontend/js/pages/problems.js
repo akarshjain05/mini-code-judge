@@ -1,8 +1,13 @@
+import { loadSampleTestCases, escapeHtml, resetSubmitScreen } from '../ui.js';
+import { goTo } from '../router.js';
+import { editProblem } from './addproblem.js';
+import { state } from '../state.js';
+import { API, GOOGLE_CLIENT_ID, apiFetch } from '../api.js';
 // ── Problems Page ───────────────────────────────────────────────────
 // ── Problems ───────────────────────────────────────────────────────
-let _problemAcceptance = {}; // problem_id -> { total, accepted }
+export let _problemAcceptance = {}; // problem_id -> { total, accepted }
 
-async function loadProblems(retriesLeft = 2) {
+export async function loadProblems(retriesLeft = 2) {
   const tbody = document.getElementById('problemList');
   tbody.innerHTML = Array(6).fill(0).map(() => `
     <tr>
@@ -19,11 +24,11 @@ async function loadProblems(retriesLeft = 2) {
   
   try {
     const [probRes, subRes] = await Promise.all([
-      fetch(`${API}/problems`),
-      token ? fetch(`${API}/problems/acceptance-rates`) : Promise.resolve(null),
+      apiFetch(`${API}/problems`),
+      state.token ? apiFetch(`${API}/problems/acceptance-rates`) : Promise.resolve(null),
     ]);
     const problems = await probRes.json();
-    _allProblems = problems;
+    state._allProblems = problems;
     document.getElementById('statProblems').textContent = problems.length;
 
     // Use pre-aggregated acceptance rates
@@ -54,13 +59,13 @@ async function loadProblems(retriesLeft = 2) {
   }
 }
 
-function filterProblems() {
+export function filterProblems() {
   const tbody = document.getElementById('problemList');
   const search = (document.getElementById('probSearch')?.value || '').toLowerCase();
   const diff   = document.getElementById('probFilterDiff')?.value || '';
   const cat    = document.getElementById('probFilterCat')?.value || '';
 
-  let filtered = _allProblems.filter(p => {
+  let filtered = state._allProblems.filter(p => {
     if (diff && p.difficulty !== diff) return false;
     if (cat) {
       const probCats = (p.category || '').split(',').map(c => c.trim());
@@ -97,7 +102,7 @@ function filterProblems() {
     return;
   }
 
-  const isAdmin = document.getElementById('adminBadge')?.style.display !== 'none';
+  const state.isAdmin = document.getElementById('adminBadge')?.style.display !== 'none';
   tbody.innerHTML = filtered.map((p, i) => {
     const acc = _problemAcceptance[p.id];
     const rate = acc && acc.total > 0 ? Math.round((acc.accepted/acc.total)*100) : null;
@@ -121,7 +126,7 @@ function filterProblems() {
         ${acc ? `<div style="font-size:10px;color:var(--muted);font-weight:400">${acc.accepted}/${acc.total}</div>` : ''}
       </td>
     </tr>
-    ${isAdmin ? `<tr style="border-bottom:1px solid var(--border);background:rgba(0,0,0,0.15)">
+    ${state.isAdmin ? `<tr style="border-bottom:1px solid var(--border);background:rgba(0,0,0,0.15)">
       <td colspan="5" style="padding:4px 16px;text-align:right">
         <button onclick="event.stopPropagation();editProblem(${JSON.stringify(p).replace(/"/g,'&quot;')})" style="background:none;border:none;color:var(--accent);font-size:11px;cursor:pointer;padding:2px 8px">✏ Edit</button>
       </td>
@@ -129,14 +134,14 @@ function filterProblems() {
   }).join('');
 }
 
-function clearProbFilters() {
+export function clearProbFilters() {
   const s = document.getElementById('probSearch'); if (s) s.value = '';
   const d = document.getElementById('probFilterDiff'); if (d) d.value = '';
   const c = document.getElementById('probFilterCat'); if (c) c.value = '';
   filterProblems();
 }
 
-function openProblem(p) {
+export function openProblem(p) {
   // Fully reset the code editor, verdict box, and AI review panel first —
   // otherwise stale state (code, verdict, "Analyzing…") from whatever
   // problem/submission was last viewed leaks into this fresh screen.
@@ -152,3 +157,8 @@ function openProblem(p) {
   goTo('submit', false);
   history.pushState({ page: 'submit', problem_id: p.id }, '', '#problem/' + p.id);
 }
+
+window.loadProblems = loadProblems;
+window.filterProblems = filterProblems;
+window.clearProbFilters = clearProbFilters;
+window.openProblem = openProblem;
